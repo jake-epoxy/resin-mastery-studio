@@ -86,33 +86,33 @@ export default function IntroScreen() {
         >
             {/* Terminal typing sequence */}
             {(phase === "initializing" || phase === "authenticating" || phase === "granted") && (
-                <div className="flex-1 flex flex-col items-center justify-center p-6 w-full max-w-3xl mx-auto">
+                <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:p-6 w-full max-w-3xl mx-auto">
                     <div className="relative w-full rounded-[14px] p-[2px] shadow-[0_0_40px_rgba(120,200,255,0.1)]">
                         <GlowingEffect spread={60} glow={true} disabled={false} proximity={120} inactiveZone={0} borderWidth={3} className="rounded-[14px]" />
-                        <div className="relative w-full h-[300px] flex items-center justify-center overflow-hidden rounded-xl bg-[#0c0c18] border border-white/5 p-8 z-10">
+                        <div className="relative w-full min-h-[250px] sm:h-[300px] flex items-center justify-center overflow-hidden rounded-xl bg-[#0c0c18] border border-white/5 p-5 sm:p-8 z-10">
                             {/* Subtle grid background for the terminal */}
                             <div className="absolute inset-0 bg-[linear-gradient(to_right,#78c8ff1a_1px,transparent_1px),linear-gradient(to_bottom,#78c8ff1a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_10%,transparent_100%)] z-0" />
 
-                            <div className="w-full max-w-xl text-left space-y-4 relative z-10">
-                                <div className="flex items-center gap-2 mb-8 text-[#78c8ff]/50">
-                                    <Terminal className="w-5 h-5" />
-                                    <span className="text-sm tracking-widest uppercase font-bold drop-shadow-[0_0_10px_rgba(120,200,255,0.3)]">Resin Academics Terminal v2.0</span>
+                            <div className="w-full max-w-xl text-left space-y-3 sm:space-y-4 relative z-10">
+                                <div className="flex items-center gap-2 mb-4 sm:mb-8 text-[#78c8ff]/50">
+                                    <Terminal className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                                    <span className="text-xs sm:text-sm tracking-widest uppercase font-bold drop-shadow-[0_0_10px_rgba(120,200,255,0.3)]">Resin Academics Terminal v2.0</span>
                                 </div>
 
-                                <div className="h-6">
-                                    <p className="text-lg md:text-xl font-medium tracking-wide text-[#78c8ff] drop-shadow-[0_0_5px_rgba(120,200,255,0.5)]">{text1}</p>
+                                <div className="min-h-[1.5rem]">
+                                    <p className="text-sm sm:text-lg md:text-xl font-medium tracking-wide text-[#78c8ff] drop-shadow-[0_0_5px_rgba(120,200,255,0.5)] break-words">{text1}</p>
                                 </div>
-                                <div className="h-6">
-                                    <p className="text-lg md:text-xl font-medium tracking-wide text-[#78c8ff] drop-shadow-[0_0_5px_rgba(120,200,255,0.5)]">{text2}</p>
+                                <div className="min-h-[1.5rem]">
+                                    <p className="text-sm sm:text-lg md:text-xl font-medium tracking-wide text-[#78c8ff] drop-shadow-[0_0_5px_rgba(120,200,255,0.5)] break-words">{text2}</p>
                                 </div>
-                                <div className="h-6">
-                                    <p className={`text-lg md:text-xl font-medium tracking-wide ${phase === "granted" ? "text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]" : ""}`}>
+                                <div className="min-h-[1.5rem]">
+                                    <p className={`text-sm sm:text-lg md:text-xl font-medium tracking-wide break-words ${phase === "granted" ? "text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]" : ""}`}>
                                         {text3}
                                     </p>
                                 </div>
 
-                                <div className="mt-4 flex items-center gap-2 text-[#78c8ff] animate-pulse">
-                                    <div className="w-3 h-6 bg-[#78c8ff] shadow-[0_0_10px_rgba(120,200,255,0.8)]" />
+                                <div className="mt-3 sm:mt-4 flex items-center gap-2 text-[#78c8ff] animate-pulse">
+                                    <div className="w-2.5 h-5 sm:w-3 sm:h-6 bg-[#78c8ff] shadow-[0_0_10px_rgba(120,200,255,0.8)]" />
                                 </div>
                             </div>
                         </div>
@@ -122,30 +122,30 @@ export default function IntroScreen() {
 
             {/* Main Link Tree Menu */}
             {phase === "menu" && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-[#0c0c18] animate-in fade-in duration-700">
+                <div className="absolute inset-0 flex flex-col items-center bg-[#0c0c18] animate-in fade-in duration-700 overflow-y-auto">
 
                     {/* Background glow */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#78c8ff]/5 blur-[100px] rounded-full pointer-events-none" />
 
-                    <div className="relative z-10 w-full max-w-md mx-auto space-y-8">
-                        <div className="text-center space-y-4">
-                            <div className="mx-auto w-16 h-16 bg-[#78c8ff]/10 rounded-2xl flex items-center justify-center border border-[#78c8ff]/20 shadow-[0_0_30px_rgba(120,200,255,0.15)] mb-6">
-                                <ShieldCheck className="w-8 h-8 text-[#78c8ff]" />
+                    <div className="relative z-10 w-full max-w-md mx-auto px-4 sm:px-6 py-8 sm:py-12 my-auto space-y-5 sm:space-y-8">
+                        <div className="text-center space-y-3 sm:space-y-4">
+                            <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-[#78c8ff]/10 rounded-2xl flex items-center justify-center border border-[#78c8ff]/20 shadow-[0_0_30px_rgba(120,200,255,0.15)] mb-4 sm:mb-6">
+                                <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8 text-[#78c8ff]" />
                             </div>
-                            <h1 className="text-3xl md:text-4xl font-sans font-bold text-white tracking-tight">
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-sans font-bold text-white tracking-tight">
                                 Access Granted
                             </h1>
-                            <div className="pt-4 pb-6">
+                            <div className="pt-3 pb-4 sm:pt-4 sm:pb-6">
                                 <RainbowButton onClick={handleSkip}>
                                     Enter Resin Academics
                                 </RainbowButton>
                             </div>
-                            <p className="text-sm tracking-widest uppercase text-[#78c8ff]/70 font-mono">
+                            <p className="text-xs sm:text-sm tracking-widest uppercase text-[#78c8ff]/70 font-mono">
                                 Select Destination
                             </p>
                         </div>
 
-                        <div className="space-y-4 flex flex-col font-sans">
+                        <div className="space-y-3 sm:space-y-4 flex flex-col font-sans">
                             {/* Primary CTA */}
                             <div className="w-full group">
                                 <button
@@ -170,7 +170,7 @@ export default function IntroScreen() {
                             </div>
 
                             {/* Secondary Links */}
-                            <div className="grid grid-cols-1 gap-3">
+                            <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
                                 <div className="w-full group">
                                     <a
                                         href="https://Mud2Marble.xyz"
@@ -259,7 +259,7 @@ export default function IntroScreen() {
                         </div>
 
                         {/* Social Links */}
-                        <div className="flex items-center justify-center gap-5 pt-6">
+                        <div className="flex items-center justify-center gap-5 pt-4 sm:pt-6">
                             <a href="https://www.instagram.com/jake.epoxy/" target="_blank" rel="noopener noreferrer" className="group w-9 h-9 rounded-full border border-white/10 flex items-center justify-center hover:border-[#78c8ff]/50 hover:bg-[#78c8ff]/10 transition-all duration-300" aria-label="Instagram">
                                 <svg className="w-4 h-4 text-zinc-500 group-hover:text-[#78c8ff] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
                             </a>
@@ -272,7 +272,7 @@ export default function IntroScreen() {
                         </div>
 
                         {/* Enter Full Site Button */}
-                        <div className="pt-4 text-center">
+                        <div className="pt-3 sm:pt-4 pb-4 text-center">
                             <button
                                 onClick={handleSkip}
                                 className="text-zinc-500 hover:text-white text-sm font-medium transition-colors hover:underline underline-offset-4"
