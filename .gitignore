@@ -26,7 +26,7 @@ dist-ssr
 # Large binaries and media
 public/ffmpeg-master-latest-win64-gpl/
 public/ffmpeg.zip
-*.mp4
+public/Website intro.mp4
 *.HEIC
 *.heic
 FULL_SOURCE_CODE.md
