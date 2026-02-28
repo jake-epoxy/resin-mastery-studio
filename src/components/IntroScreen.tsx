@@ -134,7 +134,7 @@ export default function IntroScreen() {
 
             {/* Main Link Tree Menu */}
             {phase === "menu" && (
-                <div className="absolute inset-0 flex flex-col items-center bg-[#0c0c18] animate-in fade-in duration-700 overflow-y-auto">
+                <div className="absolute inset-0 flex flex-col items-center bg-[#0c0c18] animate-in fade-in duration-700 overflow-y-auto overflow-x-hidden">
 
                     {/* Background glow */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#78c8ff]/5 blur-[100px] rounded-full pointer-events-none" />
