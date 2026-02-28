@@ -70,14 +70,30 @@ const StarterKitSection = () => {
         } finally {
             setIsSubmitting(false);
 
-            // Trigger direct download from Google Drive
-            // Using uc?export=download bypasses the preview screen for direct download
-            const link = document.createElement("a");
-            link.href = "https://drive.google.com/uc?export=download&id=1lCrWluUIE11u60o6Cqrqp_B1z-W4ERDf";
-            link.target = "_blank";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Google Drive download URL
+            const downloadUrl = "https://drive.google.com/uc?export=download&id=1lCrWluUIE11u60o6Cqrqp_B1z-W4ERDf";
+
+            // Detect in-app browsers (Instagram, Facebook, TikTok, etc.)
+            // These browsers block programmatic downloads via createElement('a').click()
+            const ua = navigator.userAgent || "";
+            const isInAppBrowser = /FBAN|FBAV|Instagram|Line|Twitter|TikTok|Snapchat|Pinterest/i.test(ua);
+
+            if (isInAppBrowser) {
+                // For in-app browsers: open in system browser where downloads work
+                window.open(downloadUrl, "_system");
+                // Fallback: also try window.location as some in-app browsers block window.open
+                setTimeout(() => {
+                    window.location.href = downloadUrl;
+                }, 300);
+            } else {
+                // Standard browsers: use the link click method
+                const link = document.createElement("a");
+                link.href = downloadUrl;
+                link.target = "_blank";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
 
             setIsSuccess(true);
         }
@@ -142,7 +158,7 @@ const StarterKitSection = () => {
                                             </div>
                                             <DialogTitle className="text-2xl font-bold text-white">Success!</DialogTitle>
                                             <DialogDescription className="text-lg text-zinc-400">
-                                                Check your downloads — and your inbox for more from Jake Epoxy.
+                                                Your download should start automatically. If it doesn't, it may open in a new browser window.
                                             </DialogDescription>
                                             <button
                                                 onClick={() => setIsOpen(false)}
