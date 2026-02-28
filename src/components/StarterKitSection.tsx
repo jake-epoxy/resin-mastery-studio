@@ -70,26 +70,24 @@ const StarterKitSection = () => {
         } finally {
             setIsSubmitting(false);
 
-            // Google Drive download URL
-            const downloadUrl = "https://drive.google.com/uc?export=download&id=1lCrWluUIE11u60o6Cqrqp_B1z-W4ERDf";
+            // Download the PDF directly from our own server — no Google Drive login issues
+            const downloadUrl = "/Epoxy_Business_Starter_Kit_by_Jake_Epoxy.pdf";
 
             // Detect in-app browsers (Instagram, Facebook, TikTok, etc.)
-            // These browsers block programmatic downloads via createElement('a').click()
             const ua = navigator.userAgent || "";
             const isInAppBrowser = /FBAN|FBAV|Instagram|Line|Twitter|TikTok|Snapchat|Pinterest/i.test(ua);
 
             if (isInAppBrowser) {
                 // For in-app browsers: open in system browser where downloads work
                 window.open(downloadUrl, "_system");
-                // Fallback: also try window.location as some in-app browsers block window.open
                 setTimeout(() => {
                     window.location.href = downloadUrl;
                 }, 300);
             } else {
-                // Standard browsers: use the link click method
+                // Standard browsers: direct download
                 const link = document.createElement("a");
                 link.href = downloadUrl;
-                link.target = "_blank";
+                link.download = "Epoxy_Business_Starter_Kit_by_Jake_Epoxy.pdf";
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
