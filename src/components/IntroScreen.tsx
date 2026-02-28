@@ -14,7 +14,19 @@ export default function IntroScreen() {
 
     useEffect(() => {
         const seen = sessionStorage.getItem("hasSeenIntro");
-        if (!seen) {
+        const hasHash = window.location.hash && window.location.hash.length > 1;
+
+        if (hasHash) {
+            // Deep link — skip intro entirely and scroll to the section
+            setPhase("closed");
+            sessionStorage.setItem("hasSeenIntro", "true");
+            setHasSeenIntro(true);
+            // Small delay to let the page render before scrolling
+            setTimeout(() => {
+                const el = document.querySelector(window.location.hash);
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+            }, 300);
+        } else if (!seen) {
             setHasSeenIntro(false);
             startSequence();
         } else {
