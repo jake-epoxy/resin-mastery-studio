@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Terminal, ShieldCheck, ChevronRight, FileText, Map as MapIcon, Wrench, GraduationCap, Calculator } from "lucide-react";
+import { Terminal, ShieldCheck, ChevronRight, FileText, Map as MapIcon, Wrench, GraduationCap, Calculator, Handshake } from "lucide-react";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { RainbowButton } from "@/components/ui/rainbow-button";
 
@@ -262,6 +262,22 @@ export default function IntroScreen() {
                                             <div className="flex items-center gap-3 relative z-10">
                                                 <MapIcon className="w-5 h-5 text-[#78c8ff]/70 group-hover:text-[#78c8ff] transition-colors" />
                                                 <span className="text-white font-medium">View Installer Map</span>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-white group-hover:translate-x-1 transition-all relative z-10" />
+                                        </div>
+                                    </button>
+                                </div>
+
+                                <div className="w-full group">
+                                    <button
+                                        onClick={() => handleLinkClick("licensing")}
+                                        className="relative block w-full rounded-[14px] p-[1.5px] hover:scale-[1.01] transition-transform duration-300 text-left"
+                                    >
+                                        <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={1.5} />
+                                        <div className="relative w-full h-full flex items-center justify-between overflow-hidden rounded-xl bg-[#0c0c18] p-4 z-10">
+                                            <div className="flex items-center gap-3 relative z-10">
+                                                <Handshake className="w-5 h-5 text-[#78c8ff]/70 group-hover:text-[#78c8ff] transition-colors" />
+                                                <span className="text-white font-medium">Partnership Opportunities</span>
                                             </div>
                                             <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-white group-hover:translate-x-1 transition-all relative z-10" />
                                         </div>

@@ -11,6 +11,7 @@ import TrainingSection from "@/components/TrainingSection";
 import CertificationSection from "@/components/CertificationSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import MarketingSection from "@/components/MarketingSection";
+import LicensingSection from "@/components/LicensingSection";
 import InstallerMapSection from "@/components/InstallerMapSection";
 import QuotingMachine from "@/components/QuotingMachine";
 import CTASection from "@/components/CTASection";
@@ -82,6 +83,10 @@ const Index = () => {
       {/* <TestimonialsSection /> */}
       {/* <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" /> */}
       <MarketingSection />
+      <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
+      <div id="licensing">
+        <LicensingSection />
+      </div>
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
       <div id="map">
         <InstallerMapSection />
