@@ -270,7 +270,7 @@ export default function IntroScreen() {
 
                                 <div className="w-full group">
                                     <button
-                                        onClick={() => handleLinkClick("licensing")}
+                                        onClick={() => { setPhase("closed"); sessionStorage.setItem("hasSeenIntro", "true"); window.location.href = "/licensing"; }}
                                         className="relative block w-full rounded-[14px] p-[1.5px] hover:scale-[1.01] transition-transform duration-300 text-left"
                                     >
                                         <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={1.5} />
