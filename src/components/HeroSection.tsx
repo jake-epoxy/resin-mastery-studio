@@ -105,8 +105,11 @@ const HeroSection = () => {
         setTextOpacity(1 - t * 0.35);
       }
 
+      // Snap-back to top — disabled in in-app browsers (Instagram etc.) where it causes scroll glitches
       if (decayTimerRef.current) clearTimeout(decayTimerRef.current);
-      if (scrollY > lockThreshold && scrollY < 150 && velocity < 3) {
+      const ua = navigator.userAgent || "";
+      const isInApp = /FBAN|FBAV|Instagram|Line|Twitter|TikTok|Snapchat|Pinterest/i.test(ua);
+      if (!isInApp && scrollY > lockThreshold && scrollY < 150 && velocity < 3) {
         decayTimerRef.current = setTimeout(() => {
           if (window.scrollY < 150) window.scrollTo({ top: 0, behavior: "smooth" });
         }, 400);
