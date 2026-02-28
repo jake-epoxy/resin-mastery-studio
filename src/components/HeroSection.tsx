@@ -304,6 +304,7 @@ const HeroSection = () => {
   return (
     <section
       ref={sectionRef}
+      aria-label="Epoxy Flooring Training and Certification - Resin Academics"
       className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0c0c18]"
     >
       {/* Background Video */}
@@ -326,6 +327,9 @@ const HeroSection = () => {
           Master the Craft. Build the Business.
         </p>
 
+        {/* SEO: Always-present h1 for search engines */}
+        <h1 className="sr-only">Resin Academics — Professional Epoxy Flooring Classes, Training & Certification Courses</h1>
+
         {/* Scroll-reactive text */}
         <div
           className="mb-8 select-none flex items-center justify-center relative w-full"
@@ -334,7 +338,7 @@ const HeroSection = () => {
           {showFinal ? (
             <img
               src="/logo.png"
-              alt="Resin Academics Logo"
+              alt="Resin Academics — Epoxy Flooring Training & Certification Logo"
               className="w-full max-w-[280px] md:max-w-[400px] lg:max-w-[500px] object-contain transition-all duration-700 ease-out"
               style={{
                 opacity: textOpacity,

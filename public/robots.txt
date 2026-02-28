@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://resinacademics.com/sitemap.xml
+
+# Block unnecessary paths
+Disallow: /assets/
