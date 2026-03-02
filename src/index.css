@@ -534,3 +534,74 @@
   pointer-events: none;
   z-index: 1;
 }
+
+/* ============================================================ */
+/*  Mobile FAB Speed Dial                                       */
+/* ============================================================ */
+.fab-menu-item {
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+/* CTA pulse — dark themed */
+.fab-cta-pulse {
+  animation: fabCtaPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes fabCtaPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 15px rgba(120, 200, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  50% {
+    box-shadow: 0 0 25px rgba(120, 200, 255, 0.2), 0 0 50px rgba(167, 139, 250, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* Animated gradient ring around the toggle button */
+.fab-ring-glow {
+  background: conic-gradient(from 0deg,
+      #78c8ff,
+      #a78bfa,
+      #f472b6,
+      #78c8ff,
+      #a78bfa,
+      #78c8ff);
+  animation: fabRingSpin 4s linear infinite;
+  padding: 2px;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  border-radius: 50%;
+  opacity: 0.6;
+  filter: blur(1px);
+}
+
+.fab-ring-glow::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg,
+      transparent,
+      rgba(120, 200, 255, 0.15),
+      transparent,
+      rgba(167, 139, 250, 0.15),
+      transparent);
+  animation: fabRingSpin 4s linear infinite;
+  filter: blur(8px);
+}
+
+@keyframes fabRingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}

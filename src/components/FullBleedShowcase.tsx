@@ -11,9 +11,9 @@ const showcases = [
     },
     {
         image: "/gallery/living-room-marble.jpg",
-        title: "Residential Transformations",
-        subtitle: "Entire Homes, Reimagined",
-        description: "From living rooms to kitchens — we don't just coat floors, we design experiences that stop people in their tracks.",
+        title: "Next Group Class: Apr 2–5",
+        subtitle: "Limited Seats Available",
+        description: "4 days of hands-on epoxy training — floors, countertops & metallics. Walk away certified and ready to start your business.",
         align: "right" as const,
     },
     {
@@ -45,8 +45,8 @@ const FullBleedShowcase = () => {
                         />
                         {/* Dark overlay */}
                         <div className={`absolute inset-0 ${item.align === "left"
-                                ? "bg-gradient-to-r from-[#0c0c18]/95 via-[#0c0c18]/70 to-[#0c0c18]/30"
-                                : "bg-gradient-to-l from-[#0c0c18]/95 via-[#0c0c18]/70 to-[#0c0c18]/30"
+                            ? "bg-gradient-to-r from-[#0c0c18]/95 via-[#0c0c18]/70 to-[#0c0c18]/30"
+                            : "bg-gradient-to-l from-[#0c0c18]/95 via-[#0c0c18]/70 to-[#0c0c18]/30"
                             }`} />
                     </div>
 

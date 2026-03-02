@@ -17,6 +17,7 @@ import QuotingMachine from "@/components/QuotingMachine";
 import CTASection from "@/components/CTASection";
 import StarterKitSection from "@/components/StarterKitSection";
 import Footer from "@/components/Footer";
+import MobileThumbMenu from "@/components/MobileThumbMenu";
 import EnrollmentPortal from "@/components/EnrollmentPortal";
 import IntroScreen from "@/components/IntroScreen";
 import { useEffect, useState, useCallback } from "react";
@@ -55,6 +56,10 @@ const Index = () => {
 
   return (
     <main className="bg-background min-h-screen">
+      <MobileThumbMenu
+        onEnrollClick={() => openEnrollment()}
+        onClassSignUp={() => window.open("https://www.paypal.com/ncp/payment/NJ6HXBJ3NGLXG", "_blank")}
+      />
       <IntroScreen />
       <Navbar onEnrollClick={() => openEnrollment()} />
       <HeroSection />
@@ -72,7 +77,9 @@ const Index = () => {
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
       <ROICalculator />
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
-      <UpcomingClassSection />
+      <div id="upcoming-class">
+        <UpcomingClassSection />
+      </div>
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
       <div id="programs">
         <TrainingSection onEnroll={openEnrollment} />
@@ -122,7 +129,9 @@ const Index = () => {
         <StarterKitSection />
       </div>
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
-      <CTASection onEnrollClick={() => openEnrollment()} />
+      <div id="contact">
+        <CTASection onEnrollClick={() => openEnrollment()} />
+      </div>
       <Footer />
 
       {/* Enrollment Portal Modal */}
