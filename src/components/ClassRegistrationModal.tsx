@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X, User, Mail, Phone, ArrowRight, CheckCircle } from "lucide-react";
+import { logLeadToSheets } from "@/lib/logLead";
 
 interface ClassRegistrationModalProps {
     isOpen: boolean;
@@ -40,6 +41,9 @@ const ClassRegistrationModal = ({ isOpen, onClose }: ClassRegistrationModalProps
 
         setIsSubmitting(false);
         setSubmitted(true);
+
+        // Log to Google Sheets
+        logLeadToSheets({ name, email, phone, source: "Class Registration" });
 
         // TODO: Replace "https://paypal.com" with your actual PayPal payment link
         setTimeout(() => {

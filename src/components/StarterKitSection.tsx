@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Check, Download, FileText, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { logLeadToSheets } from "@/lib/logLead";
 
 const StarterKitSection = () => {
     const [name, setName] = useState("");
@@ -46,6 +47,9 @@ const StarterKitSection = () => {
         localStorage.setItem("starterKitLeads", JSON.stringify([...savedLeads, newLead]));
 
         setIsSubmitting(true);
+
+        // Log to Google Sheets
+        logLeadToSheets({ name, email, phone, source: "Starter Kit Download" });
 
         try {
             // Send data to email

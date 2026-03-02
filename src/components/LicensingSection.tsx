@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BookOpen, Video, Package, MapPin, TrendingUp, Award, ChevronRight, Check, Handshake } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { logLeadToSheets } from "@/lib/logLead";
 
 const PILLARS = [
     {
@@ -44,6 +45,9 @@ const LicensingSection = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+
+        // Log to Google Sheets
+        logLeadToSheets({ name: formData.name, email: formData.email, phone: formData.phone, source: "Licensing Inquiry" });
 
         // Save lead locally
         const newLead = { ...formData, date: new Date().toISOString(), type: "licensing" };

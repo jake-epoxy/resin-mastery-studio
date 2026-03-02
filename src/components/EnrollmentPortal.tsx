@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Monitor, Users, X, Check, ChevronRight, GraduationCap, Shield, Star, Zap } from "lucide-react";
+import { logLeadToSheets } from "@/lib/logLead";
 
 type EnrollStep = 1 | 2 | 3 | 4;
 type ProgramType = "online" | "in-person" | null;
@@ -80,6 +81,10 @@ const EnrollmentPortal = ({ isOpen, onClose, preselectedProgram }: EnrollmentPor
 
         setIsSubmitting(true);
 
+        // Log to Google Sheets
+        const sheetsSource = selectedProgram === "online" ? "Enrollment — Online" : "Enrollment — In-Person";
+        logLeadToSheets({ name: formData.name, email: formData.email, phone: formData.phone, source: sheetsSource });
+
         const programLabel = selectedProgram === "online"
             ? "Online 1-on-1 Training ($1,500)"
             : "In-Person 1-on-1 Training ($5,000)";
@@ -142,8 +147,8 @@ const EnrollmentPortal = ({ isOpen, onClose, preselectedProgram }: EnrollmentPor
                                 <div key={s} className="flex items-center gap-3">
                                     <div
                                         className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-mono font-bold transition-all duration-500 ${step >= s
-                                                ? "bg-[#78c8ff] text-black"
-                                                : "bg-white/5 text-muted-foreground border border-white/10"
+                                            ? "bg-[#78c8ff] text-black"
+                                            : "bg-white/5 text-muted-foreground border border-white/10"
                                             }`}
                                     >
                                         {step > s ? <Check className="w-4 h-4" /> : s}
@@ -192,14 +197,14 @@ const EnrollmentPortal = ({ isOpen, onClose, preselectedProgram }: EnrollmentPor
                             <button
                                 onClick={() => setInvestmentReady(!investmentReady)}
                                 className={`w-full flex items-start gap-4 p-5 rounded-lg border transition-all duration-300 text-left ${investmentReady
-                                        ? "border-[#78c8ff]/40 bg-[#78c8ff]/5 shadow-[0_0_20px_rgba(120,200,255,0.08)]"
-                                        : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                                    ? "border-[#78c8ff]/40 bg-[#78c8ff]/5 shadow-[0_0_20px_rgba(120,200,255,0.08)]"
+                                    : "border-white/10 bg-white/[0.02] hover:border-white/20"
                                     }`}
                             >
                                 <div
                                     className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all duration-300 ${investmentReady
-                                            ? "border-[#78c8ff] bg-[#78c8ff]"
-                                            : "border-white/20"
+                                        ? "border-[#78c8ff] bg-[#78c8ff]"
+                                        : "border-white/20"
                                         }`}
                                 >
                                     {investmentReady && <Check className="w-4 h-4 text-black" />}
@@ -217,14 +222,14 @@ const EnrollmentPortal = ({ isOpen, onClose, preselectedProgram }: EnrollmentPor
                             <button
                                 onClick={() => setSeriousApplicant(!seriousApplicant)}
                                 className={`w-full flex items-start gap-4 p-5 rounded-lg border transition-all duration-300 text-left ${seriousApplicant
-                                        ? "border-[#78c8ff]/40 bg-[#78c8ff]/5 shadow-[0_0_20px_rgba(120,200,255,0.08)]"
-                                        : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                                    ? "border-[#78c8ff]/40 bg-[#78c8ff]/5 shadow-[0_0_20px_rgba(120,200,255,0.08)]"
+                                    : "border-white/10 bg-white/[0.02] hover:border-white/20"
                                     }`}
                             >
                                 <div
                                     className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all duration-300 ${seriousApplicant
-                                            ? "border-[#78c8ff] bg-[#78c8ff]"
-                                            : "border-white/20"
+                                        ? "border-[#78c8ff] bg-[#78c8ff]"
+                                        : "border-white/20"
                                         }`}
                                 >
                                     {seriousApplicant && <Check className="w-4 h-4 text-black" />}

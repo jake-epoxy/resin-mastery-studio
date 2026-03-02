@@ -1,5 +1,6 @@
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useState, useMemo } from "react";
+import { logLeadToSheets } from "@/lib/logLead";
 
 /* ------------------------------------------------------------------ */
 /*  Color data sourced from https://mud2marble.xyz/                   */
@@ -112,6 +113,9 @@ const QuotingMachine = () => {
         }
 
         setIsSubmitting(true);
+
+        // Log to Google Sheets
+        logLeadToSheets({ name: formData.name, email: formData.email, phone: formData.phone, source: "Quote Request" });
 
         // Build a nice summary of the quote for the email
         const colorSummary = system === "metallic"
