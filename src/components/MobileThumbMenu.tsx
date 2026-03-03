@@ -36,21 +36,10 @@ const MobileThumbMenu = ({ onEnrollClick, onClassSignUp }: MobileThumbMenuProps)
     const [isVisible, setIsVisible] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    // Hide during IntroScreen
+    // Show FAB after intro animation (approx 3s delay)
     useEffect(() => {
-        const checkIntro = () => {
-            const seen = sessionStorage.getItem("hasSeenIntro");
-            if (seen === "true") {
-                setIsVisible(true);
-                return true;
-            }
-            return false;
-        };
-        if (checkIntro()) return;
-        const interval = setInterval(() => {
-            if (checkIntro()) clearInterval(interval);
-        }, 300);
-        return () => clearInterval(interval);
+        const timer = setTimeout(() => setIsVisible(true), 3000);
+        return () => clearTimeout(timer);
     }, []);
 
     // Close on outside click
