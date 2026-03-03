@@ -13,14 +13,14 @@ export const logLeadToSheets = (data: {
     try {
         fetch(SHEETS_URL, {
             method: "POST",
-            mode: "no-cors", // Apps Script doesn't support CORS preflight
-            headers: { "Content-Type": "text/plain" },
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
                 name: data.name || "",
                 email: data.email || "",
                 phone: data.phone || "",
                 source: data.source || "Website",
             }),
+            redirect: "follow",
         }).catch(() => {
             // Silent fail — never interrupt UX for analytics
         });
