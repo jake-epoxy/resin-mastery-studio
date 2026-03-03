@@ -1,4 +1,4 @@
-const SHEETS_URL = "https://script.google.com/macros/s/AKfycbz6pkQjVCRkUH1D-G_YqsgGSROJJiIRhFq1_OpMzoABTIRi9Wl63qzt9khWVzKBN8OY/exec";
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbyffEeMjJzWKr0QZ_jq_dernr2RtdGifLlvPxoGwZJ8iwR48fz_Rj6phBYtQMhvyxCG/exec";
 
 /**
  * Log a lead to the Google Sheets "Resin Academics Leads" spreadsheet.
