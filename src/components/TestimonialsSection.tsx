@@ -65,9 +65,8 @@ function VideoCard({ t, index }: { t: VideoTestimonial; index: number }) {
             <div className="testimonial-video-wrapper" onClick={!isPlaying ? handlePlay : undefined}>
                 <video
                     ref={videoRef}
-                    preload="none"
+                    preload="metadata"
                     playsInline
-                    src={t.src}
                     controls={isPlaying}
                     poster={t.poster}
                     onEnded={handleVideoEnd}
@@ -77,7 +76,9 @@ function VideoCard({ t, index }: { t: VideoTestimonial; index: number }) {
                         setIsPlaying(false);
                     }}
                     className="testimonial-video"
-                />
+                >
+                    <source src={t.src} type="video/mp4" />
+                </video>
 
                 {/* Poster overlay with play button */}
                 {!isPlaying && (

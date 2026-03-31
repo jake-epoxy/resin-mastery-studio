@@ -703,12 +703,33 @@
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
   .testimonial-video-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 24px;
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    /* Show scrollbar subtly so users know they can swipe */
+    scrollbar-width: thin;
+    padding-bottom: 12px;
+  }
+
+  .testimonial-video-grid::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .testimonial-video-grid::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .testimonial-video-grid::-webkit-scrollbar-thumb {
+    background: rgba(120, 200, 255, 0.2);
+    border-radius: 4px;
   }
 
   .testimonial-video-card {
+    flex: 0 0 85%;
+    scroll-snap-align: center;
+    min-width: 0;
     border-radius: 12px;
   }
 
