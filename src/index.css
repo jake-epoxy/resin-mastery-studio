@@ -605,3 +605,119 @@
     transform: rotate(360deg);
   }
 }
+
+/* ============================================================ */
+/*  Video Testimonials                                          */
+/* ============================================================ */
+.testimonial-video-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.testimonial-video-card {
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.testimonial-video-card:hover {
+  border-color: rgba(120, 200, 255, 0.25);
+  box-shadow: 0 0 50px rgba(120, 200, 255, 0.08), 0 24px 60px rgba(0, 0, 0, 0.3);
+  transform: translateY(-6px);
+}
+
+.testimonial-video-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  cursor: pointer;
+  background: #080808;
+}
+
+.testimonial-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Poster overlay */
+.testimonial-poster-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  transition: opacity 0.4s ease;
+}
+
+/* Play button */
+.testimonial-play-btn {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(120, 200, 255, 0.15);
+  backdrop-filter: blur(12px);
+  border: 2px solid rgba(120, 200, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.testimonial-play-btn:hover {
+  background: rgba(120, 200, 255, 0.25);
+  border-color: rgba(120, 200, 255, 0.6);
+  transform: scale(1.1);
+}
+
+/* Animated ring around play button */
+.testimonial-play-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: rgba(120, 200, 255, 0.5);
+  animation: playRingSpin 2s linear infinite;
+}
+
+@keyframes playRingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Card info area */
+.testimonial-card-info {
+  padding: 16px 20px 20px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  .testimonial-video-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .testimonial-video-card {
+    border-radius: 12px;
+  }
+
+  .testimonial-video-card:hover {
+    transform: none;
+  }
+
+  .testimonial-play-btn {
+    width: 56px;
+    height: 56px;
+  }
+}

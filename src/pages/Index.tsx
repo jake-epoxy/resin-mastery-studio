@@ -86,9 +86,8 @@ const Index = () => {
         <CertificationSection />
       </div>
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
-      {/* Testimonials hidden until reviews are ready */}
-      {/* <TestimonialsSection /> */}
-      {/* <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" /> */}
+      <TestimonialsSection />
+      <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
       <MarketingSection />
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
 

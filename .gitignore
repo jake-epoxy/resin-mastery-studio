@@ -30,3 +30,5 @@ public/Website intro.mp4
 *.HEIC
 *.heic
 FULL_SOURCE_CODE.md
+
+.vercel

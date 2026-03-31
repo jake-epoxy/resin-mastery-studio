@@ -1,6 +1,10 @@
 {
     "rewrites": [
         {
+            "source": "/quote-:slug.html",
+            "destination": "/quote-:slug.html"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }

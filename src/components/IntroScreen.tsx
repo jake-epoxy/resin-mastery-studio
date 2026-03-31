@@ -96,6 +96,20 @@ export default function IntroScreen() {
             className={`fixed inset-0 z-[100] bg-[#0c0c18] text-[#78c8ff] font-mono flex flex-col transition-opacity duration-1000 ${phase === "closed" ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"
                 }`}
         >
+            {/* Background Video — subtle motion behind the intro */}
+            <div className="absolute inset-0 z-0 overflow-hidden">
+                <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover opacity-[0.15]"
+                >
+                    <source src="/hero-background.mp4" type="video/mp4" />
+                </video>
+                <div className="absolute inset-0 bg-[#0c0c18]/85" />
+            </div>
+
             {/* Terminal typing sequence */}
             {(phase === "initializing" || phase === "authenticating" || phase === "granted") && (
                 <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:p-6 w-full max-w-3xl mx-auto">
@@ -134,7 +148,7 @@ export default function IntroScreen() {
 
             {/* Main Link Tree Menu */}
             {phase === "menu" && (
-                <div className="absolute inset-0 flex flex-col items-center bg-[#0c0c18] animate-in fade-in duration-700 overflow-y-auto overflow-x-hidden">
+                <div className="absolute inset-0 flex flex-col items-center bg-transparent animate-in fade-in duration-700 overflow-y-auto overflow-x-hidden">
 
                     {/* Background glow */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#78c8ff]/5 blur-[100px] rounded-full pointer-events-none" />
