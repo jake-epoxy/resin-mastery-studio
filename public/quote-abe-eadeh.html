@@ -11,6 +11,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         /* ─── Reset & Base ──────────────────────────────────────────── */
         *,
@@ -1978,7 +1979,7 @@
         /* ── Accept Quote ──────────────────────────────────────── */
         async function acceptQuote() {
             const btn = document.getElementById('acceptBtn');
-            btn.textContent = 'Submitting...';
+            btn.textContent = 'Generating Secure PDF...';
             btn.disabled = true;
 
             // Capture signature as base64 PNG
@@ -1994,38 +1995,78 @@
                 console.warn("Could not capture IP", e);
             }
 
-            // Build payload for Formsubmit
-            const payload = {
-                _subject: "✅ Quote Accepted — Abe Eadeh | $24,000.00 | Cleveland, OH",
-                _template: "table",
-                _cc: "Abe.eadeh@gmail.com",
-                "Client Name": "Abe Eadeh",
-                "Client Phone": "216-701-1742",
-                "Client Email": "Abe.eadeh@gmail.com",
-                "Project Location": "Cleveland, Ohio",
-                "Quote Amount": "$24,000.00",
-                "Deposit Required": "$14,000.00 (Non-Refundable)",
-                "Arrival Phase": "$5,000.00 (Due Upon Arrival)",
-                "Final Phase": "$5,000.00 (Due at Top Coat)",
-                "Project": "Custom Metallic Epoxy Floor (~3,000 sq ft)",
-                "Date Signed": document.getElementById('signDate').value,
-                "Exact Timestamp": new Date().toISOString(),
-                "IP Address": ipAddress,
-                "Quote Number": "JE-2026-0314",
-                "Printed Name": document.getElementById('printedName').value,
-                "Digital Signature Data": signatureData,
-                "Status": "✅ ACCEPTED & SIGNED"
+            // Expand Terms Box and Hide UI for PDF Capture
+            const termsBox = document.querySelector('.terms-box');
+            const originalMaxHeight = termsBox.style.maxHeight;
+            const originalOverflow = termsBox.style.overflow;
+            termsBox.style.maxHeight = 'none';
+            termsBox.style.overflow = 'visible';
+            
+            btn.style.display = 'none';
+            const sigActions = document.querySelector('.sig-actions');
+            if(sigActions) sigActions.style.display = 'none';
+
+            // Generate PDF Blob
+            const element = document.querySelector('.quote-page');
+            const opt = {
+                margin:       [0.5, 0.5, 0.5, 0.5],
+                filename:     'Signed_Agreement_Abe_Eadeh.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#050505' },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
 
+            let pdfBlob;
             try {
-                // Send to Formsubmit.co
+                pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+            } catch(e) {
+                console.error("PDF generation failed", e);
+            }
+
+            // Restore Terms Box and UI
+            termsBox.style.maxHeight = originalMaxHeight;
+            termsBox.style.overflow = originalOverflow;
+            btn.style.display = 'block';
+            if(sigActions) sigActions.style.display = 'flex';
+
+            btn.textContent = 'Submitting Contract...';
+
+            // Build FormData payload for Formsubmit
+            const formData = new FormData();
+            formData.append("_subject", "✅ Quote Accepted — Abe Eadeh | $24,000.00 | Cleveland, OH");
+            formData.append("_template", "table");
+            formData.append("_cc", "Abe.eadeh@gmail.com");
+            formData.append("_captcha", "false"); // Disable captcha to prevent blocks on AJAX with files
+            formData.append("Client Name", "Abe Eadeh");
+            formData.append("Client Phone", "216-701-1742");
+            formData.append("Client Email", "Abe.eadeh@gmail.com");
+            formData.append("Project Location", "Cleveland, Ohio");
+            formData.append("Quote Amount", "$24,000.00");
+            formData.append("Deposit Required", "$14,000.00 (Non-Refundable)");
+            formData.append("Arrival Phase", "$5,000.00 (Due Upon Arrival)");
+            formData.append("Final Phase", "$5,000.00 (Due at Top Coat)");
+            formData.append("Project", "Custom Metallic Epoxy Floor (~3,000 sq ft)");
+            formData.append("Date Signed", document.getElementById('signDate').value);
+            formData.append("Exact Timestamp", new Date().toISOString());
+            formData.append("IP Address", ipAddress);
+            formData.append("Quote Number", "JE-2026-0314");
+            formData.append("Printed Name", document.getElementById('printedName').value);
+            formData.append("Digital Signature Data", signatureData);
+            formData.append("Status", "✅ ACCEPTED & SIGNED");
+
+            if (pdfBlob) {
+                formData.append("attachment", pdfBlob, "Signed_Agreement_Abe_Eadeh.pdf");
+            }
+
+            try {
+                // Send to Formsubmit.co using FormData (supports file uploads)
                 const response = await fetch(FORMSUBMIT_URL, {
                     method: 'POST',
+                    body: formData,
                     headers: {
-                        'Content-Type': 'application/json',
                         'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
+                        // fetch sets proper Content-Type with boundary automatically for FormData
+                    }
                 });
 
                 const result = await response.json();
@@ -2033,14 +2074,12 @@
                 if (result.success) {
                     showSuccess();
                 } else {
-                    // Formsubmit might need activation — show success anyway
                     console.warn('Formsubmit response:', result);
                     showSuccess();
                 }
 
             } catch (err) {
                 console.error('Submission error:', err);
-                // Still show success to the client
                 showSuccess();
             }
         }
