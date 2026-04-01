@@ -266,7 +266,7 @@
         /* ─── Payment Breakdown ─────────────────────────────────────── */
         .payment-breakdown {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 16px;
             margin-bottom: 36px;
         }
@@ -1040,6 +1040,10 @@
                 border-color: #ddd;
                 background: #fafafa;
             }
+            .terms-box {
+                max-height: none !important;
+                overflow: visible !important;
+            }
 
             .info-card h3,
             .section-title,
@@ -1652,9 +1656,14 @@
                 <p class="note">Deposit required to secure your spot on the schedule. This deposit is <strong style="color:rgba(255,255,255,0.8);">non-refundable</strong>.</p>
             </div>
             <div class="payment-card">
-                <h4>Remaining Balance — Due Upon Arrival</h4>
-                <div class="amount">$10,000.00</div>
-                <p class="note">Balance is due upon arrival, before any work begins on-site.</p>
+                <h4>Phase 1 — Due Upon Arrival</h4>
+                <div class="amount">$5,000.00</div>
+                <p class="note">Balance is due upon arrival in Cleveland, before any work or prep begins on-site.</p>
+            </div>
+            <div class="payment-card">
+                <h4>Final Phase — Due at Top Coat</h4>
+                <div class="amount">$5,000.00</div>
+                <p class="note">Due immediately upon application of the final clear coat and completion of our walk-through.</p>
             </div>
         </div>
 
@@ -1670,8 +1679,11 @@
         <div class="terms-box">
             <h4>1. Payment Terms</h4>
             <p>A <strong>non-refundable</strong> deposit of <strong>$14,000.00</strong> is due upon acceptance of this quote to
-                book and reserve your project date on the schedule. The remaining balance of <strong>$10,000.00</strong> is due in full upon arrival at the project site, before any work begins. Accepted payment methods include cash, check, Zelle,
+                book and reserve your project date on the schedule. The first phase payment of <strong>$5,000.00</strong> is due in full upon arrival at the project site, before any work begins. The final phase payment of <strong>$5,000.00</strong> is due immediately upon the pouring of the final top coat and completion of the walk-through. Accepted payment methods include cash, check, Zelle,
                 Venmo, or CashApp.</p>
+
+            <h4>1B. Final Payment Default &amp; Asset Lien Rights</h4>
+            <p>The final <strong>$5,000.00</strong> payment is <strong>not contingent</strong> upon curing times, placing furniture, or subsequent non-related facility adjustments. It must be paid immediately at the conclusion of the top coat walk-through. <strong>Failure to pay this final balance in full on the day of completion strictly voids all warranties unconditionally.</strong> Furthermore, the client agrees that failure to remit the final payment within 24 hours of completion grants Jake Epoxy / Resin Academics the legal right to place a mechanic's lien on the property to recover the unpaid balance, associated legal fees, and late penalties.</p>
 
             <h4>2. Non-Refundable Deposit Policy</h4>
             <p>The deposit of <strong>$14,000.00</strong> is strictly <strong>non-refundable</strong> under all circumstances,
@@ -1993,7 +2005,8 @@
                 "Project Location": "Cleveland, Ohio",
                 "Quote Amount": "$24,000.00",
                 "Deposit Required": "$14,000.00 (Non-Refundable)",
-                "Balance Due": "$10,000.00 (Due Upon Arrival)",
+                "Arrival Phase": "$5,000.00 (Due Upon Arrival)",
+                "Final Phase": "$5,000.00 (Due at Top Coat)",
                 "Project": "Custom Metallic Epoxy Floor (~3,000 sq ft)",
                 "Date Signed": document.getElementById('signDate').value,
                 "Exact Timestamp": new Date().toISOString(),
