@@ -7,7 +7,7 @@ export default function Academy() {
   return (
     <div className="p-8 max-w-5xl mx-auto pb-24">
       <header className="mb-10">
-        <h1 className="text-3xl font-space font-bold text-white tracking-tight mb-2">QuoteOS Support & AI Command</h1>
+        <h1 className="text-3xl font-space font-bold text-white tracking-tight mb-2">Resin OS Support & AI Command</h1>
         <p className="text-white/60">Your 24/7 lifeline. Consult Sona AI or escalate directly to the Expert Network.</p>
       </header>
 
@@ -45,10 +45,10 @@ export default function Academy() {
           </motion.div>
         </div>
 
-        {/* Right Column: Quo Escalation & Resources */}
+        {/* Right Column: Emergency Escalation & Resources */}
         <div className="space-y-6">
           
-          {/* QUO HOTLINE */}
+          {/* EMERGENCY HOTLINE */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -59,13 +59,13 @@ export default function Academy() {
             
             <AlertTriangle className="text-red-400 mb-4" size={32} />
             <h3 className="text-xl font-space font-bold text-white mb-2">Emergency?</h3>
-            <p className="text-sm text-red-100/70 mb-6 leading-relaxed">If Sona can't answer your question and you're in the middle of a job, escalate immediately to Jake and the Pro Network via Quo.</p>
+            <p className="text-sm text-red-100/70 mb-6 leading-relaxed">If Sona can't answer your question and you're in the middle of a job, escalate immediately to Jake and the Pro Network.</p>
             
             <a 
               href={`sms:${QUO_NUMBER}`}
               className="w-full bg-red-500 hover:bg-red-400 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 transition-colors shadow-2xl"
             >
-              <MessageSquare size={18} /> Text Quo Hotline
+              <MessageSquare size={18} /> Text Emergency Hotline
             </a>
             
             <p className="text-[10px] text-red-400/50 uppercase tracking-widest text-center mt-4 mb-2 font-bold flex flex-col items-center gap-2">

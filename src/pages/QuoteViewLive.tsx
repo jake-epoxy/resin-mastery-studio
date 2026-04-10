@@ -77,7 +77,7 @@ export default function QuoteViewLive() {
          page.drawImage(sigImg, { x: 50, y: 480, width: 250, height: 100 });
          
          page.drawText(`Execution ID: ${id}`, { x: 50, y: 400, size: 10, color: rgb(0.6, 0.6, 0.6) });
-         page.drawText(`Secured by ${brandName} via QuoteOS`, { x: 50, y: 380, size: 10, color: rgb(0.6, 0.6, 0.6) });
+         page.drawText(`Secured by ${brandName} via Resin OS`, { x: 50, y: 380, size: 10, color: rgb(0.6, 0.6, 0.6) });
 
          pdfBase64 = await pdfDoc.saveAsBase64();
        } catch (err) {

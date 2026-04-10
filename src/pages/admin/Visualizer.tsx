@@ -126,7 +126,7 @@ export default function Visualizer() {
     if (!generatedImage) return;
     const link = document.createElement('a');
     link.href = generatedImage;
-    link.download = `openai-quoteos-visualizer-${selectedStyle.id}-${Date.now()}.png`;
+    link.download = `resin-os-visualizer-${selectedStyle.id}-${Date.now()}.png`;
     link.target = "_blank";
     link.click();
   }
