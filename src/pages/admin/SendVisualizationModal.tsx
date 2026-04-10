@@ -163,21 +163,23 @@ export default function SendVisualizationModal({ isOpen, onClose, originalImage,
           </div>
           <div style="padding: 24px;">
             ${beforeUrl ? `
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
               <tr>
                 <td width="48%" style="vertical-align: top;">
                   <p style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px 0; text-align: center; font-weight: bold;">Before</p>
-                  <img src="${beforeUrl}" alt="Before" style="width: 100%; border-radius: 10px; display: block;" />
+                  <a href="${beforeUrl}" target="_blank" style="display: block;"><img src="${beforeUrl}" alt="Before" style="width: 100%; border-radius: 10px; display: block;" /></a>
                 </td>
                 <td width="4%"></td>
                 <td width="48%" style="vertical-align: top;">
                   <p style="color: #10b981; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px 0; text-align: center; font-weight: bold;">After</p>
-                  <img src="${afterUrl}" alt="After" style="width: 100%; border-radius: 10px; display: block;" />
+                  <a href="${afterUrl}" target="_blank" style="display: block;"><img src="${afterUrl}" alt="After" style="width: 100%; border-radius: 10px; display: block;" /></a>
                 </td>
               </tr>
             </table>
+            <p style="color: #555; font-size: 11px; text-align: center; margin: 0 0 16px 0;">👆 Tap either photo to view full size</p>
             ` : `
-            <img src="${afterUrl}" alt="Floor Visualization" style="width: 100%; border-radius: 12px; margin-bottom: 20px; display: block;" />
+            <a href="${afterUrl}" target="_blank" style="display: block;"><img src="${afterUrl}" alt="Floor Visualization" style="width: 100%; border-radius: 12px; margin-bottom: 4px; display: block;" /></a>
+            <p style="color: #555; font-size: 11px; text-align: center; margin: 0 0 16px 0;">👆 Tap to view full size</p>
             `}
             <div style="background: #111; border: 1px solid #222; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
               <p style="color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 4px 0;">Coating Style</p>
