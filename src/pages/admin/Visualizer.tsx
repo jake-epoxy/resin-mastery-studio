@@ -14,6 +14,7 @@ const LOADING_MESSAGES = [
 ];
 
 const COATING_STYLES = [
+  { id: 'marble-epoxy', name: 'Marble Epoxy', description: 'Realistic marble veining with deep gloss', colors: ['Pearl White w/ Grey Veins', 'All Black w/ White Veins', 'Carrara White w/ Gold Veins', 'Dark Gray w/ Silver Veins', 'Cream w/ Brown Veins'] },
   { id: 'metallic-epoxy', name: 'Metallic Epoxy', description: 'High-gloss swirling metallic finish', colors: ['Charcoal & Silver', 'Copper & Bronze', 'Pearl White', 'Ocean Blue', 'Champagne Gold'] },
   { id: 'flake-epoxy', name: 'Flake Epoxy', description: 'Vinyl flake broadcast with clear topcoat', colors: ['Multi-Color Granite', 'Saddle Tan', 'Midnight Black', 'Domino', 'Earth Tone'] },
   { id: 'solid-epoxy', name: 'Solid Color Epoxy', description: 'Mirror-smooth single color finish', colors: ['Medium Gray', 'Beige', 'Light Gray', 'Black', 'White'] },

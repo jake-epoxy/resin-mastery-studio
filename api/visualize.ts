@@ -20,6 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Build a simple floor description
     const getFloorDesc = (style: string, color: string): string => {
       switch (style) {
+        case 'marble-epoxy': return `${color} marble-look epoxy floor with realistic natural stone veining patterns, ultra high-gloss mirror finish that looks like real polished marble`;
         case 'flake-epoxy': return `${color} vinyl flake epoxy with thousands of tiny scattered paint chips under a high-gloss clear coat`;
         case 'metallic-epoxy': return `${color} metallic epoxy with swirling marbled patterns and mirror-like reflective finish`;
         case 'solid-epoxy': return `${color} solid color epoxy, perfectly smooth with ultra high-gloss finish`;
