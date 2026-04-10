@@ -5,7 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import SendVisualizationModal from "./SendVisualizationModal";
 
 const LOADING_MESSAGES = [
-  "Firing up the OpenAI Vision engine... 🔍",
+  "Firing up the Resin OS rendering engine... 🔍",
   "Scanning original lighting physics... 🌞",
   "Isolating the floor boundaries natively... 🎨",
   "Protecting the walls, grass, and sky... 🛡️",
@@ -147,8 +147,8 @@ export default function Visualizer() {
             <Wand2 size={24} className="text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white font-space">OpenAI 100% Hands-Free AR</h1>
-            <p className="text-white/50 text-sm">GPT-4 Vision + DALL-E 3 Holistic Recreation Engine</p>
+            <h1 className="text-2xl font-bold text-white font-space">AI Visualizer</h1>
+            <p className="text-white/50 text-sm">Show clients their floor before you pour it</p>
           </div>
         </div>
       </div>
@@ -281,7 +281,7 @@ export default function Visualizer() {
             ) : (
               <>
                 <Sparkles size={20} />
-                Generate DALL-E 3 Vibe
+                Generate Visualization
               </>
             )}
           </button>
@@ -322,9 +322,9 @@ export default function Visualizer() {
                 <div className="w-20 h-20 bg-gradient-to-br from-emerald-500/10 to-blue-500/10 rounded-2xl flex items-center justify-center mb-4 border border-emerald-500/20">
                   <Sparkles size={32} className="text-emerald-400/50" />
                 </div>
-                <p className="text-white/50 font-bold mb-1">OpenAI Recreation Engine</p>
+                <p className="text-white/50 font-bold mb-1">Resin OS Visualization Engine</p>
                 <p className="text-white/30 text-sm max-w-xs mt-2">
-                  Upload an image. ChatGPT evaluates the lighting and architecture, then automatically reconstructs the entire photograph with the new luxurious epoxy floor. No masking needed.
+                  Upload a photo of any floor. Our AI evaluates the lighting and architecture, then automatically renders a photorealistic preview with the new epoxy coating. No masking needed.
                 </p>
               </div>
             )}
