@@ -252,6 +252,22 @@ export default function IntroScreen() {
 
                                 <div className="w-full group">
                                     <button
+                                        onClick={() => handleLinkClick("software")}
+                                        className="relative block w-full rounded-[14px] p-[2px] transition-transform duration-300 text-left shadow-[0_0_15px_rgba(120,200,255,0.15)] group-hover:shadow-[0_0_25px_rgba(120,200,255,0.3)] animate-pulse-glow"
+                                    >
+                                        <GlowingEffect spread={60} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} />
+                                        <div className="relative w-full h-full flex items-center justify-between overflow-hidden rounded-xl bg-[#0c0c18] border border-[#78c8ff]/20 p-4 z-10 hover:bg-[#78c8ff]/5 transition-colors">
+                                            <div className="flex items-center gap-3 relative z-10">
+                                                <Terminal className="w-5 h-5 text-[#78c8ff]" />
+                                                <span className="text-white font-bold tracking-wide">Subscribe to the Platform</span>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-[#78c8ff] group-hover:translate-x-1 transition-all relative z-10" />
+                                        </div>
+                                    </button>
+                                </div>
+
+                                <div className="w-full group">
+                                    <button
                                         onClick={() => handleLinkClick("services")}
                                         className="relative block w-full rounded-[14px] p-[1.5px] hover:scale-[1.01] transition-transform duration-300 text-left"
                                     >

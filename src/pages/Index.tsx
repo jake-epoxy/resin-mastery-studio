@@ -6,20 +6,20 @@ import ServicesSection from "@/components/ServicesSection";
 import ProcessSection from "@/components/ProcessSection";
 import GallerySection from "@/components/GallerySection";
 import ROICalculator from "@/components/ROICalculator";
-import UpcomingClassSection from "@/components/UpcomingClassSection";
+
 import TrainingSection from "@/components/TrainingSection";
 import CertificationSection from "@/components/CertificationSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import MarketingSection from "@/components/MarketingSection";
+import SoftwareMarketingSection from "@/components/SoftwareMarketingSection";
 import { Link } from "react-router-dom";
 import InstallerMapSection from "@/components/InstallerMapSection";
-import QuotingMachine from "@/components/QuotingMachine";
+import QuoteGeneratorDemo from "@/components/QuoteGeneratorDemo";
 import CTASection from "@/components/CTASection";
 import StarterKitSection from "@/components/StarterKitSection";
 import Footer from "@/components/Footer";
 import MobileThumbMenu from "@/components/MobileThumbMenu";
 import EnrollmentPortal from "@/components/EnrollmentPortal";
-import IntroScreen from "@/components/IntroScreen";
 import { useEffect, useState, useCallback } from "react";
 
 const Index = () => {
@@ -55,15 +55,15 @@ const Index = () => {
   }, []);
 
   return (
-    <main className="bg-background min-h-screen">
+    <main className="bg-background min-h-screen overflow-x-hidden">
       <MobileThumbMenu
         onEnrollClick={() => openEnrollment()}
         onClassSignUp={() => window.open("https://www.paypal.com/ncp/payment/NJ6HXBJ3NGLXG", "_blank")}
       />
-      <IntroScreen />
       <Navbar onEnrollClick={() => openEnrollment()} />
       <HeroSection />
       <FullBleedShowcase />
+      <SoftwareMarketingSection />
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
       <AboutSection />
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
@@ -76,10 +76,6 @@ const Index = () => {
       <GallerySection />
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
       <ROICalculator />
-      <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
-      <div id="upcoming-class">
-        <UpcomingClassSection />
-      </div>
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
       <div id="programs">
         <TrainingSection onEnroll={openEnrollment} />
@@ -121,7 +117,7 @@ const Index = () => {
       </div>
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
       <div id="quote">
-        <QuotingMachine />
+        <QuoteGeneratorDemo />
       </div>
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade" />
       <div id="starter-kit">

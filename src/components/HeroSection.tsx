@@ -1,5 +1,6 @@
 import heroBg from "@/assets/hero-bg.jpg";
 import { useRef, useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 
 /* ------------------------------------------------------------------ */
 /*  Inspiring words — Nike-ad energy for epoxy floor entrepreneurs     */
@@ -326,12 +327,12 @@ const HeroSection = () => {
 
       {/* Content */}
       <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-        <p className="text-muted-foreground text-sm tracking-[0.3em] uppercase mb-6 font-body animate-scroll-reveal">
-          Master the Craft. Build the Business.
+        <p className="text-[#78c8ff] text-sm tracking-[0.3em] uppercase mb-6 font-body font-bold animate-scroll-reveal">
+          The Ultimate Platform for Epoxy Entrepreneurs
         </p>
 
         {/* SEO: Always-present h1 for search engines */}
-        <h1 className="sr-only">Resin Academics — Professional Epoxy Flooring Classes, Training & Certification Courses</h1>
+        <h1 className="sr-only">Resin Academics — The Ultimate Epoxy Contractor Software, CRM & Training Platform</h1>
 
         {/* Scroll-reactive text */}
         <div
@@ -373,21 +374,20 @@ const HeroSection = () => {
         </div>
 
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 font-light animate-scroll-reveal" style={{ transitionDelay: "0.2s" }}>
-          Professional epoxy flooring, countertop & wall coating training — online and in-person.
-          Get certified and learn how to market your new craft.
+          Subscribe to the Resin Academics platform for full access to our <span className="text-white font-semibold">Self-Paced Video Curriculum</span> and our <span className="text-[#78c8ff] font-semibold">complete business CRM.</span>
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-scroll-reveal" style={{ transitionDelay: "0.3s" }}>
           <a
-            href="#services"
-            className="px-8 py-4 bg-primary text-primary-foreground font-display font-semibold tracking-wide rounded-sm hover:border-glow-hover transition-all duration-300 hover:scale-105"
+            href="#software"
+            className="px-8 py-4 bg-[#78c8ff] text-[#050505] font-display font-bold tracking-wide rounded-sm hover:bg-white transition-all duration-300 hover:scale-105 shadow-[0_0_30px_rgba(120,200,255,0.3)]"
           >
-            Explore Programs
+            🚀 Subscribe to Platform
           </a>
           <a
-            href="#contact"
-            className="px-8 py-4 border border-primary/30 text-primary font-display font-semibold tracking-wide rounded-sm border-glow hover:border-glow-hover transition-all duration-300 hover:scale-105"
+            href="#programs"
+            className="flex items-center justify-center gap-2 px-8 py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-display font-semibold tracking-wide rounded-sm transition-all duration-300 hover:scale-105 backdrop-blur-sm"
           >
-            Get in Touch
+            <span className="text-xl">📍</span> Book In-Person
           </a>
         </div>
       </div>

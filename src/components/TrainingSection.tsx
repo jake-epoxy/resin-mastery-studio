@@ -1,5 +1,5 @@
 import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { Monitor, Users, ChevronRight, Play, Clock, Sparkles } from "lucide-react";
+import { Monitor, Users, ChevronRight, Play, Clock, Sparkles, Calculator } from "lucide-react";
 
 interface TrainingSectionProps {
   onEnroll?: (program: "online" | "in-person") => void;
@@ -22,47 +22,37 @@ const TrainingSection = ({ onEnroll }: TrainingSectionProps) => {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
 
-          {/* Self-Paced Video Course — PRE-SALE */}
-          <div className="animate-scroll-reveal group p-10 rounded-sm border border-amber-500/30 bg-card hover:border-amber-500/50 transition-all duration-500 relative order-first lg:order-none">
-            {/* Pre-Sale badge */}
-            <div className="absolute -top-3 left-8 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-black text-[10px] tracking-[0.15em] uppercase font-bold flex items-center gap-1">
+          {/* SaaS Platform Access */}
+          <div className="animate-scroll-reveal group p-10 rounded-sm border border-[#78c8ff]/30 bg-card hover:border-[#78c8ff]/50 transition-all duration-500 relative order-first lg:order-none">
+            {/* SaaS badge */}
+            <div className="absolute -top-3 left-8 px-3 py-1 rounded-full bg-gradient-to-r from-[#78c8ff] to-blue-500 text-black text-[10px] tracking-[0.15em] uppercase font-bold flex items-center gap-1">
               <Sparkles className="w-3 h-3" />
-              Founding Member Pre-Sale
+              Software Platform
             </div>
-            <Play className="w-12 h-12 text-muted-foreground mb-6 group-hover:text-amber-400 transition-colors" strokeWidth={1.2} />
-            <h3 className="text-2xl font-display font-bold text-primary mb-1">Self-Paced Course</h3>
+            <Calculator className="w-12 h-12 text-muted-foreground mb-6 group-hover:text-[#78c8ff] transition-colors" strokeWidth={1.2} />
+            <h3 className="text-2xl font-display font-bold text-primary mb-1">Platform Access</h3>
             <div className="flex items-baseline gap-2 mb-4">
-              <p className="text-amber-400 text-lg font-display font-bold">$197</p>
-              <p className="text-muted-foreground text-sm line-through">$497</p>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold">60% OFF</span>
+              <p className="text-[#78c8ff] text-lg font-display font-bold">$99<span className="text-sm font-medium text-muted-foreground">/mo</span></p>
             </div>
             <p className="text-muted-foreground leading-relaxed mb-6">
-              Watch at your own speed. Every technique, every business lesson — recorded and ready when you are. Founding members lock in this price forever.
+              Instant access to our automated Quote Generator, interactive PDF contracts, lead tracking CRM, and the full video Mastery Vault.
             </p>
             <ul className="space-y-2 text-sm text-muted-foreground mb-8">
-              {["Full video tutorial library", "All modules — beginner to advanced", "Business & pricing strategies", "Lifetime access + future updates"].map((item) => (
+              {["Smart Quoting Engine", "Auto PDF Contract Generation", "Full video training library", "Cancel anytime"].map((item) => (
                 <li key={item} className="flex items-center gap-3">
-                  <span className="w-1 h-1 rounded-full bg-amber-400" />
+                  <span className="w-1 h-1 rounded-full bg-[#78c8ff]" />
                   {item}
                 </li>
               ))}
             </ul>
             <div className="space-y-3">
               <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert("Stan Store link coming soon! DM @jake.epoxy on Instagram to pre-order now.");
-                }}
-                className="group/btn w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-display font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-black rounded-sm hover:shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all duration-300 hover:scale-105"
+                href="/admin"
+                className="group/btn w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-display font-semibold bg-gradient-to-r from-[#78c8ff] to-blue-500 text-black rounded-sm hover:shadow-[0_0_25px_rgba(120,200,255,0.4)] transition-all duration-300 hover:scale-105"
               >
-                Pre-Order Now
+                Access Dashboard
                 <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
               </a>
-              <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                <Clock className="w-3 h-3" />
-                <span>Launching soon — only 25 founding spots</span>
-              </div>
             </div>
           </div>
 

@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { Camera, Wand2, Download, RotateCcw, Sparkles, ChevronDown, CheckCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Camera, Wand2, Download, RotateCcw, Sparkles, ChevronDown, CheckCircle, Mail, FileText } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import SendVisualizationModal from "./SendVisualizationModal";
 
 const LOADING_MESSAGES = [
   "Firing up the OpenAI Vision engine... 🔍",
@@ -24,12 +26,14 @@ const COATING_STYLES = [
 
 export default function Visualizer() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(null); // display version (full data URI)
   const [rawBase64, setRawBase64] = useState<string | null>(null); // raw base64 string (no prefix) for API
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
   
   // UI State
   const [selectedStyle, setSelectedStyle] = useState(COATING_STYLES[0]);
@@ -289,14 +293,26 @@ export default function Visualizer() {
             {generatedImage ? (
               <>
                 <img src={generatedImage} alt="AI Generated visualization" className="w-full h-full object-cover" />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-white font-bold text-sm">{selectedStyle.name}</p>
-                      <p className="text-white/60 text-xs">{selectedColor}</p>
-                    </div>
-                    <button onClick={handleDownload} className="px-4 py-2 bg-white/10 backdrop-blur rounded-lg text-white text-sm font-bold hover:bg-white/20 transition-colors flex items-center gap-2">
-                      <Download size={14} /> Save
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4">
+                  <div className="mb-3">
+                    <p className="text-white font-bold text-sm">{selectedStyle.name}</p>
+                    <p className="text-white/60 text-xs">{selectedColor}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={handleDownload} className="flex-1 py-2 bg-white/10 backdrop-blur rounded-lg text-white text-xs font-bold hover:bg-white/20 transition-colors flex items-center justify-center gap-1.5">
+                      <Download size={13} /> Save
+                    </button>
+                    <button onClick={() => setShowEmailModal(true)} className="flex-1 py-2 bg-emerald-500/20 backdrop-blur rounded-lg text-emerald-300 text-xs font-bold hover:bg-emerald-500/30 transition-colors flex items-center justify-center gap-1.5">
+                      <Mail size={13} /> Email Client
+                    </button>
+                    <button onClick={() => {
+                      // Store generated image in sessionStorage and navigate to quote generator
+                      sessionStorage.setItem('viz_image', generatedImage);
+                      sessionStorage.setItem('viz_style', selectedStyle.name);
+                      sessionStorage.setItem('viz_color', selectedColor);
+                      navigate('/admin/quote');
+                    }} className="flex-1 py-2 bg-blue-500/20 backdrop-blur rounded-lg text-blue-300 text-xs font-bold hover:bg-blue-500/30 transition-colors flex items-center justify-center gap-1.5">
+                      <FileText size={13} /> Build Quote
                     </button>
                   </div>
                 </div>
@@ -315,6 +331,15 @@ export default function Visualizer() {
           </div>
         </div>
       </div>
+
+      {/* Email Modal */}
+      <SendVisualizationModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        generatedImage={generatedImage || ''}
+        coatingStyle={selectedStyle.name}
+        coatingColor={selectedColor}
+      />
     </div>
   );
 }

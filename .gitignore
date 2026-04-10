@@ -32,3 +32,4 @@ public/Website intro.mp4
 FULL_SOURCE_CODE.md
 
 .vercel
+.env*.local

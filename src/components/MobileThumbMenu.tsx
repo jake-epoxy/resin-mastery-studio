@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Wrench,
     GraduationCap,
@@ -35,12 +36,28 @@ const MobileThumbMenu = ({ onEnrollClick, onClassSignUp }: MobileThumbMenuProps)
     const [isOpen, setIsOpen] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
     // Show FAB after intro animation (approx 3s delay)
     useEffect(() => {
         const timer = setTimeout(() => setIsVisible(true), 3000);
         return () => clearTimeout(timer);
     }, []);
+
+    // Prevent background scrolling when open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+            document.body.style.touchAction = 'none'; // Prevents mobile pull-to-refresh
+        } else {
+            document.body.style.overflow = '';
+            document.body.style.touchAction = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+            document.body.style.touchAction = '';
+        };
+    }, [isOpen]);
 
     // Close on outside click
     useEffect(() => {
@@ -109,81 +126,46 @@ const MobileThumbMenu = ({ onEnrollClick, onClassSignUp }: MobileThumbMenuProps)
             />
 
             {/* Menu items container */}
-            <div className="relative flex flex-col-reverse items-end gap-3 mb-3">
-                {MENU_ITEMS.map((item, i) => {
-                    const delay = i * 50;
+            <div className={`relative flex flex-col-reverse items-end gap-3 mb-3 max-h-[70vh] overflow-y-auto overflow-x-hidden p-2 -mr-2 no-scrollbar pointer-events-auto ${isOpen ? "z-50" : "-z-10"}`}>
+                {MENU_ITEMS.map((item) => {
                     return (
                         <button
                             key={item.label}
                             onClick={() => handleAction(item.target)}
-                            className="fab-menu-item group flex items-center gap-3"
-                            style={{
-                                transitionDelay: isOpen ? `${delay}ms` : `${(MENU_ITEMS.length - 1 - i) * 30}ms`,
-                                opacity: isOpen ? 1 : 0,
-                                transform: isOpen ? "translateY(0) scale(1)" : "translateY(20px) scale(0.6)",
-                                pointerEvents: isOpen ? "auto" : "none",
-                            }}
+                            className={`fab-menu-item group flex items-center gap-3 transition-all duration-200 ease-out origin-bottom shrink-0 ${isOpen ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" : "opacity-0 translate-y-4 scale-95 pointer-events-none"}`}
                             aria-label={item.label}
                         >
                             {/* Label pill */}
-                            <span
-                                className="px-3 py-1.5 rounded-lg text-sm font-semibold tracking-wide text-white/90 bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_0_15px_rgba(120,200,255,0.1)] whitespace-nowrap"
-                                style={{
-                                    transitionDelay: isOpen ? `${delay + 80}ms` : "0ms",
-                                    opacity: isOpen ? 1 : 0,
-                                    transform: isOpen ? "translateX(0)" : "translateX(10px)",
-                                    transition: "opacity 0.25s ease, transform 0.25s ease",
-                                }}
-                            >
+                            <span className="px-3 py-1.5 rounded-lg text-sm font-semibold tracking-wide text-white bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg whitespace-nowrap">
                                 {item.label}
                             </span>
 
-                            {/* Icon circle — dark with glow border */}
-                            <span className="flex items-center justify-center w-12 h-12 rounded-full bg-[#0e0e1a] border border-white/10 text-[#78c8ff] shadow-[0_0_15px_rgba(120,200,255,0.15),inset_0_1px_0_rgba(255,255,255,0.05)] hover:shadow-[0_0_25px_rgba(120,200,255,0.3)] hover:border-[#78c8ff]/30 hover:scale-110 transition-all duration-200">
+                            {/* Icon circle */}
+                            <span className="flex items-center justify-center w-12 h-12 shrink-0 rounded-full bg-[#111] border border-white/20 text-[#78c8ff] shadow-xl active:scale-95 transition-all">
                                 {item.icon}
                             </span>
                         </button>
                     );
                 })}
 
-                {/* Group Class CTA Banner */}
+                {/* SaaS Platform CTA Banner */}
                 <button
-                    onClick={() => handleAction("action:class-signup")}
-                    className="fab-menu-item flex items-center gap-3"
-                    style={{
-                        transitionDelay: isOpen ? `${MENU_ITEMS.length * 50}ms` : "0ms",
-                        opacity: isOpen ? 1 : 0,
-                        transform: isOpen ? "translateY(0) scale(1)" : "translateY(20px) scale(0.6)",
-                        pointerEvents: isOpen ? "auto" : "none",
-                    }}
-                    aria-label="Sign up for group class"
+                    onClick={() => { navigate('/admin'); setIsOpen(false); }}
+                    className={`fab-menu-item flex items-center gap-3 transition-all duration-200 ease-out origin-bottom shrink-0 mt-2 ${isOpen ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" : "opacity-0 translate-y-4 scale-95 pointer-events-none"}`}
+                    aria-label="Subscribe to Platform"
                 >
-                    <span
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold tracking-wide text-white bg-gradient-to-r from-[#78c8ff]/20 to-[#a78bfa]/20 border border-[#78c8ff]/20 shadow-[0_0_20px_rgba(120,200,255,0.15)] hover:shadow-[0_0_30px_rgba(120,200,255,0.3)] hover:border-[#78c8ff]/40 hover:scale-105 transition-all duration-200 whitespace-nowrap fab-cta-pulse backdrop-blur-xl"
-                        style={{
-                            transitionDelay: isOpen ? `${MENU_ITEMS.length * 50 + 80}ms` : "0ms",
-                            opacity: isOpen ? 1 : 0,
-                            transform: isOpen ? "translateX(0)" : "translateX(10px)",
-                            transition: "opacity 0.25s ease, transform 0.25s ease",
-                        }}
-                    >
-                        <CalendarDays size={18} className="text-[#78c8ff]" />
-                        Sign Up — Group Class Apr 2–5
+                    <span className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold tracking-wide text-white bg-gradient-to-r from-[#78c8ff]/30 to-[#a78bfa]/30 border border-[#78c8ff]/30 shadow-xl whitespace-nowrap backdrop-blur-xl">
+                        <Sparkles size={18} className="text-white" />
+                        Subscribe to Platform
                     </span>
                 </button>
 
-                {/* "Change Your Life" tagline */}
+                {/* Tagline */}
                 <div
-                    className="fab-menu-item text-right mr-1"
-                    style={{
-                        transitionDelay: isOpen ? `${MENU_ITEMS.length * 50 + 100}ms` : "0ms",
-                        opacity: isOpen ? 1 : 0,
-                        transform: isOpen ? "translateY(0)" : "translateY(10px)",
-                        pointerEvents: "none",
-                    }}
+                    className={`fab-menu-item text-right mr-1 shrink-0 mb-2 transition-all duration-300 ease-out ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                 >
-                    <p className="text-xs tracking-[0.25em] uppercase font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#78c8ff] via-[#a78bfa] to-[#f472b6] drop-shadow-[0_0_10px_rgba(120,200,255,0.3)]">
-                        Change Your Life
+                    <p className="text-xs tracking-[0.25em] uppercase font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#78c8ff] via-[#a78bfa] to-[#f472b6]">
+                        Automate Your Business
                     </p>
                 </div>
             </div>

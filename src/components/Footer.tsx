@@ -87,11 +87,11 @@ const Footer = () => {
         {/* Bottom Row */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-t border-border pt-8">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Resin Academics. All rights reserved.
+            © {new Date().getFullYear()} Pour Masters LLC (dba Resin Academics). All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <Link to="/privacy" className="hover:text-primary transition-colors hover:underline">
-              Privacy Policy
+            <Link to="/legal" className="hover:text-primary transition-colors hover:underline">
+              Terms of Service & Privacy
             </Link>
           </div>
         </div>
