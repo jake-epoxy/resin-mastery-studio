@@ -45,15 +45,17 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="p-8">
-      <header className="mb-8 flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-space font-bold text-white tracking-tight mb-2">Command Center</h1>
-          <p className="text-white/60">Manage your pipeline, incoming leads, and active projects.</p>
+    <div className="p-4 md:p-8">
+      <header className="mb-6 md:mb-8">
+        <div className="flex justify-between items-start md:items-end gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-space font-bold text-white tracking-tight mb-1">Command Center</h1>
+            <p className="text-white/60 text-sm md:text-base">Manage your pipeline, incoming leads, and active projects.</p>
+          </div>
+          <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 bg-[#78c8ff] text-black px-3 md:px-4 py-2 rounded-xl font-bold hover:bg-white transition-colors text-sm md:text-base whitespace-nowrap shrink-0">
+            <Plus size={18} /> Add Lead
+          </button>
         </div>
-        <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 bg-[#78c8ff] text-black px-4 py-2 rounded-xl font-bold hover:bg-white transition-colors">
-          <Plus size={18} /> Add Lead
-        </button>
       </header>
 
       {/* Analytics Chart Row */}
@@ -85,7 +87,7 @@ export default function AdminDashboard() {
       </motion.div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-8 md:mb-10">
         {[
           { label: "New Leads", value: newLeads.length.toString(), icon: Users, color: "text-blue-400" },
           { label: "Active Quotes", value: quoted.length.toString(), icon: FileText, color: "text-purple-400" },
@@ -97,13 +99,13 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-white/5 border border-white/10 p-6 rounded-2xl"
+            className="bg-white/5 border border-white/10 p-4 md:p-6 rounded-2xl"
           >
             <div className="flex justify-between items-start mb-4">
               <span className="text-white/50 text-sm font-semibold uppercase tracking-wider">{stat.label}</span>
               <stat.icon size={20} className={stat.color} />
             </div>
-            <span className="text-3xl font-space font-bold text-white">{stat.value}</span>
+            <span className="text-2xl md:text-3xl font-space font-bold text-white">{stat.value}</span>
           </motion.div>
         ))}
       </div>
@@ -112,7 +114,7 @@ export default function AdminDashboard() {
       <h2 className="text-xl font-space font-bold text-white mb-6">Pipeline</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* New Leads Column */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[500px]">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[200px] md:min-h-[500px]">
           <h3 className="text-sm font-bold uppercase tracking-wider text-[#78c8ff] mb-4 flex justify-between">
             New Leads <span>{newLeads.length}</span>
           </h3>
@@ -124,7 +126,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quoted Column */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[500px]">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[200px] md:min-h-[500px]">
           <h3 className="text-sm font-bold uppercase tracking-wider text-[#a78bfa] mb-4 flex justify-between">
             Quoted / Follow Up <span>{quoted.length}</span>
           </h3>
@@ -136,7 +138,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Won Column */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[500px]">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[200px] md:min-h-[500px]">
           <h3 className="text-sm font-bold uppercase tracking-wider text-green-400 mb-4 flex justify-between">
             Won / Deposit Paid <span>{won.length}</span>
           </h3>

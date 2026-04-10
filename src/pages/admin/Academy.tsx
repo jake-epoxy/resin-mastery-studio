@@ -5,7 +5,7 @@ export default function Academy() {
   const QUO_NUMBER = "9158000038";
 
   return (
-    <div className="p-8 max-w-5xl mx-auto pb-24">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto pb-24">
       <header className="mb-10">
         <h1 className="text-3xl font-space font-bold text-white tracking-tight mb-2">Resin OS Support & AI Command</h1>
         <p className="text-white/60">Your 24/7 lifeline. Consult Sona AI or escalate directly to the Expert Network.</p>

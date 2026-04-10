@@ -155,8 +155,8 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col md:flex-row text-white font-inter">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-white/5 border-r border-white/10 md:min-h-screen p-6 flex flex-col">
+      {/* Desktop Sidebar — hidden on mobile */}
+      <aside className="hidden md:flex w-64 bg-white/5 border-r border-white/10 min-h-screen p-6 flex-col">
         <div className="flex items-center gap-3 mb-12">
           <div className="w-10 h-10 rounded-full border border-white/20 bg-[#78c8ff]/10 flex items-center justify-center overflow-hidden shrink-0">
              {installerProfile?.company_name ? (
@@ -214,10 +214,52 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto">
+      {/* Main Content Area — add bottom padding on mobile for the tab bar */}
+      <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
         <Outlet />
       </main>
+
+      {/* Mobile Bottom Tab Bar — visible on mobile only */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-white/10 px-2 pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center justify-around py-2">
+          {navItems.slice(0, 5).map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            const isGodMode = item.name === "God Mode";
+            
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all min-w-[56px] ${
+                  isActive && !isGodMode
+                    ? "text-[#78c8ff]"
+                    : isActive && isGodMode
+                    ? "text-red-400"
+                    : "text-white/40"
+                }`}
+              >
+                <Icon size={20} />
+                <span className="text-[10px] font-bold leading-tight truncate">
+                  {item.name === "Command Center" ? "Home" 
+                    : item.name === "Lead Center" ? "Leads" 
+                    : item.name === "Quote Generator" ? "Quotes"
+                    : item.name === "AI Visualizer" ? "AI"
+                    : item.name === "Mastery Support" ? "Help"
+                    : item.name}
+                </span>
+              </Link>
+            );
+          })}
+          <button 
+            onClick={async () => { await supabase.auth.signOut(); }}
+            className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all min-w-[56px] text-white/40"
+          >
+            <LogOut size={20} />
+            <span className="text-[10px] font-bold leading-tight">Exit</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

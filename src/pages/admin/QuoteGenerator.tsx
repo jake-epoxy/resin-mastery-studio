@@ -352,7 +352,7 @@ export default function QuoteGenerator() {
   const activeClientLast = clients.find(c => c.id === selectedClientId)?.last_name || "Doe";
 
   return (
-    <div className="p-8 pb-20">
+    <div className="p-4 md:p-8 pb-20">
       <header className="mb-10">
         <h1 className="text-3xl font-space font-bold text-white tracking-tight mb-2">Quote Generator Studio</h1>
         <p className="text-white/60">Generate branded live contracts featuring your own custom PDF agreements.</p>

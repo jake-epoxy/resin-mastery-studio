@@ -44,7 +44,7 @@ export default function LeadCenter() {
   });
 
   return (
-    <div className="p-8 pb-20">
+    <div className="p-4 md:p-8 pb-20">
       <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-space font-bold text-white tracking-tight mb-2">Lead Center</h1>
