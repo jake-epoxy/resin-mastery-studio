@@ -336,6 +336,7 @@ export default function Visualizer() {
       <SendVisualizationModal
         isOpen={showEmailModal}
         onClose={() => setShowEmailModal(false)}
+        originalImage={uploadedImage || ''}
         generatedImage={generatedImage || ''}
         coatingStyle={selectedStyle.name}
         coatingColor={selectedColor}
