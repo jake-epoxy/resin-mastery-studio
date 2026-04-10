@@ -36,6 +36,7 @@ export default function Visualizer() {
   const [selectedColor, setSelectedColor] = useState(COATING_STYLES[0].colors[0]);
   const [showStyleDropdown, setShowStyleDropdown] = useState(false);
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
+  const [customNotes, setCustomNotes] = useState('');
 
   // Rotating Messages
   useEffect(() => {
@@ -95,9 +96,10 @@ export default function Visualizer() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          imageBase64: rawBase64, // clean raw base64, no data URI prefix
+          imageBase64: rawBase64,
           coatingStyle: selectedStyle.id,
           colorDescription: selectedColor,
+          customNotes: customNotes.trim() || undefined,
         }),
       });
 
@@ -247,6 +249,14 @@ export default function Visualizer() {
                 </button>
               ))}
             </div>
+
+            <textarea
+              value={customNotes}
+              onChange={(e) => setCustomNotes(e.target.value)}
+              placeholder="Custom notes (optional): e.g. 'add a slight purple tint' or 'subtle veins, not heavy'"
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 resize-none focus:outline-none focus:border-emerald-500/40 transition-colors"
+              rows={2}
+            />
           </div>
 
           {/* Generate Button */}

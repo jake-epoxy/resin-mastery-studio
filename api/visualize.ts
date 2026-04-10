@@ -10,7 +10,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { imageBase64, coatingStyle, colorDescription } = req.body;
+  const { imageBase64, coatingStyle, colorDescription, customNotes } = req.body;
 
   if (!imageBase64) {
     return res.status(400).json({ error: 'Missing imageBase64' });
@@ -35,7 +35,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Convert base64 to a Buffer that OpenAI SDK can consume
     const imageBuffer = Buffer.from(imageBase64, 'base64');
 
-    const prompt = `Replace ONLY the concrete floor/ground surface in this photo with ${floorDesc}. Keep everything else in the photo exactly the same - same walls, same sky, same landscape, same camera angle, same lighting. Only change the floor surface material.`;
+    let prompt = `Replace ONLY the concrete floor/ground surface in this photo with ${floorDesc}. Keep everything else in the photo exactly the same - same walls, same sky, same landscape, same camera angle, same lighting. Only change the floor surface material.`;
+
+    if (customNotes) {
+      prompt += ` Additional instructions: ${customNotes}`;
+    }
 
     console.log("Editing image with gpt-image-1:", prompt);
     console.log("Image buffer size:", imageBuffer.length);
