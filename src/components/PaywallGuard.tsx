@@ -1,4 +1,5 @@
 import { Lock, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
 
 interface PaywallGuardProps {
   userId: string;
@@ -6,6 +7,7 @@ interface PaywallGuardProps {
 }
 
 export default function PaywallGuard({ userId, paymentLink }: PaywallGuardProps) {
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   // We append the user's Supabase ID to the Stripe link so the webhook knows EXACTLY who just paid
   const secureCheckoutLink = `${paymentLink}?client_reference_id=${userId}`;
 
@@ -56,16 +58,35 @@ export default function PaywallGuard({ userId, paymentLink }: PaywallGuardProps)
 
         {/* Checkout CTA */}
         <div className="w-full">
+            <div 
+              className="mb-6 flex items-start gap-4 bg-red-500/5 border border-red-500/20 p-5 rounded-2xl cursor-pointer hover:bg-red-500/10 transition-colors" 
+              onClick={() => setAgreedToTerms(!agreedToTerms)}
+            >
+               <div className={`mt-0.5 w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-colors border ${agreedToTerms ? 'bg-red-500 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'border-white/20'}`}>
+                 {agreedToTerms && <CheckCircle2 size={16} className="text-white" />}
+               </div>
+               <p className="text-sm text-white/80 text-left leading-relaxed">
+                 I understand that if I do not cancel before my 7-day trial ends, my card will be charged $97/month. <strong className="text-red-400">All sales are final and NO refunds will be issued if I forget to cancel.</strong>
+               </p>
+            </div>
+
             <a 
-              href={secureCheckoutLink}
-              className="w-full relative group overflow-hidden bg-white text-black font-bold py-5 rounded-2xl transition-all shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_50px_rgba(120,200,255,0.3)] flex items-center justify-center gap-3 text-lg"
+              href={agreedToTerms ? secureCheckoutLink : '#'}
+              className={`w-full relative group overflow-hidden bg-white text-black font-bold py-5 rounded-2xl transition-all flex items-center justify-center gap-3 text-lg ${agreedToTerms ? 'shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_50px_rgba(120,200,255,0.3)]' : 'opacity-40 cursor-not-allowed bg-zinc-300'}`}
+              onClick={(e) => {
+                 if (!agreedToTerms) e.preventDefault();
+              }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/10 to-transparent group-hover:translate-x-full transition-transform duration-1000 -translate-x-full" />
-              Subscribe ($99/mo) <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              Start 7-Day Free Trial <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </a>
             
-            <div className="flex items-center justify-center gap-2 mt-6 text-xs text-white/40 font-mono">
-              <ShieldCheck size={14} className="text-green-500/70" /> Secured natively by Stripe
+            <div className="flex flex-col items-center justify-center gap-2 mt-6 text-xs text-white/40 font-mono text-center">
+              <span className="text-emerald-400 font-bold">$0 due today. Then $97/mo.</span>
+              <span className="mt-1">Cancel anytime before day 7 via dashboard to avoid being charged.</span>
+              <div className="flex items-center gap-2 mt-3 text-white/30">
+                <ShieldCheck size={14} className="text-emerald-500/50" /> Secured natively by Stripe
+              </div>
             </div>
         </div>
 

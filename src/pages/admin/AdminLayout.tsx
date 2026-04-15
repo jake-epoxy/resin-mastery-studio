@@ -1,9 +1,10 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Calculator, PlaySquare, ShoppingBag, Settings, LogOut, Lock, ShieldAlert, ContactRound, LifeBuoy, Wand2 } from "lucide-react";
+import { LayoutDashboard, Users, Calculator, PlaySquare, ShoppingBag, Settings, LogOut, Lock, ShieldAlert, ContactRound, LifeBuoy, Wand2, Landmark, FileText, HardHat, Factory } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import OnboardingWizard from "../../components/OnboardingWizard";
 import PaywallGuard from "../../components/PaywallGuard";
+import AssistantFAB from "../../components/AssistantFAB";
 
 export default function AdminLayout() {
   const location = useLocation();
@@ -65,18 +66,30 @@ export default function AdminLayout() {
     setLoading(false);
   };
 
-  const navItems = [
-    { name: "Command Center", path: "/admin", icon: LayoutDashboard },
-    { name: "Lead Center", path: "/admin/leads", icon: ContactRound },
-    { name: "Quote Generator", path: "/admin/quote", icon: Calculator },
-    { name: "AI Visualizer", path: "/admin/visualizer", icon: Wand2 },
-    { name: "Mastery Support", path: "/admin/academy", icon: LifeBuoy },
-    { name: "Mud2Marble Store", path: "/admin/marketplace", icon: ShoppingBag },
+  // =========================================================
+  // SINGLE SOURCE OF TRUTH — All nav tabs live here.
+  // If you add a route, add it here. Mobile + Desktop both read this.
+  // devOnly tabs only show for the developer account.
+  // =========================================================
+  const allNavItems = [
+    { name: "Command Center", mobileLabel: "Home", path: "/admin", icon: LayoutDashboard },
+    { name: "Lead Center", mobileLabel: "Leads", path: "/admin/leads", icon: ContactRound },
+    { name: "Quote Generator", mobileLabel: "Quotes", path: "/admin/quote", icon: Calculator },
+    { name: "AI Visualizer", mobileLabel: "AI", path: "/admin/visualizer", icon: Wand2 },
+    { name: "Mastery Support", mobileLabel: "Help", path: "/admin/academy", icon: LifeBuoy },
+    { name: "Proposals", mobileLabel: "Proposals", path: "/admin/proposals", icon: FileText },
+    { name: "Workforce Hub", mobileLabel: "Team", path: "/admin/workforce", icon: HardHat },
+    { name: "Ops & Dispatch", mobileLabel: "Ops", path: "/admin/ops", icon: Factory },
+    { name: "Banking & Payouts", mobileLabel: "Banking", path: "/admin/finances", icon: Landmark },
+    { name: "Mud2Marble Store", mobileLabel: "Store", path: "/admin/marketplace", icon: ShoppingBag },
+    { name: "Settings", mobileLabel: "Settings", path: "/admin/settings", icon: Settings },
+    // Developer-only tabs
+    { name: "Clone AI", mobileLabel: "Clone", path: "/admin/clone", icon: Wand2, devOnly: true },
+    { name: "God Mode", mobileLabel: "God", path: "/admin/super", icon: ShieldAlert, devOnly: true },
   ];
 
-  if (userEmail === "jakeflowers222@gmail.com") {
-    navItems.push({ name: "God Mode", path: "/admin/super", icon: ShieldAlert });
-  }
+  const isDev = userEmail === "jakeflowers222@gmail.com";
+  const navItems = allNavItems.filter(item => !item.devOnly || isDev);
 
   if (!isAuthenticated) {
     return (
@@ -144,122 +157,54 @@ export default function AdminLayout() {
   }
 
   // If the user is logged in, but their SQL profile has subscription_active = false
-  if (installerProfile && installerProfile.subscription_active === false) {
+  // Developer God Mode bypass
+  if (installerProfile && installerProfile.subscription_active === false && userEmail !== 'jakeflowers222@gmail.com') {
     return (
-      <PaywallGuard 
-        userId={installerProfile.user_id} 
-        paymentLink="https://buy.stripe.com/9B63cv2338Od9qPgBN6J201" 
-      />
+      <>
+        <PaywallGuard 
+          userId={installerProfile.user_id} 
+          paymentLink="https://buy.stripe.com/9B63cv2338Od9qPgBN6J201" 
+        />
+        <AssistantFAB />
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] flex flex-col md:flex-row text-white font-inter">
-      {/* Desktop Sidebar — hidden on mobile */}
-      <aside className="hidden md:flex w-64 bg-white/5 border-r border-white/10 min-h-screen p-6 flex-col">
-        <div className="flex items-center gap-3 mb-12">
-          <div className="w-10 h-10 rounded-full border border-white/20 bg-[#78c8ff]/10 flex items-center justify-center overflow-hidden shrink-0">
+    <div className="min-h-screen bg-[#050505] flex flex-col text-white font-inter">
+      {/* Sleek Top Header for Branding and Logout */}
+      <header className="sticky top-0 z-40 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/10 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 md:w-10 md:h-10 rounded-full border border-white/20 bg-[#78c8ff]/10 flex items-center justify-center overflow-hidden shrink-0">
              {installerProfile?.company_name ? (
-                <span className="text-[#78c8ff] font-bold text-lg">{installerProfile.company_name.charAt(0)}</span>
+                <span className="text-[#78c8ff] font-bold text-base md:text-lg">{installerProfile.company_name.charAt(0)}</span>
              ) : (
                 <img src="/logo.png" alt="Resin Academics" className="w-full h-full object-cover" />
              )}
           </div>
-          <span className="font-space font-bold tracking-widest text-[#78c8ff] uppercase text-sm leading-tight">
+          <span className="font-space font-bold tracking-widest text-[#78c8ff] uppercase text-xs md:text-sm leading-tight">
             {installerProfile?.company_name || "Resin OS"}
           </span>
         </div>
 
-        <nav className="space-y-2 flex-grow">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            const isGodMode = item.name === "God Mode";
-            
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  isActive && !isGodMode
-                    ? "bg-gradient-to-r from-[#78c8ff]/20 to-[#a78bfa]/20 text-white border border-white/10"
-                    : isActive && isGodMode
-                    ? "bg-red-950/40 text-red-400 border border-red-500/30"
-                    : isGodMode
-                    ? "text-red-500/60 hover:text-red-400 hover:bg-red-950/20"
-                    : "text-white/60 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <Icon size={18} className={isActive && !isGodMode ? "text-[#78c8ff]" : ""} />
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
+        <button 
+          onClick={async () => {
+            await supabase.auth.signOut();
+          }}
+          className="flex items-center gap-2 px-3 py-2 text-white/50 hover:text-white hover:bg-white/5 rounded-lg transition-all text-xs font-bold uppercase tracking-wider"
+        >
+          <LogOut size={16} />
+          <span className="hidden md:inline">Lock Terminal</span>
+        </button>
+      </header>
 
-        <div className="mt-auto pt-8 border-t border-white/10 space-y-2">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all font-medium">
-            <Settings size={18} />
-            Settings
-          </button>
-          <button 
-            onClick={async () => {
-              await supabase.auth.signOut();
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-all font-medium"
-          >
-            <LogOut size={18} />
-            Lock Terminal
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content Area — add bottom padding on mobile for the tab bar */}
-      <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
 
-      {/* Mobile Bottom Tab Bar — visible on mobile only */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-white/10 px-2 pb-[env(safe-area-inset-bottom)]">
-        <div className="flex items-center justify-around py-2">
-          {navItems.slice(0, 5).map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            const isGodMode = item.name === "God Mode";
-            
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all min-w-[56px] ${
-                  isActive && !isGodMode
-                    ? "text-[#78c8ff]"
-                    : isActive && isGodMode
-                    ? "text-red-400"
-                    : "text-white/40"
-                }`}
-              >
-                <Icon size={20} />
-                <span className="text-[10px] font-bold leading-tight truncate">
-                  {item.name === "Command Center" ? "Home" 
-                    : item.name === "Lead Center" ? "Leads" 
-                    : item.name === "Quote Generator" ? "Quotes"
-                    : item.name === "AI Visualizer" ? "AI"
-                    : item.name === "Mastery Support" ? "Help"
-                    : item.name}
-                </span>
-              </Link>
-            );
-          })}
-          <button 
-            onClick={async () => { await supabase.auth.signOut(); }}
-            className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all min-w-[56px] text-white/40"
-          >
-            <LogOut size={20} />
-            <span className="text-[10px] font-bold leading-tight">Exit</span>
-          </button>
-        </div>
-      </nav>
+      {/* Navigation & Help is now fully handled by the integrated Assistant chatbot */}
+      <AssistantFAB />
     </div>
   );
 }
