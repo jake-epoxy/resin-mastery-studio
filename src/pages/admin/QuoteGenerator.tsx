@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calculator, ExternalLink, ShieldCheck, CreditCard, Link as LinkIcon, Palette, FileText, Save, UploadCloud } from "lucide-react";
+import { Calculator, ExternalLink, ShieldCheck, CreditCard, Link as LinkIcon, Palette, FileText, Save, UploadCloud, RotateCcw } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -37,6 +37,7 @@ export default function QuoteGenerator() {
   // Uploading States
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingContract, setIsUploadingContract] = useState(false);
+  const [isUploadingMockup, setIsUploadingMockup] = useState(false);
 
   // Templates State
   const [templates, setTemplates] = useState<any[]>([]);
@@ -50,7 +51,12 @@ export default function QuoteGenerator() {
   
   const [isSendingToClient, setIsSendingToClient] = useState(false);
   const [clientEmailed, setClientEmailed] = useState(false);
-  const [visualizationImage, setVisualizationImage] = useState<string | null>(null);
+  const [visualizationImage, setVisualizationImage] = useState<string | null>(() => localStorage.getItem('quoteos_viz') || null);
+
+  useEffect(() => { 
+    if (visualizationImage) localStorage.setItem('quoteos_viz', visualizationImage); 
+    else localStorage.removeItem('quoteos_viz');
+  }, [visualizationImage]);
 
   // Payment Schedule State
   type Milestone = { label: string; pct: number };
@@ -284,6 +290,18 @@ export default function QuoteGenerator() {
      setIsUploadingLogo(false);
   }
 
+  async function handleMockupUpload(e: React.ChangeEvent<HTMLInputElement>) {
+     const file = e.target.files?.[0];
+     if (!file) return;
+     setIsUploadingMockup(true);
+     const url = await uploadFileToSupabase(file, 'mockups');
+     if (url) {
+       setVisualizationImage(url);
+       toast({ title: "Mockup Photo Uploaded!" });
+     }
+     setIsUploadingMockup(false);
+  }
+
   async function handleContractUpload(e: React.ChangeEvent<HTMLInputElement>) {
      const file = e.target.files?.[0];
      if (!file) return;
@@ -349,6 +367,7 @@ export default function QuoteGenerator() {
       contract_pdf_url: contractPdfUrl,
       legal_terms: legalTerms,
       service_type: serviceType,
+      visualization_image: visualizationImage,
       deposit_pct: firstPct,
       payment_schedule: {
         type: scheduleType,
@@ -410,11 +429,40 @@ export default function QuoteGenerator() {
   const activeClientName = clients.find(c => c.id === selectedClientId)?.first_name || "John";
   const activeClientLast = clients.find(c => c.id === selectedClientId)?.last_name || "Doe";
 
+  function handleReset() {
+    localStorage.removeItem('quoteos_theme');
+    localStorage.removeItem('quoteos_terms');
+    localStorage.removeItem('quoteos_logo');
+    localStorage.removeItem('quoteos_pdf');
+    localStorage.removeItem('quoteos_viz');
+    
+    setThemeColor("#78c8ff");
+    setLegalTerms(DEFAULT_TERMS);
+    setLogoUrl("");
+    setContractPdfUrl("");
+    setVisualizationImage(null);
+    setSelectedTemplateId("");
+    setSelectedClientId("");
+    setSqft(500);
+    setOfferFinancing(false);
+    setFinancingLink("");
+    setGeneratedLink("");
+    toast({ title: "Form Reset!" });
+  }
+
   return (
     <div className="p-4 md:p-8 pb-20">
-      <header className="mb-10">
-        <h1 className="text-3xl font-space font-bold text-white tracking-tight mb-2">Quote Generator Studio</h1>
-        <p className="text-white/60">Generate branded live contracts featuring your own custom PDF agreements.</p>
+      <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6">
+        <div>
+          <h1 className="text-3xl font-space font-bold text-white tracking-tight mb-2">Quote Generator Studio</h1>
+          <p className="text-white/60">Generate branded live contracts featuring your own custom PDF agreements.</p>
+        </div>
+        <button 
+          onClick={handleReset}
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-colors text-sm font-bold"
+        >
+          <RotateCcw size={14} /> Start Fresh
+        </button>
       </header>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -625,7 +673,35 @@ export default function QuoteGenerator() {
               </div>
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Service Description</label>
-                <input value={serviceType} onChange={(e) => setServiceType(e.target.value)} placeholder="500sqft Metallic Epoxy" className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#a78bfa]" />
+                <input value={serviceType} onChange={(e) => setServiceType(e.target.value)} placeholder="500sqft Metallic Epoxy" className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#a78bfa] mb-4" />
+                
+                <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Attach Project Photo / Mockup (Optional)</label>
+                <div className={`border border-dashed ${visualizationImage ? 'border-transparent bg-white/5' : 'border-white/20 hover:bg-white/5'} rounded-xl p-3 flex items-center justify-between transition-colors relative`}>
+                    {isUploadingMockup ? (
+                      <p className="text-xs font-bold text-white pl-2">Uploading...</p>
+                    ) : visualizationImage ? (
+                      <div className="flex items-center gap-3 relative z-10 w-full justify-between">
+                        <div className="flex items-center gap-2">
+                          <img src={visualizationImage} alt="Mockup" className="w-10 h-10 rounded object-cover border border-white/10" />
+                          <span className="text-xs font-bold text-white">Mockup Attached</span>
+                        </div>
+                        <button 
+                          onClick={(e) => { e.preventDefault(); setVisualizationImage(null); }}
+                          className="bg-red-500/20 text-red-400 hover:bg-red-500/30 text-[10px] px-3 py-1.5 rounded transition-colors font-bold"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 pl-2">
+                          <UploadCloud className="text-white/40" size={16} />
+                          <p className="text-xs font-bold text-white/70">Click or Drop Image</p>
+                        </div>
+                        <input type="file" accept="image/*" onChange={handleMockupUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                      </>
+                    )}
+                </div>
               </div>
             </div>
 

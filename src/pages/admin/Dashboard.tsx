@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, FileText, CheckCircle, TrendingUp, Plus, BarChart3, Archive, PackageCheck, Trash2 } from "lucide-react";
+import { Users, FileText, CheckCircle, TrendingUp, Plus, BarChart3, Archive, PackageCheck, Trash2, X } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
@@ -13,14 +13,16 @@ export default function AdminDashboard() {
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showLost, setShowLost] = useState(false);
   const [archivingId, setArchivingId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Stats
   const newLeads = clients.filter(c => c.status === 'New Lead');
   const quoted = clients.filter(c => c.status === 'Quoted');
-  const won = clients.filter(c => c.status === 'Won' || c.status === 'Paid' || c.status === 'Paid In Full');
+  const won = clients.filter(c => ['Won', 'Paid', 'Paid In Full', 'Scheduled', 'In Progress', 'Curing'].includes(c.status));
   const completed = clients.filter(c => c.status === 'Completed');
+  const lost = clients.filter(c => c.status === 'Lost');
   const revenue = [...won, ...completed].reduce((acc, curr) => acc + (Number(curr.total_value) || 0), 0);
 
   async function handleArchive(clientId: string, e: React.MouseEvent) {
@@ -189,7 +191,7 @@ export default function AdminDashboard() {
         {/* Won Column */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[200px] md:min-h-[500px]">
           <h3 className="text-sm font-bold uppercase tracking-wider text-green-400 mb-4 flex justify-between">
-            Won / Deposit Paid <span>{won.length}</span>
+            Active Jobs (Won/Scheduled) <span>{won.length}</span>
           </h3>
           <div className="space-y-4">
             {won.map(c => (
@@ -274,6 +276,66 @@ export default function AdminDashboard() {
           </AnimatePresence>
         </div>
       )}
+
+      {/* Lost / Dead Leads Section */}
+      {lost.length > 0 && (
+        <div className="mt-8">
+          <button
+            onClick={() => setShowLost(!showLost)}
+            className="flex items-center gap-3 mb-4 group cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <Archive size={18} className="text-red-400/70" />
+              <h2 className="text-lg font-space font-bold text-white/60 group-hover:text-white transition-colors">Lost / Dead Leads</h2>
+            </div>
+            <span className="text-xs font-bold bg-red-400/10 text-red-400 border border-red-400/20 px-2.5 py-1 rounded-full">{lost.length}</span>
+            <span className="text-white/30 text-xs font-bold uppercase tracking-wider">{showLost ? '▼ Hide' : '▶ Show'}</span>
+          </button>
+
+          <AnimatePresence>
+            {showLost && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {lost.map(c => (
+                    <div key={c.id} className="bg-red-950/20 border border-red-500/10 rounded-xl p-4 relative group">
+                      <div onClick={() => setSelectedClient(c)} className="cursor-pointer">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-bold text-white/50 text-sm">{c.first_name} {c.last_name}</h4>
+                        </div>
+                        <p className="text-xs text-white/30 mb-3">{c.project_type}</p>
+                        <div className="flex items-center gap-1.5 text-[9px] uppercase font-bold tracking-wider text-red-400/50">
+                          <X size={10} /> Lost Lead
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 mt-3 pt-3 border-t border-red-500/10">
+                        <button
+                          onClick={(e) => handleRestore(c.id, e)}
+                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-bold text-white/40 hover:text-white hover:bg-white/5 transition-colors border border-white/5"
+                        >
+                          Restore
+                        </button>
+                        <button
+                          onClick={(e) => handlePermanentDelete(c.id, e)}
+                          className="flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-bold text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors border border-red-500/20"
+                        >
+                          <Trash2 size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
       {selectedClient && (
         <ClientProfileDrawer 
           client={selectedClient} 

@@ -328,6 +328,16 @@ export default function QuoteViewLive() {
            </div>
         </div>
 
+        {/* Dynamic Project/Mockup Visual */}
+        {visualConfig.visualization_image && (
+          <div className="bg-[#111] border border-white/10 rounded-2xl overflow-hidden mb-8 shadow-2xl relative group">
+            <h3 className="absolute top-4 left-4 bg-black/80 backdrop-blur border border-white/10 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-xl z-10 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full" style={{backgroundColor: themeColor}}></span> Project Mockup
+            </h3>
+            <img src={visualConfig.visualization_image} alt="Project Visual" className="w-full max-h-[500px] object-cover group-hover:scale-[1.02] transition-transform duration-700" />
+          </div>
+        )}
+
         {/* Legal Embed or Raw CYA */}
         {pdfUrl && !isSigned ? (
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-8">

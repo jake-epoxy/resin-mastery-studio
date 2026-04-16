@@ -224,6 +224,7 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
                  <option value="Quoted">Quoted / Follow Up</option>
                  <option value="Won">Won / Deposit Paid</option>
                  <option value="Completed">✅ Completed / Archived</option>
+                 <option value="Lost">❌ Lost / Dead Lead</option>
                </select>
             </div>
 
