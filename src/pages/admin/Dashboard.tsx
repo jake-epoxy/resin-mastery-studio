@@ -1,22 +1,69 @@
-import { motion } from "framer-motion";
-import { Users, FileText, CheckCircle, TrendingUp, Plus, BarChart3 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Users, FileText, CheckCircle, TrendingUp, Plus, BarChart3, Archive, PackageCheck, Trash2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import ClientProfileDrawer from "./ClientProfileDrawer";
 import AddLeadModal from "./AddLeadModal";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function AdminDashboard() {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Stats
   const newLeads = clients.filter(c => c.status === 'New Lead');
   const quoted = clients.filter(c => c.status === 'Quoted');
-  const won = clients.filter(c => c.status === 'Won');
-  const revenue = won.reduce((acc, curr) => acc + (Number(curr.total_value) || 0), 0);
+  const won = clients.filter(c => c.status === 'Won' || c.status === 'Paid' || c.status === 'Paid In Full');
+  const completed = clients.filter(c => c.status === 'Completed');
+  const revenue = [...won, ...completed].reduce((acc, curr) => acc + (Number(curr.total_value) || 0), 0);
+
+  async function handleArchive(clientId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setArchivingId(clientId);
+    const { error } = await supabase
+      .from('clients')
+      .update({ status: 'Completed' })
+      .eq('id', clientId);
+    setArchivingId(null);
+    if (error) {
+      toast({ title: "Archive Failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Project Completed ✅", description: "Moved to Completed. Your pipeline is clear." });
+      fetchClients();
+    }
+  }
+
+  async function handleRestore(clientId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    const { error } = await supabase
+      .from('clients')
+      .update({ status: 'Won' })
+      .eq('id', clientId);
+    if (error) {
+      toast({ title: "Restore Failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Restored", description: "Moved back to active pipeline." });
+      fetchClients();
+    }
+  }
+
+  async function handlePermanentDelete(clientId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!window.confirm("Permanently delete this completed project? This cannot be undone.")) return;
+    const { error } = await supabase.from('clients').delete().eq('id', clientId);
+    if (error) {
+      toast({ title: "Delete Failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Deleted", description: "Project permanently removed." });
+      fetchClients();
+    }
+  }
 
   useEffect(() => {
     fetchClients();
@@ -30,6 +77,7 @@ export default function AdminDashboard() {
     const { data, error } = await supabase
       .from('clients')
       .select('*')
+      .eq('installer_id', user.id)
       .order('created_at', { ascending: false });
 
     if (!error && data) {
@@ -41,7 +89,8 @@ export default function AdminDashboard() {
   const chartData = [
     { name: "New Leads", uv: newLeads.length, fill: "#78c8ff" },
     { name: "Quoted", uv: quoted.length, fill: "#a78bfa" },
-    { name: "Won Jobs", uv: won.length, fill: "#4ade80" }
+    { name: "Won Jobs", uv: won.length, fill: "#4ade80" },
+    { name: "Completed", uv: completed.length, fill: "#facc15" }
   ];
 
   return (
@@ -144,11 +193,87 @@ export default function AdminDashboard() {
           </h3>
           <div className="space-y-4">
             {won.map(c => (
-              <PipelineCard key={c.id} onClick={() => setSelectedClient(c)} name={`${c.first_name} ${c.last_name}`} project={c.project_type} status={c.status} date="Recent" amount={`$${c.total_value}`} isWon />
+              <div key={c.id} className="relative group">
+                <PipelineCard onClick={() => setSelectedClient(c)} name={`${c.first_name} ${c.last_name}`} project={c.project_type} status={c.status} date="Recent" amount={`$${c.total_value}`} isWon />
+                {/* Archive / Remove from Pipeline button */}
+                <motion.button
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  onClick={(e) => handleArchive(c.id, e)}
+                  disabled={archivingId === c.id}
+                  className="w-full mt-1.5 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all border bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/40 disabled:opacity-50"
+                >
+                  {archivingId === c.id ? (
+                    <span className="animate-pulse">Archiving...</span>
+                  ) : (
+                    <><PackageCheck size={13} /> Remove from Pipeline</>
+                  )}
+                </motion.button>
+              </div>
             ))}
           </div>
         </div>
       </div>
+
+      {/* Completed / Archived Section */}
+      {completed.length > 0 && (
+        <div className="mt-8">
+          <button
+            onClick={() => setShowCompleted(!showCompleted)}
+            className="flex items-center gap-3 mb-4 group cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <Archive size={18} className="text-yellow-400/70" />
+              <h2 className="text-lg font-space font-bold text-white/60 group-hover:text-white transition-colors">Completed Projects</h2>
+            </div>
+            <span className="text-xs font-bold bg-yellow-400/10 text-yellow-400 border border-yellow-400/20 px-2.5 py-1 rounded-full">{completed.length}</span>
+            <span className="text-white/30 text-xs font-bold uppercase tracking-wider">{showCompleted ? '▼ Hide' : '▶ Show'}</span>
+          </button>
+
+          <AnimatePresence>
+            {showCompleted && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {completed.map(c => (
+                    <div key={c.id} className="bg-white/[0.03] border border-white/5 rounded-xl p-4 relative group">
+                      <div onClick={() => setSelectedClient(c)} className="cursor-pointer">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-bold text-white/50 text-sm">{c.first_name} {c.last_name}</h4>
+                          {c.total_value && <span className="font-space text-xs font-bold text-emerald-400/60">${c.total_value?.toLocaleString()}</span>}
+                        </div>
+                        <p className="text-xs text-white/30 mb-3">{c.project_type}</p>
+                        <div className="flex items-center gap-1.5 text-[9px] uppercase font-bold tracking-wider text-yellow-400/50">
+                          <CheckCircle size={10} /> Completed
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 mt-3 pt-3 border-t border-white/5">
+                        <button
+                          onClick={(e) => handleRestore(c.id, e)}
+                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-bold text-white/40 hover:text-white hover:bg-white/5 transition-colors border border-white/5"
+                        >
+                          Restore
+                        </button>
+                        <button
+                          onClick={(e) => handlePermanentDelete(c.id, e)}
+                          className="flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-bold text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors border border-white/5"
+                        >
+                          <Trash2 size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
       {selectedClient && (
         <ClientProfileDrawer 
           client={selectedClient} 

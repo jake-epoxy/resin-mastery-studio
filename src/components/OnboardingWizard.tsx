@@ -1,30 +1,62 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
-import { User, Building, Calculator, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { User, Building, Calculator, ArrowRight, Loader2, CheckCircle2, Sparkles } from "lucide-react";
 
 interface OnboardingWizardProps {
   onComplete: () => void;
   onSwitchToLogin: () => void;
 }
 
+// ================================================================
+// Industry-standard default pricing (2025-2026) by coating type
+// These are mid-market averages for residential/commercial installs
+// ================================================================
+const DEFAULT_SERVICES = [
+  { key: "flake",       label: "Flake",         emoji: "🔷", defaultPrice: "6.50",  desc: "Full broadcast vinyl flake systems" },
+  { key: "metallic",    label: "Metallic",      emoji: "✨", defaultPrice: "8.50",  desc: "Designer metallic pigment coatings" },
+  { key: "quartz",      label: "Quartz",        emoji: "🔶", defaultPrice: "7.50",  desc: "Broadcast quartz granule systems" },
+  { key: "grind_seal",  label: "Grind & Seal",  emoji: "💎", defaultPrice: "4.00",  desc: "Diamond grind with clear sealer" },
+  { key: "polishing",   label: "Polishing",     emoji: "🪩", defaultPrice: "5.50",  desc: "Concrete polishing & densifier" },
+  { key: "single_color",label: "Single Color",  emoji: "🎨", defaultPrice: "5.00",  desc: "Solid color epoxy systems" },
+  { key: "countertops", label: "Countertops",   emoji: "🏗️", defaultPrice: "65.00", desc: "Per linear foot — epoxy countertops" },
+];
+
 export default function OnboardingWizard({ onComplete, onSwitchToLogin }: OnboardingWizardProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form State
+  // Step 1: Account
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  
+
+  // Step 2: Business
   const [companyName, setCompanyName] = useState("");
   const [companyPhone, setCompanyPhone] = useState("");
-  
-  const [flakePrice, setFlakePrice] = useState("6.50");
-  const [metallicPrice, setMetallicPrice] = useState("8.50");
+
+  // Step 3: Services & Pricing
+  const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set(["flake", "metallic"]));
+  const [servicePricing, setServicePricing] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    DEFAULT_SERVICES.forEach(s => { initial[s.key] = s.defaultPrice; });
+    return initial;
+  });
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
+
+  function toggleService(key: string) {
+    setSelectedServices(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) { next.delete(key); } else { next.add(key); }
+      return next;
+    });
+  }
+
+  function updateServicePrice(key: string, value: string) {
+    setServicePricing(prev => ({ ...prev, [key]: value }));
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,14 +73,21 @@ export default function OnboardingWizard({ onComplete, onSwitchToLogin }: Onboar
       if (authError) throw authError;
       if (!authData.user) throw new Error("Failed to create user. Please try again.");
 
-      // 2. Insert into installer_profiles
+      // 2. Build pricing object from selected services only
+      const pricingObject: Record<string, number> = {};
+      selectedServices.forEach(key => {
+        pricingObject[key] = parseFloat(servicePricing[key]) || 0;
+      });
+
+      // 3. Insert into installer_profiles with full service pricing
       const { error: profileError } = await supabase.from('installer_profiles').insert({
         user_id: authData.user.id,
         full_name: fullName,
         company_name: companyName,
         company_phone: companyPhone,
-        base_flake_price: parseFloat(flakePrice),
-        base_metallic_price: parseFloat(metallicPrice)
+        base_flake_price: parseFloat(servicePricing.flake) || 6.50,
+        base_metallic_price: parseFloat(servicePricing.metallic) || 8.50,
+        service_pricing: pricingObject
       });
 
       if (profileError) {
@@ -187,54 +226,78 @@ export default function OnboardingWizard({ onComplete, onSwitchToLogin }: Onboar
         </div>
       )}
 
-      {/* STEP 3: QUOTING */}
+      {/* STEP 3: SERVICES & PRICING */}
       {step === 3 && (
-        <form onSubmit={handleSubmit} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="text-center mb-6">
+        <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="text-center mb-4">
             <h2 className="text-2xl font-bold text-white mb-2 flex items-center justify-center gap-2">
-              <Calculator className="text-[#78c8ff]" size={24} /> Quoting Magic
+              <Calculator className="text-[#78c8ff]" size={24} /> Your Services
             </h2>
-            <p className="text-zinc-500 text-sm">Set your base prices to calibrate the Quoting Engine.</p>
+            <p className="text-zinc-500 text-sm">Select the coatings you offer — we'll pre-fill industry pricing.</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                  <label className="text-xs text-zinc-500 uppercase font-bold tracking-wider ml-1 mb-2 block">Flake per SqFt</label>
-                  <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={flakePrice}
-                        onChange={(e) => setFlakePrice(e.target.value)}
-                        className="w-full bg-[#111] border border-white/10 rounded-xl pl-8 pr-4 py-4 text-white focus:outline-none focus:border-green-500 transition-colors shadow-inner"
-                        required
-                      />
+          {/* Service Tiles Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            {DEFAULT_SERVICES.map((svc) => {
+              const isSelected = selectedServices.has(svc.key);
+              return (
+                <div 
+                  key={svc.key}
+                  className={`relative rounded-xl border-2 transition-all cursor-pointer overflow-hidden ${
+                    isSelected 
+                      ? 'border-[#78c8ff] bg-[#78c8ff]/5 shadow-[0_0_15px_rgba(120,200,255,0.15)]' 
+                      : 'border-white/10 bg-[#111] hover:border-white/20'
+                  } ${svc.key === 'countertops' ? 'col-span-2' : ''}`}
+                >
+                  {/* Tap area to toggle */}
+                  <div 
+                    onClick={() => toggleService(svc.key)}
+                    className="p-3 pb-1 flex items-center gap-2.5"
+                  >
+                    <span className="text-xl">{svc.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-white/60'}`}>{svc.label}</p>
+                      <p className="text-[10px] text-white/30 truncate">{svc.desc}</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
+                      isSelected ? 'bg-[#78c8ff] text-black' : 'bg-white/5 border border-white/20'
+                    }`}>
+                      {isSelected && <CheckCircle2 size={13} />}
+                    </div>
                   </div>
-              </div>
-              <div>
-                  <label className="text-xs text-zinc-500 uppercase font-bold tracking-wider ml-1 mb-2 block">Metallic per SqFt</label>
-                  <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={metallicPrice}
-                        onChange={(e) => setMetallicPrice(e.target.value)}
-                        className="w-full bg-[#111] border border-white/10 rounded-xl pl-8 pr-4 py-4 text-white focus:outline-none focus:border-purple-500 transition-colors shadow-inner"
-                        required
-                      />
-                  </div>
-              </div>
+
+                  {/* Price Input (only if selected) */}
+                  {isSelected && (
+                    <div className="px-3 pb-3 pt-1">
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40 text-xs">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={servicePricing[svc.key]}
+                          onChange={(e) => updateServicePrice(svc.key, e.target.value)}
+                          className="w-full bg-black/60 border border-[#78c8ff]/30 rounded-lg pl-6 pr-14 py-2 text-white text-sm focus:outline-none focus:border-[#78c8ff] transition-colors"
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 text-[10px] font-bold uppercase">
+                          {svc.key === 'countertops' ? '/lin ft' : '/sq ft'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          
-          <div className="bg-[#78c8ff]/5 border border-[#78c8ff]/20 p-4 rounded-xl mt-6">
+
+          {/* Helpful defaults banner */}
+          <div className="bg-[#78c8ff]/5 border border-[#78c8ff]/20 p-4 rounded-xl flex items-start gap-3">
+              <Sparkles size={16} className="text-[#78c8ff] flex-shrink-0 mt-0.5" />
               <p className="text-xs text-[#78c8ff] leading-relaxed">
-                  <strong>Zero-Friction Guarantee:</strong> By providing these two numbers, your Quote Generator is perfectly calibrated. You can generate your first $10k quote the second you log in.
+                  <strong>Industry defaults loaded.</strong> Prices are pre-set to national contractor averages. Adjust to your market rates — you can always change these later in Settings.
               </p>
           </div>
           
-          <div className="flex gap-3 mt-8">
+          <div className="flex gap-3 mt-6">
             <button 
               type="button"
               onClick={handleBack}
@@ -245,14 +308,14 @@ export default function OnboardingWizard({ onComplete, onSwitchToLogin }: Onboar
             </button>
             <button 
               type="submit"
-              disabled={loading || !flakePrice || !metallicPrice}
+              disabled={loading || selectedServices.size === 0}
               className="w-2/3 relative group overflow-hidden bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-100 transition-colors shadow-[0_0_30px_rgba(255,255,255,0.2)] disabled:opacity-50"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/10 to-transparent group-hover:translate-x-full transition-transform duration-1000 -translate-x-full" />
               {loading ? (
                   <span className="flex items-center justify-center gap-2"><Loader2 className="animate-spin" size={18} /> Building Dashboard...</span>
               ) : (
-                  "Create Digital Profile"
+                  `Launch Dashboard (${selectedServices.size} services)`
               )}
             </button>
           </div>

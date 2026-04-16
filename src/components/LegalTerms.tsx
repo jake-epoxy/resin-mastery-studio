@@ -32,7 +32,7 @@ export default function LegalTerms() {
                             Due to the proprietary nature of our digital curriculum, business frameworks, and immediate access to CRM software tools, <strong>all sales are final.</strong> 
                         </p>
                         <ul className="list-disc pl-6 space-y-2 text-sm text-zinc-400">
-                            <li><strong>Monthly SaaS Subscriptions:</strong> You may cancel your $99/mo software subscription at any time via your dashboard panel. However, no prorated refunds will be issued for the remainder of a billing cycle once the monthly charge has been captured successfully.</li>
+                            <li><strong>Monthly SaaS Subscriptions:</strong> You may cancel your $97/mo software subscription at any time via your dashboard panel. If you enroll via a free trial, you are fully responsible for canceling before the trial period ends. No prorated refunds or full refunds will be issued for charges processed if you fail to cancel prior to trial expiration.</li>
                             <li><strong>In-Person Training / Masterclasses:</strong> Seats for in-person training are highly limited. Rescheduling requests must be made at least 14 days prior to the event. Cancellations inside of the 14-day window forfeit their deposit.</li>
                             <li><strong>Digital Goods & Vaults:</strong> Any purchase that grants immediate digital access to videos, PDFs, or quoting engines cannot be reversed. Chargebacks filed against legitimate digital delivery will be aggressively challenged with logs of user access and IP timestamps.</li>
                         </ul>

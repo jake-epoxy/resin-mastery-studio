@@ -2,12 +2,16 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LegalTerms from "./components/LegalTerms";
 import LicensingPage from "./pages/LicensingPage";
 import QuoteViewLive from "./pages/QuoteViewLive";
+import PortfolioGallery from "./pages/PortfolioGallery";
+import LeadCaptureWidget from "./pages/LeadCaptureWidget";
+import ReviewPortal from "./pages/ReviewPortal";
+import EmbedWidget from "./pages/EmbedWidget";
 
 // SaaS Admin Routes
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -18,6 +22,17 @@ import Marketplace from "./pages/admin/Marketplace";
 import MasterControl from "./pages/admin/MasterControl";
 import LeadCenter from "./pages/admin/LeadCenter";
 import Visualizer from "./pages/admin/Visualizer";
+import OperationsHub from "./pages/admin/OperationsHub";
+import WorkforceHub from "./pages/admin/WorkforceHub";
+import Billing from "./pages/admin/Billing";
+import CloneOS from "./pages/admin/CloneOS";
+import ProposalsLibrary from "./pages/admin/ProposalsLibrary";
+import AdminBanking from "./pages/admin/AdminBanking";
+import SettingsPage from "./pages/admin/SettingsPage";
+import FieldLayout from "./pages/field/FieldLayout";
+import MobileSchedule from "./pages/field/MobileSchedule";
+
+import AssistantFAB from "./components/AssistantFAB";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +48,10 @@ const App = () => (
           <Route path="/privacy" element={<LegalTerms />} />
           <Route path="/licensing" element={<LicensingPage />} />
           <Route path="/quote-live/:id" element={<QuoteViewLive />} />
+          <Route path="/portfolio/:id" element={<PortfolioGallery />} />
+          <Route path="/quote-form/:id" element={<LeadCaptureWidget />} />
+          <Route path="/widget/ai/:installerId" element={<EmbedWidget />} />
+          <Route path="/review/:id" element={<ReviewPortal />} />
           
           {/* Admin SaaS Portal */}
           <Route path="/admin" element={<AdminLayout />}>
@@ -41,13 +60,28 @@ const App = () => (
             <Route path="quote" element={<QuoteGenerator />} />
             <Route path="academy" element={<Academy />} />
             <Route path="marketplace" element={<Marketplace />} />
+            <Route path="workforce" element={<WorkforceHub />} />
+            <Route path="ops" element={<OperationsHub />} />
+            <Route path="proposals" element={<ProposalsLibrary />} />
             <Route path="super" element={<MasterControl />} />
+            <Route path="clone" element={<CloneOS />} />
             <Route path="visualizer" element={<Visualizer />} />
+            <Route path="billing" element={<Billing />} />
+            <Route path="finances" element={<AdminBanking />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
 
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          {/* Mobile Field App */}
+          <Route path="/field" element={<FieldLayout />}>
+            <Route index element={<MobileSchedule />} />
+          </Route>
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+
+        {/* Global Assistant Nav/Chatbot visible everywhere EXCEPT on end-client URLs like quote-live */}
+        <AssistantFAB />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -20,7 +20,9 @@ import {
   ArrowLeft,
   Sparkles,
   Bot,
+  ShieldAlert,
 } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -113,10 +115,25 @@ export default function AssistantFAB() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isDev, setIsDev] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Check Dev Status
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email === "jakeflowers222@gmail.com") {
+        setIsDev(true);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsDev(session?.user?.email === "jakeflowers222@gmail.com");
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -139,6 +156,18 @@ export default function AssistantFAB() {
     }
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
+
+  // Hide the internal contractor bot on client-facing URLs
+  const isClientFacingUrl = 
+    location.pathname.startsWith('/quote-live') || 
+    location.pathname.startsWith('/review') || 
+    location.pathname.startsWith('/portfolio') || 
+    location.pathname.startsWith('/quote-form') || 
+    location.pathname.startsWith('/widget');
+
+  if (isClientFacingUrl) {
+    return null;
+  }
 
   function handleOpen() {
     setIsOpen(true);
@@ -367,6 +396,7 @@ export default function AssistantFAB() {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-1 pt-1 pb-2">
                     Your Toolkit
                   </p>
+                  {/* Render Standard Tools */}
                   {TOOLS.map((tool) => {
                     const Icon = tool.icon;
                     const isActive = location.pathname === tool.path;
@@ -425,6 +455,91 @@ export default function AssistantFAB() {
                       </div>
                     );
                   })}
+
+                  {/* Clone AI - Visible to all but "Coming Soon" for non-devs */}
+                  <div
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${
+                      isDev ? "cursor-pointer hover:bg-white/[0.04] border border-transparent" : "opacity-60 cursor-not-allowed border border-dashed border-white/10"
+                    } ${location.pathname === "/admin/clone" ? "bg-white/[0.07] border-white/10" : ""}`}
+                    onClick={() => {
+                      if (isDev) handleNavigate("/admin/clone");
+                    }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+                      style={{ backgroundColor: "#ec489915", border: "1px solid #ec489925" }}
+                    >
+                      <Wand2 size={18} style={{ color: "#ec4899" }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-bold text-sm truncate flex items-center gap-2">
+                        Clone AI
+                        {!isDev && (
+                          <span className="text-[8px] bg-zinc-500/20 text-zinc-400 border border-zinc-500/30 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                            Pending Meta Approval
+                          </span>
+                        )}
+                        {isDev && location.pathname === "/admin/clone" && (
+                          <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Active</span>
+                        )}
+                      </p>
+                      <div className="text-white/40 text-[11px] leading-relaxed mt-1">
+                        {!isDev ? (
+                          <>
+                            <span className="block mb-1">
+                              Train an authentic AI persona that clones exactly how you type and talk in your DMs. It seamlessly engages prospects and dispatches leads so nobody can tell they're talking to an AI.
+                            </span>
+                            <span className="block text-white/60 font-bold italic">
+                              * Resin OS is currently the ONLY Epoxy SaaS platform in the world testing this autonomous DM & SMS dispatch technology.
+                            </span>
+                          </>
+                        ) : (
+                          <span className="truncate block">Train an AI clone to answer calls and dispatch leads.</span>
+                        )}
+                      </div>
+                    </div>
+                    {isDev && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAskAboutTool("Clone AI");
+                        }}
+                        className="p-2 rounded-lg text-white/20 hover:text-[#78c8ff] hover:bg-[#78c8ff]/10 transition-all shrink-0"
+                      >
+                        <MessageCircle size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* God Mode - Only for Jake */}
+                  {isDev && (
+                    <div
+                      className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all group cursor-pointer ${
+                        location.pathname === "/admin/super"
+                          ? "bg-red-900/10 border border-red-500/20"
+                          : "hover:bg-red-900/5 border border-transparent"
+                      }`}
+                      onClick={() => handleNavigate("/admin/super")}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+                        style={{ backgroundColor: "#ef444415", border: "1px solid #ef444425" }}
+                      >
+                        <ShieldAlert size={18} className="text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-bold text-sm truncate flex items-center gap-2">
+                          God Mode
+                          <span className="text-[8px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                            Dev Only
+                          </span>
+                        </p>
+                        <p className="text-red-400/50 text-xs truncate">
+                          Global CRM analytics & platform overrides.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* Chat Mode */

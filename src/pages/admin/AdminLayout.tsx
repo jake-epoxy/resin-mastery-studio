@@ -100,7 +100,13 @@ export default function AdminLayout() {
         <div className="relative z-10 w-full max-w-lg bg-[#0a0a0a] border border-white/10 rounded-3xl p-6 md:p-10 flex flex-col items-center text-center shadow-[0_0_50px_rgba(120,200,255,0.1)]">
           {isSignUp ? (
             <OnboardingWizard 
-              onComplete={() => setIsAuthenticated(true)}
+              onComplete={async () => {
+                const { data } = await supabase.auth.getSession();
+                if (data.session) {
+                   await fetchProfile(data.session.user.id);
+                }
+                setIsAuthenticated(true);
+              }}
               onSwitchToLogin={() => setIsSignUp(false)}
             />
           ) : (
@@ -146,7 +152,7 @@ export default function AdminLayout() {
               
               <div className="mt-8 pt-6 border-t border-white/5 w-full">
                 <p className="text-sm text-zinc-500">
-                  Don't have an account? <button type="button" onClick={() => setIsSignUp(true)} className="text-[#78c8ff] hover:underline font-bold">Subscribe Now</button>
+                  Don't have an account? <button type="button" onClick={() => setIsSignUp(true)} className="text-[#78c8ff] hover:underline font-bold">Subscribe ($97/mo)</button>
                 </p>
               </div>
             </>
@@ -156,17 +162,20 @@ export default function AdminLayout() {
     );
   }
 
-  // If the user is logged in, but their SQL profile has subscription_active = false
-  // Developer God Mode bypass
   if (installerProfile && installerProfile.subscription_active === false && userEmail !== 'jakeflowers222@gmail.com') {
+    // Webhook Falback: If they just returned from Stripe correctly, immediately save them!
+    if (window.location.search.includes('success=true')) {
+       // Fire off a background update to ensure they are active in DB just in case webhook didn't route
+       supabase.from('installer_profiles').update({ subscription_active: true }).eq('user_id', installerProfile.user_id).then(() => fetchProfile(installerProfile.user_id));
+       return <div className="min-h-screen bg-black flex items-center justify-center text-white/50">Activating your terminal...</div>;
+    }
+
     return (
-      <>
-        <PaywallGuard 
-          userId={installerProfile.user_id} 
-          paymentLink="https://buy.stripe.com/9B63cv2338Od9qPgBN6J201" 
-        />
-        <AssistantFAB />
-      </>
+      <PaywallGuard 
+        userId={installerProfile.user_id} 
+        userEmail={userEmail || undefined}
+        paymentLink="https://buy.stripe.com/9B63cv2338Od9qPgBN6J201" 
+      />
     );
   }
 
@@ -203,8 +212,6 @@ export default function AdminLayout() {
         <Outlet />
       </main>
 
-      {/* Navigation & Help is now fully handled by the integrated Assistant chatbot */}
-      <AssistantFAB />
     </div>
   );
 }

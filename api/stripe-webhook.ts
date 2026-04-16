@@ -1,72 +1,123 @@
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Stripe (uses live key in production)
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2026-03-25.dahlia' as any,
+// Initialize Stripe with the secret key securely
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: '2023-10-16' as any,
 });
 
-// Initialize Supabase Admin client
-// We MUST use the service_role key to bypass RLS here, because the webhook is an unauthenticated server request.
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// We must use the SERVICE_ROLE_KEY to bypass Row Level Security because this is a server-to-server request lacking the user's browser session wrapper.
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL as string,
+  process.env.SUPABASE_SERVICE_ROLE_KEY as string
+);
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // Stripe webhook signatures require the raw unparsed body
   },
 };
 
-export default async function handler(req: any, res: any) {
-  if (req.method !== 'POST') {
-    return res.status(405).send('Method Not Allowed');
-  }
-
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  let event;
-  try {
-    // Collect the raw body buffer to securely verify the Stripe signature
-    const rawBody = await buffer(req);
-    event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret || '');
-  } catch (err: any) {
-    console.error(`Webhook Error: ${err.message}`);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Handle successful checkout session
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const userId = session.client_reference_id; // we passed this from PaywallGuard
-
-    if (userId) {
-      // Unlock the dashboard in Supabase
-      const { error } = await supabase
-        .from('installer_profiles')
-        .update({ subscription_active: true })
-        .eq('user_id', userId);
-        
-      if (error) {
-        console.error("Failed to unlock dashboard:", error);
-        return res.status(500).json({ error: "Failed to update database" });
-      }
-      console.log(`Success! Unlocked dashboard for user ${userId}`);
-    } else {
-        console.warn("Checkout completed, but no client_reference_id found.");
-    }
-  }
-
-  // Return a 200 response to acknowledge receipt of the event
-  res.status(200).json({ received: true });
-}
-
-// Helper function to extract raw body buffer from Vercel Request
-async function buffer(readable: any) {
+// Helper to buffer the raw request exactly as Vercel received it
+async function buffer(readable: NodeJS.ReadableStream) {
   const chunks = [];
   for await (const chunk of readable) {
     chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
   }
   return Buffer.concat(chunks);
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const buf = await buffer(req);
+  const signature = req.headers['stripe-signature'] as string;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!signature || !webhookSecret) {
+    return res.status(400).send('Webhook endpoint not properly configured with secrets');
+  }
+
+  let event: Stripe.Event;
+
+  try {
+    event = stripe.webhooks.constructEvent(buf, signature, webhookSecret);
+  } catch (err: any) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the subscription successfully completing
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const userId = session.client_reference_id; // Passed gracefully from PaywallGuard
+    
+    // 1. Subscription Logic
+    if (userId) {
+      try {
+        console.log(`Upgrading User ${userId} to PREMIUM tier...`);
+        
+        const { error } = await supabase
+          .from('installer_profiles')
+          .update({
+            subscription_active: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+
+        if (error) throw error;
+        console.log(`Successfully upgraded user: ${userId}`);
+
+      } catch (dbError: any) {
+        console.error('Failed to upgrade user tier in database:', dbError);
+        return res.status(500).send('Database failure during user upgrade');
+      }
+    }
+
+    // 2. Quote Milestone Payment Logic
+    if (session.metadata?.quoteId) {
+      const quoteId = session.metadata.quoteId;
+      const paymentType = session.metadata.type; // 'deposit_payment', 'milestone_payment', or 'final_payment'
+      
+      try {
+        // Fetch current quote config to update milestones_paid
+        const { data: currentQuote } = await supabase
+          .from('quotes')
+          .select('config')
+          .eq('id', quoteId)
+          .single();
+        
+        const currentConfig = currentQuote?.config || {};
+        const currentMilestonesPaid = currentConfig.milestones_paid || 0;
+        const milestones = currentConfig.payment_schedule?.milestones || [];
+        const totalMilestones = milestones.length || 2; // default 2-step
+        const newMilestonesPaid = currentMilestonesPaid + 1;
+        const isFullyPaid = newMilestonesPaid >= totalMilestones || paymentType === 'final_payment';
+
+        // Update config with new milestones_paid count
+        const updatedConfig = { ...currentConfig, milestones_paid: newMilestonesPaid };
+
+        if (isFullyPaid) {
+          console.log(`All milestones paid for Quote ${quoteId}. Status → Paid In Full`);
+          await supabase
+            .from('quotes')
+            .update({ status: 'Paid In Full', config: updatedConfig })
+            .eq('id', quoteId);
+        } else {
+          console.log(`Milestone ${newMilestonesPaid}/${totalMilestones} paid for Quote ${quoteId}.`);
+          await supabase
+            .from('quotes')
+            .update({ status: 'Paid', config: updatedConfig })
+            .eq('id', quoteId);
+        }
+      } catch (dbError: any) {
+        console.error(`Failed to update quote status for ${quoteId}:`, dbError);
+      }
+    }
+  }
+
+  res.status(200).json({ received: true });
 }

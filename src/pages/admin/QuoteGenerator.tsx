@@ -22,6 +22,7 @@ export default function QuoteGenerator() {
   const [baseMetallicPrice, setBaseMetallicPrice] = useState(8.50);
   const [financingLink, setFinancingLink] = useState('');
   const [offerFinancing, setOfferFinancing] = useState(false);
+  const [profileServicePricing, setProfileServicePricing] = useState<Record<string, number>>({});
   
   // Customization State (Sticky)
   const [themeColor, setThemeColor] = useState(() => localStorage.getItem('quoteos_theme') || "#78c8ff");
@@ -50,6 +51,50 @@ export default function QuoteGenerator() {
   const [isSendingToClient, setIsSendingToClient] = useState(false);
   const [clientEmailed, setClientEmailed] = useState(false);
   const [visualizationImage, setVisualizationImage] = useState<string | null>(null);
+
+  // Payment Schedule State
+  type Milestone = { label: string; pct: number };
+  const SCHEDULE_PRESETS: Record<string, { name: string; emoji: string; desc: string; milestones: Milestone[] }> = {
+    '50_50': {
+      name: '50 / 50',
+      emoji: '⚖️',
+      desc: '50% deposit, balance on completion',
+      milestones: [
+        { label: 'Material Deposit', pct: 50 },
+        { label: 'Balance Due on Completion', pct: 50 },
+      ]
+    },
+    '100_upfront': {
+      name: '100% Upfront',
+      emoji: '💰',
+      desc: 'Full payment before work begins',
+      milestones: [
+        { label: 'Full Payment Before Start', pct: 100 },
+      ]
+    },
+    'staggered': {
+      name: '20 / 40 / 40',
+      emoji: '📊',
+      desc: '20% deposit, 40% at start, 40% on completion',
+      milestones: [
+        { label: 'Booking Deposit', pct: 20 },
+        { label: 'Due When Work Begins', pct: 40 },
+        { label: 'Balance Due on Completion', pct: 40 },
+      ]
+    },
+    'custom': {
+      name: 'Custom',
+      emoji: '✏️',
+      desc: 'Build your own payment milestones',
+      milestones: [
+        { label: 'Deposit', pct: 30 },
+        { label: 'Mid-Project', pct: 30 },
+        { label: 'Final Balance', pct: 40 },
+      ]
+    },
+  };
+  const [scheduleType, setScheduleType] = useState<string>('50_50');
+  const [customMilestones, setCustomMilestones] = useState<Milestone[]>(SCHEDULE_PRESETS['custom'].milestones);
 
   // Check for visualization from AI Visualizer (supports both localStorage and sessionStorage)
   useEffect(() => {
@@ -173,6 +218,12 @@ export default function QuoteGenerator() {
       if (profile.base_metallic_price) {
           setBaseMetallicPrice(profile.base_metallic_price);
       }
+      if (profile.service_pricing) {
+        setProfileServicePricing(profile.service_pricing);
+        // Set default price to first service
+        const firstKey = Object.keys(profile.service_pricing)[0];
+        if (firstKey) setPricePerSqft(profile.service_pricing[firstKey]);
+      }
       if (profile.company_name) setBrandName(profile.company_name);
       if (profile.company_logo_url && !logoUrl) setLogoUrl(profile.company_logo_url);
     } else if (user?.email) {
@@ -289,12 +340,20 @@ export default function QuoteGenerator() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    const activeMilestones = scheduleType === 'custom' ? customMilestones : SCHEDULE_PRESETS[scheduleType].milestones;
+    const firstPct = activeMilestones[0]?.pct || 50;
+
     const configPayload = {
       theme_color: themeColor,
       logo_url: logoUrl,
       contract_pdf_url: contractPdfUrl,
       legal_terms: legalTerms,
-      service_type: serviceType
+      service_type: serviceType,
+      deposit_pct: firstPct,
+      payment_schedule: {
+        type: scheduleType,
+        milestones: activeMilestones
+      }
     };
 
     const { data: quote, error } = await supabase
@@ -487,16 +546,49 @@ export default function QuoteGenerator() {
                 <input type="number" value={sqft} onChange={(e) => setSqft(Number(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-lg focus:outline-none focus:border-[#a78bfa]" />
               </div>
               <div>
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-start mb-2">
                   <label className="block text-xs font-bold uppercase tracking-wider text-white/50">Price Per Sq Ft</label>
-                  <div className="flex gap-2">
-                     <button onClick={() => { setPricePerSqft(baseFlakePrice); setServiceType("Premium Flake System"); }} className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white/70 transition-colors uppercase font-bold tracking-wider border border-white/5">
+                </div>
+                {/* Dynamic service pricing buttons */}
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {Object.keys(profileServicePricing).length > 0 ? (
+                    Object.entries(profileServicePricing).map(([key, price]) => {
+                      const labels: Record<string, string> = {
+                        flake: 'Flake', metallic: 'Metallic', quartz: 'Quartz',
+                        grind_seal: 'Grind&Seal', polishing: 'Polish',
+                        single_color: 'Solid', countertops: 'Counter'
+                      };
+                      const serviceNames: Record<string, string> = {
+                        flake: 'Premium Flake System', metallic: 'Metallic Epoxy System',
+                        quartz: 'Quartz Broadcast System', grind_seal: 'Grind & Seal',
+                        polishing: 'Concrete Polishing', single_color: 'Single Color Epoxy',
+                        countertops: 'Epoxy Countertops'
+                      };
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => { setPricePerSqft(price); setServiceType(serviceNames[key] || key); }}
+                          className={`text-[10px] px-2.5 py-1.5 rounded-lg font-bold tracking-wider border transition-colors ${
+                            pricePerSqft === price
+                              ? 'bg-[#78c8ff]/20 text-[#78c8ff] border-[#78c8ff]/40'
+                              : 'bg-white/5 hover:bg-white/10 text-white/70 border-white/5'
+                          }`}
+                        >
+                          {labels[key] || key} (${price})
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => { setPricePerSqft(baseFlakePrice); setServiceType("Premium Flake System"); }} className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white/70 transition-colors uppercase font-bold tracking-wider border border-white/5">
                         Flake (${baseFlakePrice})
-                     </button>
-                     <button onClick={() => { setPricePerSqft(baseMetallicPrice); setServiceType("Metallic Epoxy System"); }} className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white/70 transition-colors uppercase font-bold tracking-wider border border-white/5">
+                      </button>
+                      <button type="button" onClick={() => { setPricePerSqft(baseMetallicPrice); setServiceType("Metallic Epoxy System"); }} className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white/70 transition-colors uppercase font-bold tracking-wider border border-white/5">
                         Metallic (${baseMetallicPrice})
-                     </button>
-                  </div>
+                      </button>
+                    </>
+                  )}
                 </div>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">$</span>
@@ -551,6 +643,115 @@ export default function QuoteGenerator() {
                    <input type="url" value={financingLink} onChange={(e) => setFinancingLink(e.target.value)} placeholder="Paste Financing URL" className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:outline-none" />
                  </div>
                )}
+            </div>
+
+            {/* Payment Schedule Selector */}
+            <div className="mb-6">
+              <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-3">Payment Schedule</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                {Object.entries(SCHEDULE_PRESETS).map(([key, preset]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setScheduleType(key)}
+                    className={`rounded-xl border-2 p-3 text-left transition-all ${
+                      scheduleType === key
+                        ? 'border-[#a78bfa] bg-[#a78bfa]/10 shadow-[0_0_15px_rgba(167,139,250,0.15)]'
+                        : 'border-white/10 bg-black/30 hover:border-white/20'
+                    }`}
+                  >
+                    <span className="text-lg block mb-1">{preset.emoji}</span>
+                    <p className={`font-bold text-sm ${scheduleType === key ? 'text-white' : 'text-white/60'}`}>{preset.name}</p>
+                    <p className="text-[9px] text-white/30 leading-tight mt-0.5">{preset.desc}</p>
+                  </button>
+                ))}
+              </div>
+
+              {/* Visual payment breakdown preview */}
+              <div className="bg-black/40 border border-white/10 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-[#a78bfa]"></div>
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-white/40">Payment Breakdown — ${estimatedTotal.toLocaleString()}</p>
+                </div>
+                <div className="flex gap-1 h-3 rounded-full overflow-hidden mb-3">
+                  {(scheduleType === 'custom' ? customMilestones : SCHEDULE_PRESETS[scheduleType].milestones).map((m, i) => {
+                    const colors = ['#a78bfa', '#78c8ff', '#34d399', '#fbbf24'];
+                    return <div key={i} style={{ width: `${m.pct}%`, backgroundColor: colors[i % colors.length] }} className="rounded-full transition-all" />;
+                  })}
+                </div>
+                <div className="space-y-2">
+                  {(scheduleType === 'custom' ? customMilestones : SCHEDULE_PRESETS[scheduleType].milestones).map((m, i) => {
+                    const colors = ['#a78bfa', '#78c8ff', '#34d399', '#fbbf24'];
+                    const amount = estimatedTotal * (m.pct / 100);
+                    return (
+                      <div key={i} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: colors[i % colors.length] }}></div>
+                          {scheduleType === 'custom' ? (
+                            <input
+                              value={m.label}
+                              onChange={(e) => {
+                                const updated = [...customMilestones];
+                                updated[i] = { ...updated[i], label: e.target.value };
+                                setCustomMilestones(updated);
+                              }}
+                              className="bg-transparent border-b border-white/10 text-white/80 text-xs focus:outline-none focus:border-[#a78bfa] w-36 py-0.5"
+                            />
+                          ) : (
+                            <span className="text-white/60">{m.label}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {scheduleType === 'custom' ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                min="1" max="100"
+                                value={m.pct}
+                                onChange={(e) => {
+                                  const updated = [...customMilestones];
+                                  updated[i] = { ...updated[i], pct: Number(e.target.value) };
+                                  setCustomMilestones(updated);
+                                }}
+                                className="w-12 bg-transparent border-b border-white/10 text-white text-xs text-right focus:outline-none focus:border-[#a78bfa] py-0.5"
+                              />
+                              <span className="text-white/30">%</span>
+                            </div>
+                          ) : (
+                            <span className="text-white/40">{m.pct}%</span>
+                          )}
+                          <span className="font-mono font-bold text-white">${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {scheduleType === 'custom' && (
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-white/5">
+                    <button
+                      type="button"
+                      onClick={() => setCustomMilestones([...customMilestones, { label: 'New Milestone', pct: 10 }])}
+                      className="text-[10px] bg-white/5 hover:bg-white/10 text-white/50 px-3 py-1.5 rounded-lg border border-white/10 transition-colors font-bold"
+                    >
+                      + Add Milestone
+                    </button>
+                    {customMilestones.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomMilestones(customMilestones.slice(0, -1))}
+                        className="text-[10px] bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/20 transition-colors font-bold"
+                      >
+                        Remove Last
+                      </button>
+                    )}
+                    {(() => {
+                      const total = customMilestones.reduce((a, m) => a + m.pct, 0);
+                      if (total !== 100) return <span className="text-red-400 text-[10px] font-bold self-center ml-auto">⚠️ Total: {total}% (must equal 100%)</span>;
+                      return <span className="text-emerald-400 text-[10px] font-bold self-center ml-auto">✅ 100%</span>;
+                    })()}
+                  </div>
+                )}
+              </div>
             </div>
 
             {!generatedLink ? (

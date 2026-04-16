@@ -339,28 +339,21 @@ const HeroSection = () => {
           className="mb-8 select-none flex items-center justify-center relative w-full"
           style={{ minHeight: "clamp(120px, 18vw, 220px)" }}
         >
-          {showFinal ? (
-            <img
-              src="/logo.png"
-              alt="Resin Academics — Epoxy Flooring Training & Certification Logo"
-              className="w-full max-w-[280px] md:max-w-[400px] lg:max-w-[500px] object-contain transition-all duration-700 ease-out"
-              style={{
-                opacity: textOpacity,
-                filter: "drop-shadow(0 0 20px rgba(120,200,255,0.4))",
-                transform: `scale(${0.9 + (textOpacity * 0.1)})`
-              }}
-            />
-          ) : (
             <h1
-              className="text-5xl md:text-7xl lg:text-8xl font-bold font-display leading-[1.05] transition-opacity duration-100"
+              className={`text-5xl md:text-7xl lg:text-8xl font-bold font-display leading-[1.05] transition-all ${showFinal ? 'duration-700' : 'duration-100'}`}
               style={{
                 opacity: textOpacity,
                 color: "transparent",
-                backgroundImage: "linear-gradient(135deg, #78c8ff 0%, #fff 40%, #78c8ff 70%, #b4e0ff 100%)",
+                backgroundImage: showFinal
+                  ? "linear-gradient(135deg, #78c8ff 0%, #ffffff 30%, #78c8ff 60%, #b4e0ff 100%)"
+                  : "linear-gradient(135deg, #78c8ff 0%, #fff 40%, #78c8ff 70%, #b4e0ff 100%)",
                 backgroundClip: "text",
                 WebkitBackgroundClip: "text",
                 textShadow: "none",
-                filter: "drop-shadow(0 0 25px rgba(120,200,255,0.25))",
+                filter: showFinal
+                  ? "drop-shadow(0 0 35px rgba(120,200,255,0.35))"
+                  : "drop-shadow(0 0 25px rgba(120,200,255,0.25))",
+                transform: showFinal ? "scale(1)" : "scale(0.97)",
               }}
             >
               {lines.map((line, i) => (
@@ -370,7 +363,6 @@ const HeroSection = () => {
                 </span>
               ))}
             </h1>
-          )}
         </div>
 
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 font-light animate-scroll-reveal" style={{ transitionDelay: "0.2s" }}>

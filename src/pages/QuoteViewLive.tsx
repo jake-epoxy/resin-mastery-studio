@@ -20,15 +20,34 @@ export default function QuoteViewLive() {
   
   const [quote, setQuote] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
+  const [installerInfo, setInstallerInfo] = useState<any>(null);
   
   const [loading, setLoading] = useState(true);
   const [signing, setSigning] = useState(false);
   const [isSigned, setIsSigned] = useState(false);
-  const [depositStatus, setDepositStatus] = useState<'pending' | 'processing' | 'paid'>('pending');
+  const [depositStatus, setDepositStatus] = useState<'pending' | 'processing' | 'paid' | 'final_processing' | 'final_paid'>('pending');
   const [digitalFootprint, setDigitalFootprint] = useState<any>(null);
+  const [milestonesPaid, setMilestonesPaid] = useState(0);
 
   useEffect(() => {
     fetchQuoteData();
+    const params = new URLSearchParams(window.location.search);
+    // Legacy support
+    if (params.get('success') === 'true') {
+       setDepositStatus('paid');
+       setIsSigned(true);
+    }
+    if (params.get('final_success') === 'true') {
+       setDepositStatus('final_paid');
+       setIsSigned(true);
+    }
+    // New milestone-aware redirect
+    const mp = params.get('milestone_paid');
+    if (mp) {
+      setMilestonesPaid(Number(mp));
+      setIsSigned(true);
+      setDepositStatus('paid');
+    }
   }, [id]);
 
   async function fetchQuoteData() {
@@ -36,11 +55,83 @@ export default function QuoteViewLive() {
     const { data: quoteData } = await supabase.from('quotes').select('*').eq('id', id).single();
     if (!quoteData) { setLoading(false); return; }
     
+    // Process Read Receipt silently
+    if (quoteData.status !== 'Won' && quoteData.status !== 'Paid' && quoteData.status !== 'Paid In Full') {
+      const isFirstOpen = !quoteData.config?.opened_at;
+      const updatedConfig = { ...(quoteData.config || {}), opened_at: new Date().toISOString() };
+      const newStatus = quoteData.status === 'Won' ? 'Won' : 'Opened';
+      await supabase.from('quotes').update({ status: newStatus, config: updatedConfig }).eq('id', id);
+
+      // Notify contractor on FIRST open only
+      if (isFirstOpen && quoteData.installer_email) {
+        const clientName = quoteData.config?.client_name || 'Your client';
+        const brandName = quoteData.config?.brand_name || 'Resin OS';
+        const amount = quoteData.total_amount?.toLocaleString() || '0';
+        const serviceType = quoteData.config?.service_type || 'Custom System';
+        fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: quoteData.installer_email,
+            subject: `👀 Quote Viewed: ${clientName} just opened your $${amount} proposal`,
+            html: `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;"><tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.05);">
+<tr><td style="padding:40px 40px 20px;text-align:center;">
+<div style="display:inline-block;background:#3b82f620;border:1px solid #3b82f640;color:#3b82f6;padding:6px 16px;border-radius:999px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">📩 Read Receipt</div>
+<h1 style="margin:0;font-size:24px;color:#111827;">Your Proposal Was Opened</h1>
+</td></tr>
+<tr><td style="padding:0 40px 20px;">
+<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:24px;">
+<p style="margin:0 0 12px;font-size:14px;color:#64748b;"><strong style="color:#111827;">${clientName}</strong> just viewed your proposal.</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+<tr><td style="padding:8px 0;border-top:1px solid #e2e8f0;font-size:13px;color:#64748b;">Service</td><td style="padding:8px 0;border-top:1px solid #e2e8f0;font-size:13px;color:#111;font-weight:600;text-align:right;">${serviceType}</td></tr>
+<tr><td style="padding:8px 0;border-top:1px solid #e2e8f0;font-size:13px;color:#64748b;">Quote Total</td><td style="padding:8px 0;border-top:1px solid #e2e8f0;font-size:13px;color:#111;font-weight:600;text-align:right;">$${amount}</td></tr>
+<tr><td style="padding:8px 0;border-top:1px solid #e2e8f0;font-size:13px;color:#64748b;">Viewed At</td><td style="padding:8px 0;border-top:1px solid #e2e8f0;font-size:13px;color:#111;font-weight:600;text-align:right;">${new Date().toLocaleString()}</td></tr>
+</table>
+</div>
+</td></tr>
+<tr><td style="padding:0 40px 30px;">
+<p style="margin:0 0 20px;font-size:15px;line-height:22px;color:#334155;">🔥 <strong>This is your window.</strong> The client is actively looking at your quote right now. Follow up while it's fresh — a quick call or text could close the deal.</p>
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<a href="https://www.resinacademics.com/quote-live/${id}" style="display:inline-block;padding:14px 32px;background:#111827;color:#fff;font-size:16px;font-weight:600;text-decoration:none;border-radius:6px;">View Live Quote</a>
+</td></tr></table>
+</td></tr>
+</table>
+</td></tr></table>
+</body></html>`
+          })
+        }).catch(() => {}); // Fire-and-forget — don't block the client's page load
+      }
+    }
+    
     setQuote(quoteData);
-    if (quoteData.status === 'Won') setIsSigned(true);
+    if (quoteData.status === 'Won') {
+      setIsSigned(true);
+      const mp = quoteData.config?.milestones_paid || 0;
+      setMilestonesPaid(mp);
+      if (mp === 0 && !window.location.search.includes('milestone_paid')) setDepositStatus('pending');
+      else setDepositStatus('paid');
+    }
+    if (quoteData.status === 'Paid') {
+      setIsSigned(true);
+      setMilestonesPaid(quoteData.config?.milestones_paid || 1);
+      setDepositStatus('paid');
+    }
+    if (quoteData.status === 'Paid In Full') {
+      setIsSigned(true);
+      const milestones = quoteData.config?.payment_schedule?.milestones || [];
+      setMilestonesPaid(milestones.length || 2);
+      setDepositStatus('final_paid');
+    }
 
     const { data: clientData } = await supabase.from('clients').select('*').eq('id', quoteData.client_id).single();
     if (clientData) setClient(clientData);
+
+    const { data: instData } = await supabase.from('installers').select('company_name').eq('email', quoteData.installer_email).maybeSingle();
+    if (instData) setInstallerInfo(instData);
 
     setLoading(false);
   }
@@ -128,7 +219,8 @@ export default function QuoteViewLive() {
     }
 
     // 2. Update DB Statuses
-    await supabase.from('quotes').update({ status: 'Won' }).eq('id', id);
+    const executionConfig = { ...quote.config, digital_footprint_pdf: pdfBase64 };
+    await supabase.from('quotes').update({ status: 'Won', config: executionConfig }).eq('id', id);
     if (client) await supabase.from('clients').update({ status: 'Won' }).eq('id', quote.client_id);
 
     // 3. Notify via Resend
@@ -172,16 +264,16 @@ export default function QuoteViewLive() {
 
   if (loading) return <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center">Decrypting Smart Link...</div>;
   if (!quote) return <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center flex-col gap-4">
-     <ShieldCheck size={48} className="text-red-500 opacity-50" />
+     <ShieldCheck size={48} className="text-emerald-500 opacity-50" />
      <p>Quote not found or expired.</p>
   </div>;
 
   const visualConfig = quote.config || {};
-  const themeColor = visualConfig.theme_color || '#78c8ff';
+  const themeColor = visualConfig.theme_color || '#ffffff';
   const logoUrl = visualConfig.logo_url || '';
   const pdfUrl = visualConfig.contract_pdf_url || '';
   const legalTermsRaw = visualConfig.legal_terms || DEFAULT_TERMS;
-  const brandName = visualConfig.brand_name || quote.installer_email?.split('@')[0].toUpperCase() || 'Epoxy Contractor';
+  const brandName = visualConfig.brand_name || installerInfo?.company_name || quote.installer_email?.split('@')[0].toUpperCase() || 'Epoxy Contractor';
   const serviceType = visualConfig.service_type || client?.project_type || 'Custom Integration';
 
   const legalTermsArray = legalTermsRaw.split('\n').filter((l: string) => l.trim() !== '');
@@ -226,11 +318,11 @@ export default function QuoteViewLive() {
            <div>
              <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-1">Prepared For</p>
              <p className="text-xl font-bold">{client?.first_name} {client?.last_name}</p>
-             <p className="text-[#a78bfa] font-mono text-sm mt-1">{serviceType}</p>
+             <p className="text-[#ffffff] font-mono text-sm mt-1">{serviceType}</p>
            </div>
            <div className="text-left sm:text-right">
              <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-1">Quote Status</p>
-             <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${isSigned ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
+             <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${isSigned ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
                {isSigned ? 'Digitally Executed' : 'Awaiting Signature'}
              </div>
            </div>
@@ -282,87 +374,160 @@ export default function QuoteViewLive() {
               {signing ? "Processing Signature Cryptography..." : "I Agree & Accept Proposal"}
             </button>
           </div>
-        ) : depositStatus === 'pending' || depositStatus === 'processing' ? (
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-8 mb-10 overflow-hidden relative shadow-2xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-3xl rounded-none"></div>
-            
-            <div className="text-center mb-8 relative z-10">
-              <div className="inline-block bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4 flex items-center justify-center gap-2 w-max mx-auto">
-                <CheckCircle2 size={14} /> Legally Executed
+        ) : (() => {
+          // ===== MILESTONE-AWARE PAYMENT SECTION =====
+          const milestones = quote.config?.payment_schedule?.milestones || [
+            { label: 'Material Deposit', pct: quote.config?.deposit_pct || 50 },
+            { label: 'Balance Due on Completion', pct: 100 - (quote.config?.deposit_pct || 50) }
+          ];
+          const totalMilestones = milestones.length;
+          const allPaid = milestonesPaid >= totalMilestones || depositStatus === 'final_paid';
+          const nextMilestone = milestones[milestonesPaid];
+          const colors = ['#a78bfa', '#78c8ff', '#34d399', '#fbbf24'];
+
+          if (allPaid) {
+            // FULLY PAID
+            return (
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-10 text-center shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-400/10 via-transparent to-transparent"></div>
+                <ShieldCheck size={56} className="text-emerald-400 mx-auto mb-4 relative z-10" />
+                <h3 className="text-3xl font-space font-bold text-white mb-2 relative z-10">Paid In Full</h3>
+                <p className="text-emerald-400/80 max-w-md mx-auto mb-8 text-sm leading-relaxed relative z-10">This project has been fully paid. Your digitally executed contract and final receipt have been routed to your inbox.</p>
+                
+                {/* Completed milestones checklist */}
+                <div className="bg-black/30 border border-white/10 rounded-xl p-4 max-w-sm mx-auto mb-6 relative z-10">
+                  {milestones.map((m: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between py-2 text-sm border-b border-white/5 last:border-0">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 size={14} className="text-emerald-400" />
+                        <span className="text-white/60">{m.label}</span>
+                      </div>
+                      <span className="font-mono text-emerald-400 font-bold">${(quote.total_amount * (m.pct / 100)).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+                           
+                <a 
+                  href={digitalFootprint ? `data:application/pdf;base64,${digitalFootprint?.pdfBase64 || ''}` : '#'} 
+                  download={`Contract_${client?.last_name}.pdf`}
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors shadow-xl w-full sm:w-auto relative z-10"
+                >
+                   <FileText size={18}/> Download Fully Executed PDF
+                </a>
               </div>
-              <h3 className="text-3xl font-space font-bold text-white mb-2">Contract Signed</h3>
-              <p className="text-white/60 mb-6 font-mono text-sm">Crypto ID: {id?.substring(0,12)}...</p>
+            );
+          }
+
+          // PARTIAL — Show milestone progress + next pay button
+          return (
+            <div className="bg-[#111] border border-white/10 rounded-2xl p-8 mb-10 overflow-hidden relative shadow-2xl">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl"></div>
               
-              <div className="bg-black/50 border border-white/5 rounded-xl p-4 text-left inline-block w-full max-w-sm mb-6">
-                <p className="text-[10px] uppercase tracking-widest text-white/40 mb-2">Immutable Footprint</p>
-                <img src={digitalFootprint?.signature} className="h-12 mb-2 filter invert opacity-80" alt="Signature" />
-                <p className="text-xs text-white/50 font-mono italic">{new Date(digitalFootprint?.timestamp).toLocaleString()}</p>
+              <div className="text-center mb-8 relative z-10">
+                <div className="inline-block bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4 flex items-center justify-center gap-2 w-max mx-auto">
+                  <CheckCircle2 size={14} /> Contract Signed
+                </div>
+                <h3 className="text-3xl font-space font-bold text-white mb-2">Payment Progress</h3>
+                <p className="text-white/60 mb-2 font-mono text-sm">{milestonesPaid} of {totalMilestones} payments complete</p>
+                
+                {digitalFootprint?.timestamp && digitalFootprint?.signature && (
+                  <div className="bg-black/50 border border-white/5 rounded-xl p-4 text-left inline-block w-full max-w-sm mb-4">
+                    <p className="text-[10px] uppercase tracking-widest text-white/40 mb-2">Immutable Footprint</p>
+                    <img src={digitalFootprint.signature} className="h-12 mb-2 filter invert opacity-80" alt="Signature" />
+                    <p className="text-xs text-white/50 font-mono italic">{new Date(digitalFootprint.timestamp).toLocaleString()}</p>
+                  </div>
+                )}
               </div>
+
+              {/* Milestone tracker */}
+              <div className="bg-black/40 border border-white/10 rounded-2xl p-5 relative z-10 mb-6">
+                <p className="text-[10px] uppercase font-bold tracking-widest text-white/40 mb-3">Payment Schedule</p>
+                {/* Progress bar */}
+                <div className="flex gap-1 h-2.5 rounded-full overflow-hidden mb-4">
+                  {milestones.map((m: any, i: number) => (
+                    <div 
+                      key={i}
+                      style={{ width: `${m.pct}%`, backgroundColor: i < milestonesPaid ? '#34d399' : colors[i % colors.length], opacity: i < milestonesPaid ? 1 : 0.3 }}
+                      className="rounded-full transition-all"
+                    />
+                  ))}
+                </div>
+                {/* Milestone rows */}
+                <div className="space-y-2">
+                  {milestones.map((m: any, i: number) => {
+                    const amt = quote.total_amount * (m.pct / 100);
+                    const isPaid = i < milestonesPaid;
+                    const isCurrent = i === milestonesPaid;
+                    return (
+                      <div key={i} className={`flex items-center justify-between text-sm rounded-lg px-3 py-2.5 transition-all ${
+                        isCurrent ? 'bg-white/5 border border-[#a78bfa]/30' : isPaid ? 'opacity-60' : ''
+                      }`}>
+                        <div className="flex items-center gap-2.5">
+                          {isPaid ? (
+                            <CheckCircle2 size={16} className="text-emerald-400 flex-shrink-0" />
+                          ) : (
+                            <div className="w-4 h-4 rounded-full border-2 flex-shrink-0" style={{ borderColor: isCurrent ? colors[i % colors.length] : 'rgba(255,255,255,0.15)' }}></div>
+                          )}
+                          <span className={isPaid ? 'text-white/40 line-through' : isCurrent ? 'text-white font-bold' : 'text-white/50'}>{m.label}</span>
+                          {isPaid && <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">PAID</span>}
+                          {isCurrent && <span className="text-[9px] bg-[#a78bfa]/20 text-[#a78bfa] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Due Now</span>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/30 text-xs">{m.pct}%</span>
+                          <span className={`font-mono font-bold ${isPaid ? 'text-emerald-400' : isCurrent ? 'text-white' : 'text-white/40'}`}>${amt.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Pay Next Milestone Button */}
+              {nextMilestone && (
+                <div className="bg-black border border-white/30 rounded-2xl p-6 relative z-10">
+                  <div className="flex justify-between items-end mb-5">
+                    <div>
+                      <h4 className="font-bold text-white mb-1 tracking-tight text-lg">{nextMilestone.label}</h4>
+                      <p className="text-xs text-white/50">Payment {milestonesPaid + 1} of {totalMilestones}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-space font-bold" style={{color: themeColor}}>${(quote.total_amount * (nextMilestone.pct / 100)).toLocaleString()}</p>
+                      <p className="text-[10px] text-white/40 uppercase tracking-widest">{nextMilestone.pct}%</p>
+                    </div>
+                  </div>
+                  <button 
+                    disabled={depositStatus === 'processing' || depositStatus === 'final_processing'}
+                    onClick={async () => {
+                      setDepositStatus('processing');
+                      try {
+                        const res = await fetch('/api/create-checkout', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ quoteId: id, originUrl: window.location.origin })
+                        });
+                        const data = await res.json();
+                        if (data.url) window.location.href = data.url;
+                        else {
+                          toast({ title: "Payment Error", description: data.error || "Failed to initiate payment.", variant: "destructive" });
+                          setDepositStatus('paid');
+                        }
+                      } catch(e) { setDepositStatus('paid'); }
+                    }}
+                    className="w-full bg-white hover:bg-gray-200 text-black py-4 rounded-xl flex items-center justify-center gap-2 font-bold transition-all"
+                  >
+                    {depositStatus === 'processing' || depositStatus === 'final_processing' 
+                      ? <Loader2 size={18} className="animate-spin"/> 
+                      : `Pay ${nextMilestone.label}`}
+                  </button>
+                  <p className="text-[10px] text-white/30 text-center mt-4 flex items-center justify-center gap-1">
+                    <Lock size={10}/> Payments securely processed by Stripe
+                  </p>
+                </div>
+              )}
             </div>
-
-            <div className="bg-black border border-[#a78bfa]/40 rounded-2xl p-6 relative z-10 shadow-[0_0_40px_rgba(167,139,250,0.1)]">
-               <div className="flex justify-between items-end mb-6">
-                 <div>
-                   <h4 className="font-bold text-white mb-1 tracking-tight text-lg">Initial Material Deposit</h4>
-                   <p className="text-xs text-white/50">Required to secure your installation date slot lock.</p>
-                 </div>
-                 <div className="text-right">
-                   <p className="text-2xl font-space font-bold" style={{color: themeColor}}>${(quote.total_amount * 0.5).toLocaleString()}</p>
-                   <p className="text-[10px] text-white/40 uppercase tracking-widest">50% Hold</p>
-                 </div>
-               </div>
-
-               <div className="space-y-3">
-                 <button 
-                   disabled={depositStatus === 'processing'}
-                   onClick={() => {
-                     setDepositStatus('processing');
-                     setTimeout(() => setDepositStatus('paid'), 2500);
-                   }}
-                   className="w-full bg-white hover:bg-gray-200 text-black py-4 rounded-xl flex items-center justify-center gap-2 font-bold transition-all"
-                 >
-                   {depositStatus === 'processing' ? <Loader2 size={18} className="animate-spin"/> : 'Pay with Apple Pay'}
-                 </button>
-
-                 <div className="flex items-center gap-4 py-2">
-                   <div className="flex-1 h-px bg-white/10"></div>
-                   <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold">Or</p>
-                   <div className="flex-1 h-px bg-white/10"></div>
-                 </div>
-
-                 <button 
-                   disabled={depositStatus === 'processing'}
-                   onClick={() => {
-                     setDepositStatus('processing');
-                     setTimeout(() => setDepositStatus('paid'), 2500);
-                   }}
-                   className="w-full bg-transparent hover:bg-white/5 border border-white/20 text-white py-4 rounded-xl flex items-center justify-center gap-2 font-bold transition-all uppercase tracking-wider text-sm"
-                 >
-                   <CreditCard size={18}/> Pay with Credit Card
-                 </button>
-               </div>
-               
-               <p className="text-[10px] text-white/30 text-center mt-5 flex items-center justify-center gap-1">
-                 <Lock size={10}/> Payments securely processed by Stripe
-               </p>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-10 text-center shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-green-400/10 via-transparent to-transparent"></div>
-            <ShieldCheck size={56} className="text-green-400 mx-auto mb-4 relative z-10" />
-            <h3 className="text-3xl font-space font-bold text-white mb-2 relative z-10">Fully Secured</h3>
-            <p className="text-green-400/80 max-w-md mx-auto mb-8 text-sm leading-relaxed relative z-10">Your installation date is officially locked in! The 50% deposit has been processed and your digitally executed PDF contract has been routed to your inbox.</p>
-                       
-            <a 
-              href={digitalFootprint ? `data:application/pdf;base64,${digitalFootprint?.pdfBase64 || ''}` : '#'} 
-              download={`Contract_${client?.last_name}.pdf`}
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors shadow-xl w-full sm:w-auto relative z-10"
-            >
-               <FileText size={18}/> Download Fully Executed PDF
-            </a>
-          </div>
-        )}
+          );
+        })()
+        }
 
       </div>
     </div>

@@ -3,13 +3,35 @@ import { useState } from "react";
 
 interface PaywallGuardProps {
   userId: string;
-  paymentLink: string; // The Stripe Payment Link url
+  userEmail?: string;
+  paymentLink?: string; // Legacy fallback
 }
 
-export default function PaywallGuard({ userId, paymentLink }: PaywallGuardProps) {
+export default function PaywallGuard({ userId, userEmail }: PaywallGuardProps) {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  // We append the user's Supabase ID to the Stripe link so the webhook knows EXACTLY who just paid
-  const secureCheckoutLink = `${paymentLink}?client_reference_id=${userId}`;
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const startCheckout = async () => {
+    if (!agreedToTerms) return;
+    setIsProcessing(true);
+    try {
+      const res = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: true, userId, email: userEmail })
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Failed to initialize secure checkout. Please contact support.");
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      console.error(err);
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-[#050505] flex items-center justify-center p-6 overflow-hidden">
@@ -28,7 +50,7 @@ export default function PaywallGuard({ userId, paymentLink }: PaywallGuardProps)
         </h1>
         
         <p className="text-white/60 text-lg mb-10 max-w-lg mx-auto">
-          Your secure business profile has been generated. Activate your monthly subscription to instantly unlock the CRM, Quoting Engine, and Video Vault.
+          Your secure business profile has been generated. Activate your free trial to instantly unlock the CRM, Quoting Engine, AI Tools, and Dispatch Hub.
         </p>
 
         {/* Feature Payload */}
@@ -47,11 +69,11 @@ export default function PaywallGuard({ userId, paymentLink }: PaywallGuardProps)
             </div>
             <div className="flex items-start gap-3">
               <CheckCircle2 className="text-[#78c8ff] shrink-0 mt-0.5" size={18} />
-              <span className="text-sm border-white/70 text-white">Custom Lead Pipeline</span>
+              <span className="text-sm border-white/70 text-white">Full CRM & Lead Pipeline</span>
             </div>
             <div className="flex items-start gap-3">
               <CheckCircle2 className="text-[#78c8ff] shrink-0 mt-0.5" size={18} />
-              <span className="text-sm border-white/70 text-white">Mastery Video Vault</span>
+              <span className="text-sm border-white/70 text-white">AI Flooring Visualizer</span>
             </div>
           </div>
         </div>
@@ -59,27 +81,27 @@ export default function PaywallGuard({ userId, paymentLink }: PaywallGuardProps)
         {/* Checkout CTA */}
         <div className="w-full">
             <div 
-              className="mb-6 flex items-start gap-4 bg-red-500/5 border border-red-500/20 p-5 rounded-2xl cursor-pointer hover:bg-red-500/10 transition-colors" 
+              className="mb-6 flex items-start gap-4 bg-[#78c8ff]/5 border border-[#78c8ff]/20 p-5 rounded-2xl cursor-pointer hover:bg-[#78c8ff]/10 transition-colors" 
               onClick={() => setAgreedToTerms(!agreedToTerms)}
             >
-               <div className={`mt-0.5 w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-colors border ${agreedToTerms ? 'bg-red-500 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'border-white/20'}`}>
-                 {agreedToTerms && <CheckCircle2 size={16} className="text-white" />}
+               <div className={`mt-0.5 w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-colors border ${agreedToTerms ? 'bg-[#78c8ff] border-[#78c8ff] shadow-[0_0_15px_rgba(120,200,255,0.4)]' : 'border-white/20'}`}>
+                 {agreedToTerms && <CheckCircle2 size={16} className="text-black" />}
                </div>
                <p className="text-sm text-white/80 text-left leading-relaxed">
-                 I understand that if I do not cancel before my 7-day trial ends, my card will be charged $97/month. <strong className="text-red-400">All sales are final and NO refunds will be issued if I forget to cancel.</strong>
+                 I understand my card will <strong>not</strong> be charged today. After my 7-day free trial concludes, I will be securely billed $97/month. I can easily cancel anytime from my dashboard.
                </p>
             </div>
 
-            <a 
-              href={agreedToTerms ? secureCheckoutLink : '#'}
+            <button 
+              disabled={!agreedToTerms || isProcessing}
               className={`w-full relative group overflow-hidden bg-white text-black font-bold py-5 rounded-2xl transition-all flex items-center justify-center gap-3 text-lg ${agreedToTerms ? 'shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_50px_rgba(120,200,255,0.3)]' : 'opacity-40 cursor-not-allowed bg-zinc-300'}`}
-              onClick={(e) => {
-                 if (!agreedToTerms) e.preventDefault();
-              }}
+              onClick={startCheckout}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/10 to-transparent group-hover:translate-x-full transition-transform duration-1000 -translate-x-full" />
-              Start 7-Day Free Trial <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </a>
+              {isProcessing ? "Connecting to Stripe..." : (
+                 <>Start 7-Day Free Trial <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" /></>
+              )}
+            </button>
             
             <div className="flex flex-col items-center justify-center gap-2 mt-6 text-xs text-white/40 font-mono text-center">
               <span className="text-emerald-400 font-bold">$0 due today. Then $97/mo.</span>
