@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { ShieldAlert, Users, TrendingUp, Building, Download } from "lucide-react";
+import { ShieldAlert, Users, TrendingUp, Building, Download, Share2 } from "lucide-react";
 
 export default function MasterControl() {
   const [installers, setInstallers] = useState<any[]>([]);
@@ -150,6 +150,101 @@ export default function MasterControl() {
           </div>
         </div>
       )}
+
+      {/* Affiliate Referrals Panel */}
+      {(() => {
+        const referred = installers.filter(i => i.referred_by);
+        const affiliateGroups = referred.reduce((acc, curr) => {
+          const slug = curr.referred_by;
+          if (!acc[slug]) acc[slug] = [];
+          acc[slug].push(curr);
+          return acc;
+        }, {} as Record<string, any[]>);
+        const affiliateSlugs = Object.keys(affiliateGroups);
+
+        if (affiliateSlugs.length === 0 && !loading) return null;
+
+        return (
+          <div className="mb-12">
+            <h2 className="text-xl font-space font-bold text-white mb-6 flex items-center gap-3">
+              <Share2 size={20} className="text-purple-400" />
+              Affiliate Referrals
+              {referred.length > 0 && (
+                <span className="text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-full">
+                  {referred.length} total
+                </span>
+              )}
+            </h2>
+
+            {affiliateSlugs.length === 0 ? (
+              <div className="bg-[#111] border border-white/10 p-6 rounded-2xl text-center">
+                <p className="text-white/40 text-sm">No affiliate referrals yet. Share your link: <span className="text-purple-400">resinacademics.com/ref/doctor-epoxy</span></p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {affiliateSlugs.map(slug => {
+                  const group = affiliateGroups[slug];
+                  const paying = group.filter(i => i.subscription_active);
+                  const commission = paying.length * 30;
+
+                  return (
+                    <div key={slug} className="bg-[#0a0a0a] border border-purple-500/20 rounded-2xl overflow-hidden">
+                      {/* Affiliate header */}
+                      <div className="p-5 border-b border-white/5 bg-purple-500/5">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 font-bold text-sm">
+                              {slug.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-bold text-white text-sm">{slug}</p>
+                              <p className="text-[10px] text-white/40">resinacademics.com/ref/{slug}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="bg-white/5 rounded-lg p-2 text-center">
+                            <p className="text-lg font-bold text-white">{group.length}</p>
+                            <p className="text-[9px] text-white/40 uppercase tracking-wider">Signups</p>
+                          </div>
+                          <div className="bg-white/5 rounded-lg p-2 text-center">
+                            <p className="text-lg font-bold text-emerald-400">{paying.length}</p>
+                            <p className="text-[9px] text-white/40 uppercase tracking-wider">Paying</p>
+                          </div>
+                          <div className="bg-white/5 rounded-lg p-2 text-center">
+                            <p className="text-lg font-bold text-purple-400">${commission}</p>
+                            <p className="text-[9px] text-white/40 uppercase tracking-wider">Owed</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Referred contractors list */}
+                      <div className="p-3 space-y-2 max-h-[200px] overflow-y-auto">
+                        {group.map(installer => (
+                          <div key={installer.id} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
+                            <div>
+                              <p className="text-xs font-bold text-white/80">{installer.company_name || installer.full_name || 'Unnamed'}</p>
+                              <p className="text-[10px] text-white/30">{new Date(installer.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                              installer.subscription_active
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            }`}>
+                              {installer.subscription_active ? 'Paying' : 'Trial'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
         {/* Contractor Directory */}
