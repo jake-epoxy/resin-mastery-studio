@@ -28,7 +28,8 @@ interface AffiliateConfig {
   tagline: string;
   endorsement: string;
   heroImage: string;       // main photo — used in hero
-  workImage: string;       // secondary photo — work showcase
+  workImage: string;       // secondary photo — work showcase right tile
+  showcaseImage: string;   // work showcase left tile
   instagram: string;       // full handle with @
   instagramUrl: string;
   accentColor: string;     // unique color to differentiate from main brand
@@ -45,6 +46,7 @@ const AFFILIATES: Record<string, AffiliateConfig> = {
       "I've been in this game for years — and finding a tool that actually helps you close more jobs and stay organized? That's rare. Resin OS is that tool. If you're serious about running a real epoxy business and not just winging it, you need this in your arsenal. Period.",
     heroImage: "/doctor-epoxy-metallic.jpg",
     workImage: "/doctor-epoxy-commercial.png",
+    showcaseImage: "/doctor-epoxy-metallic.jpg",
     instagram: "@doctor.epoxy",
     instagramUrl: "https://instagram.com/doctor.epoxy",
     accentColor: "#4ade80",
@@ -59,6 +61,7 @@ const AFFILIATES: Record<string, AffiliateConfig> = {
       "We run a two-man crew and used to waste hours on quotes and chasing leads. Resin OS changed everything — we send professional quotes from the truck, track every job, and collect payments before we even start. If you want to run your coating business like a real company and not a side hustle, get on this.",
     heroImage: "/everlast-coatings-team.png",
     workImage: "/everlast-metallic.png",
+    showcaseImage: "/everlast-commercial.png",
     instagram: "@everlastcoatingsaz",
     instagramUrl: "https://instagram.com/everlastcoatingsaz",
     accentColor: "#f59e0b",
@@ -361,7 +364,7 @@ export default function AffiliateLanding() {
           >
             <div className="relative h-[350px] overflow-hidden rounded-2xl border border-white/10">
               <img
-                src={affiliate.heroImage}
+                src={affiliate.showcaseImage}
                 alt={`Commercial work by ${affiliate.name}`}
                 className="w-full h-full object-cover"
               />
