@@ -1464,7 +1464,7 @@
                     <p>Professional Epoxy Flooring Services</p>
                 </div>
             </div>
-            <div class="quote-badge">Custom Quote</div>
+            <div class="quote-badge" style="color: #ff6b6b; border-color: rgba(255, 107, 107, 0.2); background: rgba(255, 107, 107, 0.08);">Quote Expired</div>
         </header>
 
         <!-- ─── PERSONAL INTRO ────────────────────────────────── -->
@@ -1806,8 +1806,8 @@
         </div>
 
         <!-- ─── ACCEPT BUTTON ────────────────────────────────── -->
-        <button class="accept-btn" id="acceptBtn" disabled onclick="acceptQuote()">
-            Accept Quote &amp; Agree to Terms
+        <button class="accept-btn" id="acceptBtn" disabled style="background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); box-shadow: none;">
+            Quote Expired
         </button>
 
         <!-- ─── FOOTER ───────────────────────────────────────── -->
@@ -1884,9 +1884,9 @@
         validDate.setDate(validDate.getDate() + 30);
 
         const fmt = d => d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        document.getElementById('quoteDate').textContent = fmt(today);
-        document.getElementById('validUntil').textContent = fmt(validDate);
-        document.getElementById('signDate').value = fmt(today);
+        document.getElementById('quoteDate').textContent = "March 14, 2026";
+        document.getElementById('validUntil').innerHTML = '<span style="color: #ff6b6b; font-weight: bold;">EXPIRED</span>';
+        document.getElementById('signDate').value = "";
 
         /* ── Agreement Checkbox ─────────────────────────────────── */
         function toggleAgree() {
@@ -1966,9 +1966,8 @@
 
         /* ── Accept Button State ───────────────────────────────── */
         function updateAcceptBtn() {
-            const agreed = document.getElementById('agreeCheck').checked;
-            const name = document.getElementById('printedName').value.trim();
-            document.getElementById('acceptBtn').disabled = !(agreed && hasSig && name.length > 0);
+            const btn = document.getElementById('acceptBtn');
+            if (btn) btn.disabled = true;
         }
 
         document.getElementById('printedName').addEventListener('input', updateAcceptBtn);
