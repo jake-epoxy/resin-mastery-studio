@@ -14,6 +14,7 @@ import {
   Sparkles,
   BadgeCheck,
   BarChart3,
+  Bot,
 } from "lucide-react";
 
 // ============================================================
@@ -371,6 +372,172 @@ export default function AffiliateLanding() {
               </div>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ============================================= */}
+      {/* CLONE AI — WORLD'S FIRST                      */}
+      {/* ============================================= */}
+      <section className="py-24 px-6 relative overflow-hidden">
+        {/* Background effects */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#78c8ff]/[0.02] to-transparent" />
+        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-[#78c8ff]/5 rounded-full blur-[120px] pointer-events-none -translate-y-1/2" />
+        <div className="absolute top-1/2 right-0 w-[300px] h-[300px] rounded-full blur-[100px] pointer-events-none -translate-y-1/2"
+          style={{ backgroundColor: affiliate.accentGlow }}
+        />
+
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Left: Copy */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              {/* World's first badge */}
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#78c8ff]/10 to-purple-500/10 border border-[#78c8ff]/20 mb-6">
+                <div className="w-2 h-2 rounded-full bg-[#78c8ff] animate-pulse" />
+                <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#78c8ff]">
+                  World's First in Epoxy
+                </span>
+              </div>
+
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] mb-6">
+                Your AI Clone{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#78c8ff] to-purple-400">
+                  Answers DMs for You
+                </span>
+              </h2>
+
+              <p className="text-lg text-white/60 leading-relaxed mb-8">
+                You're on a job site pouring metallic at 2pm. A lead hits your Instagram DMs asking for a quote. 
+                Instead of missing that lead — <span className="text-white font-medium">your Clone AI responds instantly</span>, 
+                qualifies them, answers their questions about pricing, and captures their phone number. All while sounding exactly like you.
+              </p>
+
+              <div className="space-y-4 mb-8">
+                {[
+                  {
+                    title: "Responds to Instagram & Messenger DMs 24/7",
+                    desc: "Never miss a lead again. Your AI clone handles every incoming message instantly.",
+                  },
+                  {
+                    title: "Trained on YOUR voice, pricing & services",
+                    desc: "It doesn't sound like a generic chatbot — it sounds like you. Your prices, your vibe, your brand.",
+                  },
+                  {
+                    title: "Qualifies leads & captures phone numbers",
+                    desc: "Routes install inquiries, training questions, and product interest into the right funnel automatically.",
+                  },
+                  {
+                    title: "You stay in full control",
+                    desc: "Watch every conversation in real-time. Step in manually anytime you want. Toggle autopilot on/off.",
+                  },
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#78c8ff]/10 border border-[#78c8ff]/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle2 size={14} className="text-[#78c8ff]" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-white text-sm mb-1">{item.title}</p>
+                      <p className="text-xs text-white/45 leading-relaxed">{item.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Right: Fake DM conversation mockup */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+                {/* Chat header */}
+                <div className="px-5 py-4 border-b border-white/5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <Instagram size={14} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                      Instagram DMs
+                      <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                    </p>
+                    <p className="text-[10px] text-white/40 uppercase tracking-wider">Clone AI • Active</p>
+                  </div>
+                </div>
+
+                {/* Messages */}
+                <div className="p-5 space-y-4 min-h-[420px]">
+                  {/* Incoming */}
+                  <div className="flex gap-2.5 max-w-[85%]">
+                    <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-xs font-bold text-white/50">J</div>
+                    <div className="bg-white/[0.06] border border-white/10 rounded-2xl rounded-tl-md px-4 py-3">
+                      <p className="text-sm text-white/80">hey man i saw your work on IG. how much for a 2 car garage in metallic?</p>
+                    </div>
+                  </div>
+
+                  {/* AI Response */}
+                  <div className="flex gap-2.5 max-w-[85%] ml-auto flex-row-reverse">
+                    <div className="w-7 h-7 rounded-full bg-[#78c8ff]/20 flex items-center justify-center shrink-0">
+                      <Bot size={13} className="text-[#78c8ff]" />
+                    </div>
+                    <div className="bg-[#78c8ff]/10 border border-[#78c8ff]/20 rounded-2xl rounded-tr-md px-4 py-3">
+                      <p className="text-sm text-white/80">yo appreciate you reaching out 🙏 for a 2-car garage in metallic you're looking at roughly $8-12/sqft depending on the design. what's the approximate size, around 400-500 sqft?</p>
+                    </div>
+                  </div>
+
+                  {/* Incoming */}
+                  <div className="flex gap-2.5 max-w-[85%]">
+                    <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-xs font-bold text-white/50">J</div>
+                    <div className="bg-white/[0.06] border border-white/10 rounded-2xl rounded-tl-md px-4 py-3">
+                      <p className="text-sm text-white/80">yeah about 480. can you do that copper and blue look?</p>
+                    </div>
+                  </div>
+
+                  {/* AI Response */}
+                  <div className="flex gap-2.5 max-w-[85%] ml-auto flex-row-reverse">
+                    <div className="w-7 h-7 rounded-full bg-[#78c8ff]/20 flex items-center justify-center shrink-0">
+                      <Bot size={13} className="text-[#78c8ff]" />
+                    </div>
+                    <div className="bg-[#78c8ff]/10 border border-[#78c8ff]/20 rounded-2xl rounded-tr-md px-4 py-3">
+                      <p className="text-sm text-white/80">100% that's one of our most popular designs. for 480 sqft you're looking around $3,800 - $5,200. want me to put together a full quote? just need your number and i'll send it over</p>
+                    </div>
+                  </div>
+
+                  {/* Typing indicator */}
+                  <div className="flex gap-2.5 max-w-[85%]">
+                    <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-xs font-bold text-white/50">J</div>
+                    <div className="bg-white/[0.06] border border-white/10 rounded-2xl rounded-tl-md px-4 py-3">
+                      <div className="flex gap-1.5 items-center">
+                        <div className="w-2 h-2 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <div className="w-2 h-2 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <div className="w-2 h-2 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom bar */}
+                <div className="px-5 py-3 border-t border-white/5 flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#78c8ff]/10 border border-[#78c8ff]/20">
+                    <Bot size={12} className="text-[#78c8ff]" />
+                    <span className="text-[10px] font-bold text-[#78c8ff] uppercase tracking-wider">Clone AI responding</span>
+                  </div>
+                  <span className="text-[10px] text-white/30 ml-auto">while you're on the job site 💪</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
