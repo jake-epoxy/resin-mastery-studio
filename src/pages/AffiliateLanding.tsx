@@ -57,8 +57,8 @@ const AFFILIATES: Record<string, AffiliateConfig> = {
     tagline: "Built to last. Powered by Resin OS.",
     endorsement:
       "We run a two-man crew and used to waste hours on quotes and chasing leads. Resin OS changed everything — we send professional quotes from the truck, track every job, and collect payments before we even start. If you want to run your coating business like a real company and not a side hustle, get on this.",
-    heroImage: "/everlast-coatings-team.png",
-    workImage: "/everlast-coatings-team.png",
+    heroImage: "/everlast-commercial.png",
+    workImage: "/everlast-metallic.png",
     instagram: "@everlastcoatingsaz",
     instagramUrl: "https://instagram.com/everlastcoatingsaz",
     accentColor: "#f59e0b",
@@ -362,26 +362,26 @@ export default function AffiliateLanding() {
             <div className="relative h-[350px] overflow-hidden rounded-2xl border border-white/10">
               <img
                 src={affiliate.heroImage}
-                alt="Metallic epoxy floor by Doctor Epoxy"
+                alt={`Commercial work by ${affiliate.name}`}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-4 left-4">
                 <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-black/50 backdrop-blur-sm text-white/80 border border-white/10">
-                  Metallic Epoxy
+                  Commercial Prep
                 </span>
               </div>
             </div>
             <div className="relative h-[350px] overflow-hidden rounded-2xl border border-white/10">
               <img
                 src={affiliate.workImage}
-                alt="Commercial epoxy floor by Doctor Epoxy"
+                alt={`Metallic epoxy by ${affiliate.name}`}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-4 left-4">
                 <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-black/50 backdrop-blur-sm text-white/80 border border-white/10">
-                  Commercial Install
+                  Metallic Epoxy
                 </span>
               </div>
             </div>
