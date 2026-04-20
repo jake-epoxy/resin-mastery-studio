@@ -57,7 +57,7 @@ const AFFILIATES: Record<string, AffiliateConfig> = {
     tagline: "Built to last. Powered by Resin OS.",
     endorsement:
       "We run a two-man crew and used to waste hours on quotes and chasing leads. Resin OS changed everything — we send professional quotes from the truck, track every job, and collect payments before we even start. If you want to run your coating business like a real company and not a side hustle, get on this.",
-    heroImage: "/everlast-commercial.png",
+    heroImage: "/everlast-coatings-team.png",
     workImage: "/everlast-metallic.png",
     instagram: "@everlastcoatingsaz",
     instagramUrl: "https://instagram.com/everlastcoatingsaz",
