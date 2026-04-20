@@ -50,6 +50,20 @@ const AFFILIATES: Record<string, AffiliateConfig> = {
     accentColor: "#4ade80",
     accentGlow: "rgba(74, 222, 128, 0.15)",
   },
+  "everlast-coatings": {
+    slug: "everlast-coatings",
+    name: "Everlast Coatings AZ",
+    realName: "Anthony & Chuck",
+    tagline: "Built to last. Powered by Resin OS.",
+    endorsement:
+      "We run a two-man crew and used to waste hours on quotes and chasing leads. Resin OS changed everything — we send professional quotes from the truck, track every job, and collect payments before we even start. If you want to run your coating business like a real company and not a side hustle, get on this.",
+    heroImage: "/everlast-coatings-team.png",
+    workImage: "/everlast-coatings-team.png",
+    instagram: "@everlastcoatingsaz",
+    instagramUrl: "https://instagram.com/everlastcoatingsaz",
+    accentColor: "#f59e0b",
+    accentGlow: "rgba(245, 158, 11, 0.15)",
+  },
 };
 
 // ============================================================
