@@ -5,7 +5,7 @@ import {
   ArrowRight,
   Zap,
   TrendingUp,
-  Terminal,
+  Wand2,
   Shield,
   Smartphone,
   Star,
@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Sparkles,
   BadgeCheck,
+  BarChart3,
 } from "lucide-react";
 
 // ============================================================
@@ -57,32 +58,32 @@ const FEATURES = [
   {
     icon: Zap,
     title: "Instant Smart Quotes",
-    desc: "Generate professional PDF quotes in 30 seconds. No more scribbling numbers on napkins.",
+    desc: "Generate professional PDF quotes in 30 seconds flat. Clients see a sleek, branded proposal — not a scribbled napkin.",
   },
   {
     icon: TrendingUp,
-    title: "Pipeline Dashboard",
-    desc: "Track every lead, job, and dollar collected in one sleek command center.",
+    title: "Pipeline CRM",
+    desc: "See every lead, active job, and dollar collected at a glance. Know exactly where your money is.",
   },
   {
-    icon: Terminal,
-    title: "40+ Hours of Training",
-    desc: "Full access to the Resin Academics video vault — learn every system from flake to metallic.",
+    icon: Wand2,
+    title: "AI Room Visualizer",
+    desc: "Show clients what their floor will look like BEFORE you pour. Close jobs on the spot.",
   },
   {
     icon: Shield,
     title: "Collect Payments Online",
-    desc: "Accept deposits and final payments via Stripe. Get paid before you show up.",
+    desc: "Accept deposits and final payments via Stripe. Get paid before you even show up to the job.",
+  },
+  {
+    icon: BarChart3,
+    title: "Revenue Tracking",
+    desc: "Track every dollar — won jobs, pending quotes, monthly revenue. Run your business like a CEO.",
   },
   {
     icon: Smartphone,
-    title: "Mobile-First Design",
-    desc: "Close deals and manage your crew from the job site. Built for the field.",
-  },
-  {
-    icon: BadgeCheck,
-    title: "Auto-CYA Legal Terms",
-    desc: "Every quote ships with a bulletproof epoxy contract. Protect your business automatically.",
+    title: "Built for the Field",
+    desc: "Close deals, dispatch crews, and manage your entire operation from your phone.",
   },
 ];
 
@@ -194,8 +195,8 @@ export default function AffiliateLanding() {
               </h1>
 
               <p className="text-lg text-white/60 leading-relaxed max-w-lg mb-10">
-                Quote jobs in 30 seconds, track your pipeline, collect payments, and access 40+ hours
-                of pro training — all in one subscription. {affiliate.realName} uses it. You should too.
+                Quote jobs in 30 seconds, track your pipeline, collect payments online, and visualize floors with AI
+                — all in one subscription. {affiliate.realName} uses it. You should too.
               </p>
 
               {/* CTA */}
@@ -223,7 +224,7 @@ export default function AffiliateLanding() {
                 {[
                   { value: "$97", label: "/ month after trial" },
                   { value: "7", label: "day free trial" },
-                  { value: "40+", label: "hours of training" },
+                  { value: "30s", label: "to generate a quote" },
                 ].map((stat, i) => (
                   <div key={i}>
                     <div className="text-2xl font-bold text-white">{stat.value}</div>
@@ -508,9 +509,9 @@ export default function AffiliateLanding() {
                 {[
                   "Interactive Smart Quotes",
                   "Full CRM Dashboard",
-                  "40+ Hours Video Training",
                   "AI Room Visualizer",
                   "Stripe Payment Collection",
+                  "Revenue & Job Tracking",
                   "Cancel Anytime — No Lock-in",
                 ].map((feature, i) => (
                   <div key={i} className="flex items-center gap-2.5">
