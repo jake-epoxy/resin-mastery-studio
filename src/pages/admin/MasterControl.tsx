@@ -162,8 +162,6 @@ export default function MasterControl() {
         }, {} as Record<string, any[]>);
         const affiliateSlugs = Object.keys(affiliateGroups);
 
-        if (affiliateSlugs.length === 0 && !loading) return null;
-
         return (
           <div className="mb-12">
             <h2 className="text-xl font-space font-bold text-white mb-6 flex items-center gap-3">
