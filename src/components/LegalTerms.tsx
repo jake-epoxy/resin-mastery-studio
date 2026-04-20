@@ -19,8 +19,8 @@ export default function LegalTerms() {
                         <h2 className="text-xl font-bold text-white mb-3 tracking-wide">1. Business Entity & Ownership</h2>
                         <div className="bg-[#78c8ff]/5 border border-[#78c8ff]/20 p-5 rounded-xl">
                             <p className="text-sm">
-                                "Resin Academics" is a platform and registered DBA operating under the parent commercial entity <strong>Pour Masters LLC</strong>.
-                                All software subscriptions, training enrollments, product purchases, and associated financial transactions processed through this Website or our merchant providers (e.g., Stripe, PayPal) are legally processed, captured, and managed by Pour Masters LLC. By using this platform, you explicitly acknowledge and agree that your commercial relationship is with Pour Masters LLC.
+                                "Resin Academics" is a platform and registered DBA operating under the parent commercial entity <strong>Resin OS and Resin Academics</strong>.
+                                All software subscriptions, training enrollments, product purchases, and associated financial transactions processed through this Website or our merchant providers (e.g., Stripe, PayPal) are legally processed, captured, and managed by Resin OS and Resin Academics. By using this platform, you explicitly acknowledge and agree that your commercial relationship is with Resin OS and Resin Academics.
                             </p>
                         </div>
                     </section>
@@ -55,7 +55,7 @@ export default function LegalTerms() {
                         <ul className="list-disc pl-6 space-y-2 text-sm text-zinc-400">
                             <li>We do not sell your personal data or your client data to third parties.</li>
                             <li>We use necessary cookies to maintain your login session and secure your dashboard.</li>
-                            <li>Payment data is tokenized and processed directly via Stripe; at no point does Pour Masters LLC hold raw credit card data on our servers.</li>
+                            <li>Payment data is tokenized and processed directly via Stripe; at no point does Resin OS and Resin Academics hold raw credit card data on our servers.</li>
                         </ul>
                     </section>
 

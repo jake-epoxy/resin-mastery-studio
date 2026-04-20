@@ -12,6 +12,7 @@ import PortfolioGallery from "./pages/PortfolioGallery";
 import LeadCaptureWidget from "./pages/LeadCaptureWidget";
 import ReviewPortal from "./pages/ReviewPortal";
 import EmbedWidget from "./pages/EmbedWidget";
+import AffiliateLanding from "./pages/AffiliateLanding";
 
 // SaaS Admin Routes
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -52,6 +53,9 @@ const App = () => (
           <Route path="/quote-form/:id" element={<LeadCaptureWidget />} />
           <Route path="/widget/ai/:installerId" element={<EmbedWidget />} />
           <Route path="/review/:id" element={<ReviewPortal />} />
+          
+          {/* Affiliate Referral Pages */}
+          <Route path="/ref/:affiliateSlug" element={<AffiliateLanding />} />
           
           {/* Admin SaaS Portal */}
           <Route path="/admin" element={<AdminLayout />}>

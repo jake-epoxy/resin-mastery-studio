@@ -1,93 +1,83 @@
-import { useScrollReveal } from "@/hooks/useScrollReveal";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Bot, Banknote, CalendarCheck } from "lucide-react";
 
 const showcases = [
     {
+        id: "quote",
         image: "/gallery/countertop-floor.jpg",
-        title: "Custom Floors & Countertops",
-        subtitle: "Where Art Meets Architecture",
-        description: "High-gloss metallic epoxy that transforms any space into a masterpiece. Every pour is one of a kind.",
-        align: "left" as const,
+        icon: <Banknote className="w-8 h-8 text-[#78c8ff]" />,
+        title: "Smart Quoting Engine",
+        subtitle: "Generate Proposals in 60 Seconds",
+        description: "Don't spend hours writing estimates. Build flawless, professional quotes on your phone right at the kitchen table. Win the job before your competitor even opens their laptop.",
     },
     {
+        id: "crm",
         image: "/gallery/living-room-marble.jpg",
-        title: "Next Group Class: Apr 2–5",
-        subtitle: "Limited Seats Available",
-        description: "4 days of hands-on epoxy training — floors, countertops & metallics. Walk away certified and ready to start your business.",
-        align: "right" as const,
+        icon: <Bot className="w-8 h-8 text-[#ff2a2a]" />,
+        title: "Automated Client CRM",
+        subtitle: "Never Let A Lead Go Cold",
+        description: "Our AI tracks your leads, sends automated follow-ups, and alerts you when a client opens your quote. Complete visibility into your entire sales pipeline.",
     },
     {
+        id: "ops",
         image: "/gallery/staircase-install.jpg",
-        title: "Hands-On Training",
-        subtitle: "Learn By Doing, Not Watching",
-        description: "Our students don't sit in classrooms. They get on the floor, mix the epoxy, and create real work — guided step by step.",
-        align: "left" as const,
+        icon: <CalendarCheck className="w-8 h-8 text-[#a78bfa]" />,
+        title: "Operations Hub",
+        subtitle: "Schedule Installs & Collect Payments",
+        description: "Transform your chaotic whiteboards into a streamlined digital calendar. Collect deposits instantly and manage your entire workforce seamlessly from one dashboard.",
     },
 ];
 
 const FullBleedShowcase = () => {
-    const ref = useScrollReveal();
-
     return (
-        <div ref={ref}>
-            {showcases.map((item, i) => (
-                <section
-                    key={item.title}
-                    className="relative min-h-[70vh] flex items-center overflow-hidden"
+        <div className="relative bg-[#050505]">
+            {showcases.map((item, index) => (
+                <div 
+                    key={`bg-${item.id}`} 
+                    className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden bg-[#050505]"
+                    style={{ zIndex: index * 10 }}
                 >
-                    {/* Full-bleed Background Image */}
-                    <div className="absolute inset-0">
-                        <img
-                            src={item.image}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                        />
-                        {/* Dark overlay */}
-                        <div className={`absolute inset-0 ${item.align === "left"
-                            ? "bg-gradient-to-r from-[#0c0c18]/95 via-[#0c0c18]/70 to-[#0c0c18]/30"
-                            : "bg-gradient-to-l from-[#0c0c18]/95 via-[#0c0c18]/70 to-[#0c0c18]/30"
-                            }`} />
-                    </div>
-
+                    {/* Shadow overlay to create depth when the next curtain scrolls over this one */}
+                    <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#050505] to-transparent z-20 pointer-events-none opacity-80" />
+                    
+                    <img
+                        src={item.image}
+                        alt={item.title}
+                        className="absolute inset-0 w-full h-full object-cover opacity-40"
+                    />
+                    
+                    {/* Dark gradient mapping for incredible SaaS contrast */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#050505] mix-blend-multiply" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#050505]/95 via-[#050505]/40 to-transparent" />
+                    
                     {/* Content */}
-                    <div className={`relative z-10 max-w-6xl mx-auto px-8 md:px-16 py-24 w-full flex ${item.align === "right" ? "justify-end" : "justify-start"
-                        }`}>
-                        <div className="max-w-lg">
-                            <p
-                                className="text-[#78c8ff] text-xs tracking-[0.3em] uppercase mb-3 font-semibold animate-scroll-fade"
-                                style={{ transitionDelay: `${0.1 + i * 0.05}s` }}
-                            >
+                    <div className="relative z-30 w-full max-w-6xl mx-auto px-6 h-full flex flex-col justify-center">
+                        <div className="absolute left-6 md:left-12 lg:left-24 top-1/2 -translate-y-1/2 max-w-xl">
+                            <div className="mb-6 p-4 inline-flex items-center justify-center rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                                {item.icon}
+                            </div>
+                            <h3 className="text-[#78c8ff] text-sm tracking-[0.25em] uppercase mb-4 font-bold drop-shadow-md">
                                 {item.subtitle}
-                            </p>
-                            <h2
-                                className={`text-4xl md:text-5xl lg:text-6xl font-bold font-display text-white leading-tight mb-6 ${item.align === "left" ? "animate-scroll-reveal-left" : "animate-scroll-reveal-right"
-                                    }`}
-                                style={{ transitionDelay: `${0.2 + i * 0.05}s` }}
-                            >
+                            </h3>
+                            <h2 className="text-5xl md:text-6xl font-bold font-display text-white leading-tight mb-6 tracking-tight drop-shadow-xl">
                                 {item.title}
                             </h2>
-                            <p
-                                className="text-zinc-300 text-lg leading-relaxed mb-8 animate-scroll-reveal"
-                                style={{ transitionDelay: `${0.3 + i * 0.05}s` }}
-                            >
+                            <p className="text-zinc-300 text-lg md:text-xl leading-relaxed mb-8 drop-shadow-md">
                                 {item.description}
                             </p>
                             <a
-                                href="#upcoming-class"
+                                href="#quote-engine"
                                 onClick={(e) => {
                                     e.preventDefault();
-                                    document.querySelector("#upcoming-class")?.scrollIntoView({ behavior: "smooth" });
+                                    document.querySelector("#quote-engine")?.scrollIntoView({ behavior: "smooth" });
                                 }}
-                                className="inline-flex items-center gap-2 text-[#78c8ff] font-semibold hover:text-white transition-colors group animate-scroll-reveal"
-                                style={{ transitionDelay: `${0.4 + i * 0.05}s` }}
+                                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-full font-bold text-sm tracking-wide shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] transition-all hover:bg-zinc-200"
                             >
-                                Start Your Journey
-                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                Explore Feature
+                                <ArrowRight className="w-4 h-4" />
                             </a>
                         </div>
                     </div>
-                </section>
+                </div>
             ))}
         </div>
     );

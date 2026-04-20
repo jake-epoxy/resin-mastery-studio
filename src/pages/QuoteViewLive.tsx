@@ -130,7 +130,7 @@ export default function QuoteViewLive() {
     const { data: clientData } = await supabase.from('clients').select('*').eq('id', quoteData.client_id).single();
     if (clientData) setClient(clientData);
 
-    const { data: instData } = await supabase.from('installers').select('company_name').eq('email', quoteData.installer_email).maybeSingle();
+    const { data: instData } = await supabase.from('installer_profiles').select('company_name').eq('user_id', quoteData.installer_id).maybeSingle();
     if (instData) setInstallerInfo(instData);
 
     setLoading(false);

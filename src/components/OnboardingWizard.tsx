@@ -79,7 +79,10 @@ export default function OnboardingWizard({ onComplete, onSwitchToLogin }: Onboar
         pricingObject[key] = parseFloat(servicePricing[key]) || 0;
       });
 
-      // 3. Insert into installer_profiles with full service pricing
+      // 3. Check for affiliate referral
+      const referredBy = localStorage.getItem('resin_ref') || null;
+
+      // 4. Insert into installer_profiles with full service pricing
       const { error: profileError } = await supabase.from('installer_profiles').insert({
         user_id: authData.user.id,
         full_name: fullName,
@@ -87,7 +90,8 @@ export default function OnboardingWizard({ onComplete, onSwitchToLogin }: Onboar
         company_phone: companyPhone,
         base_flake_price: parseFloat(servicePricing.flake) || 6.50,
         base_metallic_price: parseFloat(servicePricing.metallic) || 8.50,
-        service_pricing: pricingObject
+        service_pricing: pricingObject,
+        ...(referredBy ? { referred_by: referredBy } : {}),
       });
 
       if (profileError) {
@@ -95,6 +99,8 @@ export default function OnboardingWizard({ onComplete, onSwitchToLogin }: Onboar
         throw new Error("Account created, but failed to save business profile. Please contact support.");
       }
 
+      // Clear referral tracking after successful signup
+      localStorage.removeItem('resin_ref');
       onComplete();
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");

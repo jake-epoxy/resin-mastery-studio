@@ -17,6 +17,9 @@ export default function QuoteGenerator() {
   const [sqft, setSqft] = useState(500);
   const [pricePerSqft, setPricePerSqft] = useState(6.50);
   
+  const [pricingMode, setPricingMode] = useState<"sqft" | "flat">("sqft");
+  const [flatRate, setFlatRate] = useState(2500);
+  
   // Profile Baseline Pricing
   const [baseFlakePrice, setBaseFlakePrice] = useState(6.50);
   const [baseMetallicPrice, setBaseMetallicPrice] = useState(8.50);
@@ -28,10 +31,11 @@ export default function QuoteGenerator() {
   const [themeColor, setThemeColor] = useState(() => localStorage.getItem('quoteos_theme') || "#78c8ff");
   const [logoUrl, setLogoUrl] = useState(() => localStorage.getItem('quoteos_logo') || "");
   const [contractPdfUrl, setContractPdfUrl] = useState(() => localStorage.getItem('quoteos_pdf') || "");
-  const [brandName, setBrandName] = useState("Epoxy Contractor");
+  const [brandName, setBrandName] = useState(() => localStorage.getItem('quoteos_brand') || "Epoxy Contractor");
   const [legalTerms, setLegalTerms] = useState(() => localStorage.getItem('quoteos_terms') || DEFAULT_TERMS);
   
   useEffect(() => { localStorage.setItem('quoteos_theme', themeColor); }, [themeColor]);
+  useEffect(() => { localStorage.setItem('quoteos_brand', brandName); }, [brandName]);
   useEffect(() => { localStorage.setItem('quoteos_terms', legalTerms); }, [legalTerms]);
   
   // Uploading States
@@ -47,6 +51,7 @@ export default function QuoteGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
   const [generatedLink, setGeneratedLink] = useState("");
+  const [generatedQuoteId, setGeneratedQuoteId] = useState("");
   const [installerEmail, setInstallerEmail] = useState("");
   
   const [isSendingToClient, setIsSendingToClient] = useState(false);
@@ -136,6 +141,7 @@ export default function QuoteGenerator() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             to: client.email,
+            cc: installerEmail,
             subject: `Your Custom Quote from ${brandName}`,
             html: `<!DOCTYPE html>
 <html>
@@ -187,16 +193,27 @@ export default function QuoteGenerator() {
 </html>`
         })
       });
+      
+      if (generatedQuoteId) {
+        await supabase.from('quotes').update({ status: 'Sent' }).eq('id', generatedQuoteId);
+      }
+      
       setClientEmailed(true);
-      toast({ title: "Quote Sent to Client!" });
+      toast({ title: "Quote Sent Successfully!", description: "Check your email for your CC receipt." });
+      
+      // Auto-refresh the form so the user can move on to the next quote
+      setTimeout(() => {
+        handleReset();
+      }, 3500);
+      
     } catch (e: any) {
       toast({ title: "Failed to send", description: e.message, variant: "destructive" });
     }
     setIsSendingToClient(false);
   }
 
-  const estimatedTotal = sqft * pricePerSqft;
-  const estimatedMaterial = sqft * 1.50; 
+  const estimatedTotal = pricingMode === 'sqft' ? (sqft * pricePerSqft) : flatRate;
+  const estimatedMaterial = pricingMode === 'sqft' ? (sqft * 1.50) : (flatRate * 0.15); 
   const margin = estimatedTotal - estimatedMaterial;
 
   useEffect(() => {
@@ -230,9 +247,9 @@ export default function QuoteGenerator() {
         const firstKey = Object.keys(profile.service_pricing)[0];
         if (firstKey) setPricePerSqft(profile.service_pricing[firstKey]);
       }
-      if (profile.company_name) setBrandName(profile.company_name);
+      if (profile.company_name && !localStorage.getItem('quoteos_brand')) setBrandName(profile.company_name);
       if (profile.company_logo_url && !logoUrl) setLogoUrl(profile.company_logo_url);
-    } else if (user?.email) {
+    } else if (user?.email && !localStorage.getItem('quoteos_brand')) {
       setBrandName(user.email.split('@')[0].toUpperCase());
     }
   }
@@ -363,6 +380,7 @@ export default function QuoteGenerator() {
 
     const configPayload = {
       theme_color: themeColor,
+      brand_name: brandName,
       logo_url: logoUrl,
       contract_pdf_url: contractPdfUrl,
       legal_terms: legalTerms,
@@ -398,6 +416,7 @@ export default function QuoteGenerator() {
 
     const smartLink = `${window.location.origin}/quote-live/${quote.id}`;
     setGeneratedLink(smartLink);
+    setGeneratedQuoteId(quote.id);
     
     await supabase.from('clients')
       .update({ status: 'Quoted', total_value: estimatedTotal, project_type: serviceType })
@@ -447,6 +466,7 @@ export default function QuoteGenerator() {
     setOfferFinancing(false);
     setFinancingLink("");
     setGeneratedLink("");
+    setGeneratedQuoteId("");
     toast({ title: "Form Reset!" });
   }
 
@@ -490,6 +510,11 @@ export default function QuoteGenerator() {
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Company Display Name</label>
+                  <input type="text" value={brandName} onChange={(e) => setBrandName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#a78bfa]" />
                 </div>
                 
                 <div>
@@ -584,66 +609,80 @@ export default function QuoteGenerator() {
 
           {/* Section 2: Estimator */}
           <div className="bg-[#111] border border-white/10 rounded-2xl p-6 relative overflow-hidden">
-            <h2 className="text-lg font-space font-bold text-white flex items-center gap-2 mb-6 z-10 relative">
-              <Calculator size={18} className="text-[#a78bfa]" /> Pricing Engine
+            <h2 className="text-lg font-space font-bold text-white flex items-center justify-between gap-2 mb-6 z-10 relative">
+              <span className="flex items-center gap-2"><Calculator size={18} className="text-[#a78bfa]" /> Pricing Engine</span>
+              <div className="flex bg-black/50 border border-white/10 rounded-lg p-1">
+                <button type="button" onClick={() => setPricingMode("sqft")} className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors ${pricingMode === "sqft" ? "bg-[#a78bfa] text-white" : "text-white/50 hover:text-white"}`}>By Sq Ft</button>
+                <button type="button" onClick={() => setPricingMode("flat")} className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors ${pricingMode === "flat" ? "bg-[#a78bfa] text-white" : "text-white/50 hover:text-white"}`}>Flat Rate</button>
+              </div>
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Project Square Footage</label>
-                <input type="number" value={sqft} onChange={(e) => setSqft(Number(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-lg focus:outline-none focus:border-[#a78bfa]" />
-              </div>
-              <div>
-                <div className="flex justify-between items-start mb-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-white/50">Price Per Sq Ft</label>
+            {pricingMode === "sqft" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Project Square Footage</label>
+                  <input type="number" value={sqft} onChange={(e) => setSqft(Number(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-lg focus:outline-none focus:border-[#a78bfa]" />
                 </div>
-                {/* Dynamic service pricing buttons */}
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {Object.keys(profileServicePricing).length > 0 ? (
-                    Object.entries(profileServicePricing).map(([key, price]) => {
-                      const labels: Record<string, string> = {
-                        flake: 'Flake', metallic: 'Metallic', quartz: 'Quartz',
-                        grind_seal: 'Grind&Seal', polishing: 'Polish',
-                        single_color: 'Solid', countertops: 'Counter'
-                      };
-                      const serviceNames: Record<string, string> = {
-                        flake: 'Premium Flake System', metallic: 'Metallic Epoxy System',
-                        quartz: 'Quartz Broadcast System', grind_seal: 'Grind & Seal',
-                        polishing: 'Concrete Polishing', single_color: 'Single Color Epoxy',
-                        countertops: 'Epoxy Countertops'
-                      };
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => { setPricePerSqft(price); setServiceType(serviceNames[key] || key); }}
-                          className={`text-[10px] px-2.5 py-1.5 rounded-lg font-bold tracking-wider border transition-colors ${
-                            pricePerSqft === price
-                              ? 'bg-[#78c8ff]/20 text-[#78c8ff] border-[#78c8ff]/40'
-                              : 'bg-white/5 hover:bg-white/10 text-white/70 border-white/5'
-                          }`}
-                        >
-                          {labels[key] || key} (${price})
+                <div>
+                  <div className="flex justify-between items-start mb-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-white/50">Price Per Sq Ft</label>
+                  </div>
+                  {/* Dynamic service pricing buttons */}
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {Object.keys(profileServicePricing).length > 0 ? (
+                      Object.entries(profileServicePricing).map(([key, price]) => {
+                        const labels: Record<string, string> = {
+                          flake: 'Flake', metallic: 'Metallic', quartz: 'Quartz',
+                          grind_seal: 'Grind&Seal', polishing: 'Polish',
+                          single_color: 'Solid', countertops: 'Counter'
+                        };
+                        const serviceNames: Record<string, string> = {
+                          flake: 'Premium Flake System', metallic: 'Metallic Epoxy System',
+                          quartz: 'Quartz Broadcast System', grind_seal: 'Grind & Seal',
+                          polishing: 'Concrete Polishing', single_color: 'Single Color Epoxy',
+                          countertops: 'Epoxy Countertops'
+                        };
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => { setPricePerSqft(price); setServiceType(serviceNames[key] || key); }}
+                            className={`text-[10px] px-2.5 py-1.5 rounded-lg font-bold tracking-wider border transition-colors ${
+                              pricePerSqft === price
+                                ? 'bg-[#78c8ff]/20 text-[#78c8ff] border-[#78c8ff]/40'
+                                : 'bg-white/5 hover:bg-white/10 text-white/70 border-white/5'
+                            }`}
+                          >
+                            {labels[key] || key} (${price})
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <>
+                        <button type="button" onClick={() => { setPricePerSqft(baseFlakePrice); setServiceType("Premium Flake System"); }} className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white/70 transition-colors uppercase font-bold tracking-wider border border-white/5">
+                          Flake (${baseFlakePrice})
                         </button>
-                      );
-                    })
-                  ) : (
-                    <>
-                      <button type="button" onClick={() => { setPricePerSqft(baseFlakePrice); setServiceType("Premium Flake System"); }} className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white/70 transition-colors uppercase font-bold tracking-wider border border-white/5">
-                        Flake (${baseFlakePrice})
-                      </button>
-                      <button type="button" onClick={() => { setPricePerSqft(baseMetallicPrice); setServiceType("Metallic Epoxy System"); }} className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white/70 transition-colors uppercase font-bold tracking-wider border border-white/5">
-                        Metallic (${baseMetallicPrice})
-                      </button>
-                    </>
-                  )}
-                </div>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">$</span>
-                  <input type="number" step="0.10" value={pricePerSqft} onChange={(e) => setPricePerSqft(Number(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white text-lg focus:outline-none focus:border-[#a78bfa]" />
+                        <button type="button" onClick={() => { setPricePerSqft(baseMetallicPrice); setServiceType("Metallic Epoxy System"); }} className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white/70 transition-colors uppercase font-bold tracking-wider border border-white/5">
+                          Metallic (${baseMetallicPrice})
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">$</span>
+                    <input type="number" step="0.10" value={pricePerSqft} onChange={(e) => setPricePerSqft(Number(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white text-lg focus:outline-none focus:border-[#a78bfa]" />
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="relative z-10 max-w-md">
+                 <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Total Flat-Rate Project Price</label>
+                 <div className="relative">
+                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50">$</span>
+                   <input type="number" value={flatRate} onChange={(e) => setFlatRate(Number(e.target.value))} className="w-full bg-black/50 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white text-lg font-bold focus:outline-none focus:border-[#a78bfa]" />
+                 </div>
+              </div>
+            )}
 
             <div className="pt-6 mt-6 border-t border-white/10 flex items-center justify-between relative z-10">
                <div>

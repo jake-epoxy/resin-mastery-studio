@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Epoxy Flooring Starter Kit — by Jake Epoxy</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  @page { margin: 0; size: letter; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #111118;
+    --border: rgba(255,255,255,0.08);
+    --cyan: #78c8ff;
+    --red: #ff2a2a;
+    --purple: #a78bfa;
+    --text: #e4e4ef;
+    --muted: #8888a0;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 750px;
+    margin: 0 auto;
+    padding: 60px 40px;
+    page-break-after: always;
+  }
+
+  /* ─── COVER PAGE ─── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    padding: 60px 40px;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(120,200,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .cover-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 999px;
+    background: rgba(120,200,255,0.08);
+    border: 1px solid rgba(120,200,255,0.2);
+    color: var(--cyan);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+  .cover h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #fff 30%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cover h1 span {
+    display: block;
+    background: linear-gradient(135deg, var(--red) 0%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cover-sub {
+    font-size: 18px;
+    color: var(--muted);
+    max-width: 500px;
+    margin: 0 auto 50px;
+  }
+  .cover-author {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .cover-author strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+  .cover-author span {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .cover-stats {
+    display: flex;
+    gap: 40px;
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid var(--border);
+  }
+  .cover-stats div { text-align: center; }
+  .cover-stats strong {
+    display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 24px;
+    color: #fff;
+  }
+  .cover-stats span {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+  }
+
+  /* ─── SECTION STYLES ─── */
+  .section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .section-label.cyan { color: var(--cyan); }
+  .section-label.red { color: var(--red); }
+  .section-label.purple { color: var(--purple); }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 20px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+
+  h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+
+  p { margin-bottom: 16px; color: var(--muted); font-size: 15px; }
+  p.lead { font-size: 17px; color: var(--text); }
+
+  .quote-block {
+    border-left: 3px solid var(--cyan);
+    padding: 20px 24px;
+    margin: 30px 0;
+    background: rgba(120,200,255,0.04);
+    border-radius: 0 12px 12px 0;
+    font-style: italic;
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.8;
+  }
+
+  /* ─── GEAR CARDS ─── */
+  .gear-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 30px 0;
+  }
+  .gear-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .gear-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--cyan), var(--purple));
+    border-radius: 16px 16px 0 0;
+  }
+  .gear-card .emoji {
+    font-size: 32px;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .gear-card h4 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .gear-card .brand {
+    font-size: 13px;
+    color: var(--cyan);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .gear-card .detail {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .gear-card .price {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 4px 12px;
+    background: rgba(120,200,255,0.1);
+    border: 1px solid rgba(120,200,255,0.2);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--cyan);
+  }
+  .gear-full {
+    grid-column: 1 / -1;
+  }
+
+  /* ─── NUMBERED LIST ─── */
+  .num-list {
+    list-style: none;
+    counter-reset: item;
+    margin: 20px 0;
+  }
+  .num-list li {
+    counter-increment: item;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .num-list li::before {
+    content: counter(item);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    color: #000;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .num-list li div strong {
+    display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    color: #fff;
+    margin-bottom: 4px;
+    font-size: 15px;
+  }
+  .num-list li div span {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ─── CTA SECTION ─── */
+  .cta-box {
+    background: linear-gradient(135deg, rgba(120,200,255,0.08), rgba(167,139,250,0.08));
+    border: 1px solid rgba(120,200,255,0.15);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    margin: 40px 0;
+  }
+  .cta-box h3 {
+    font-size: 28px;
+    margin-bottom: 12px;
+  }
+  .cta-box p { color: var(--muted); margin-bottom: 24px; }
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 36px;
+    background: #fff;
+    color: #000;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    border-radius: 999px;
+    text-decoration: none;
+    transition: all 0.3s;
+  }
+  .cta-btn:hover { background: var(--cyan); }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 50px 0;
+  }
+
+  /* ─── FOOTER ─── */
+  .pdf-footer {
+    text-align: center;
+    padding: 30px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 60px;
+  }
+  .pdf-footer p {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .pdf-footer a {
+    color: var(--cyan);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  /* ─── PRINT STYLES ─── */
+  @media print {
+    body { background: #0a0a0f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .cover { page-break-after: always; }
+    .page { page-break-after: always; }
+  }
+
+  /* ─── MOBILE ─── */
+  @media (max-width: 600px) {
+    .cover h1 { font-size: 36px; }
+    h2 { font-size: 28px; }
+    .gear-grid { grid-template-columns: 1fr; }
+    .cover-stats { gap: 24px; }
+    .page { padding: 40px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════ -->
+<!--              COVER PAGE                 -->
+<!-- ════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge">📚 Free Guide — 2025 Edition</div>
+  <h1>
+    The Epoxy Flooring<br/>
+    <span>Starter Kit</span>
+  </h1>
+  <p class="cover-sub">
+    The exact tools, products, and strategy I used to go from $0 to a six-figure epoxy flooring business — without a degree, without connections, and without permission.
+  </p>
+  <div class="cover-author">
+    <strong>Jake Epoxy</strong>
+    <span>Founder — Resin OS & Resin Academics</span>
+  </div>
+  <div class="cover-stats">
+    <div><strong>40K+</strong><span>Followers</span></div>
+    <div><strong>25M+</strong><span>Views</span></div>
+    <div><strong>5+</strong><span>Years</span></div>
+    <div><strong>500+</strong><span>Floors</span></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!--           MY STORY                      -->
+<!-- ════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-label red">● Chapter 01</div>
+  <h2>How It All Started</h2>
+
+  <p class="lead">
+    I didn't grow up wanting to pour floors. I didn't come from money. I didn't have a mentor, a business partner, or even a garage. What I had was a girlfriend's desk, a phone with internet, and the kind of stubbornness that either makes you rich or gets you evicted.
+  </p>
+
+  <p>
+    I started this whole thing with literally <strong style="color:#fff;">$0</strong>. No equipment. No truck. No portfolio. No idea what I was doing. I just knew I didn't want to work for someone else for the rest of my life — and I saw guys on Instagram pouring these insane metallic floors and thought, "I can figure that out."
+  </p>
+
+  <p>
+    My first "office" was my girlfriend's desk. I would sit there at night after working my regular job, watching every YouTube video I could find on epoxy, reading forums, DMing contractors who were already doing it. Most of them never replied. A few told me I was wasting my time.
+  </p>
+
+  <div class="quote-block">
+    "Nobody handed me a manual. Nobody gave me a shortcut. I made every mistake in the book so you don't have to. That's why I built this guide — and eventually, an entire operating system for contractors like us."
+  </div>
+
+  <p>
+    I scraped together enough to buy a basic grinder and a small batch of epoxy. My first job was a disaster — I learned more in that one pour than I did in months of watching videos. But I didn't quit. I kept going. Job after job, mistake after mistake, until I got really, really good.
+  </p>
+
+  <p>
+    Now I run a multi-six-figure flooring operation, I've trained hundreds of people through Resin Academics, and I built <strong style="color:#fff;">Resin OS</strong> — the only business operating system built specifically for resin contractors. This guide is for you. The version of me that's just starting out and needs someone to cut through the noise.
+  </p>
+
+  <p style="color: var(--cyan); font-weight: 600; font-size: 16px;">
+    Let's get you started. For real this time.
+  </p>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!--          ESSENTIAL GEAR                 -->
+<!-- ════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-label cyan">● Chapter 02</div>
+  <h2>Your Essential Gear List</h2>
+  <p>
+    You don't need to spend $5,000 on equipment to get started. Here's the exact gear I recommend — all budget-friendly, all battle-tested on real jobs. You can get rolling for under $500.
+  </p>
+
+  <div class="gear-grid">
+
+    <div class="gear-card">
+      <span class="emoji">⚙️</span>
+      <h4>7" Angle Grinder</h4>
+      <div class="brand">Hercules — Harbor Freight</div>
+      <div class="detail">
+        This is your primary surface prep tool. You'll use it for grinding concrete, removing old coatings, and profiling the surface so the epoxy bonds properly. The Hercules 7" is a beast — reliable, powerful, and won't empty your bank account.
+      </div>
+      <span class="price">Under $200</span>
+    </div>
+
+    <div class="gear-card">
+      <span class="emoji">🌀</span>
+      <h4>HEPA Dust Vacuum</h4>
+      <div class="brand">Hercules OSHA-Certified — Harbor Freight</div>
+      <div class="detail">
+        Do NOT grind without a vac attached. Concrete dust will destroy your lungs and your client's house. This HEPA-certified unit is OSHA compliant, connects directly to your grinder, and keeps the job site clean. Non-negotiable piece of gear.
+      </div>
+      <span class="price">Harbor Freight</span>
+    </div>
+
+    <div class="gear-card">
+      <span class="emoji">😷</span>
+      <h4>3M Respirator</h4>
+      <div class="brand">3M Half-Facepiece + P100 Filters</div>
+      <div class="detail">
+        Epoxy fumes and concrete dust are no joke. A proper 3M respirator with P100 cartridges protects your lungs from both particulate matter and organic vapors. Wear it every single time — no exceptions.
+      </div>
+      <span class="price">~$30–$40</span>
+    </div>
+
+    <div class="gear-card">
+      <span class="emoji">🦵</span>
+      <h4>Knee Pads</h4>
+      <div class="brand">Heavy-Duty Gel Knee Pads</div>
+      <div class="detail">
+        You'll spend hours on your knees doing detail work, edges, and hand-troweling. Get a comfortable, thick-gel pair — your knees will thank you. Cheap ones slip and bruise; invest in a solid pair.
+      </div>
+      <span class="price">~$20–$40</span>
+    </div>
+
+    <div class="gear-card">
+      <span class="emoji">🥽</span>
+      <h4>Safety Glasses</h4>
+      <div class="brand">ANSI Z87.1 Rated</div>
+      <div class="detail">
+        Grinding throws sparks and concrete chips directly at your face. Any ANSI-rated pair works. Anti-fog lenses are a game changer in hot garages and enclosed spaces.
+      </div>
+      <span class="price">~$10</span>
+    </div>
+
+    <div class="gear-card">
+      <span class="emoji">🎧</span>
+      <h4>Ear Protection</h4>
+      <div class="brand">Over-Ear Muffs or Foam Plugs</div>
+      <div class="detail">
+        Grinders are LOUD. Extended exposure causes permanent hearing damage. Use over-ear muffs or foam plugs — doesn't matter what brand, just wear them. Every. Single. Time.
+      </div>
+      <span class="price">~$10–$25</span>
+    </div>
+
+  </div>
+
+  <div class="quote-block">
+    "I see guys posting their first floor with no respirator, no vac, no glasses. That's how you end up in the ER. Gear up before you ever touch a grinder."
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!--           EPOXY PRODUCT                 -->
+<!-- ════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-label purple">● Chapter 03</div>
+  <h2>Which Epoxy To Use</h2>
+
+  <p class="lead">
+    There are hundreds of epoxy brands out there, and most of them are trying to sell you watered-down product at premium prices. Here's what I actually use on my jobs.
+  </p>
+
+  <div class="gear-card gear-full" style="margin: 30px 0;">
+    <span class="emoji">🧪</span>
+    <h4>Mud2Marble Epoxy</h4>
+    <div class="brand">mud2marble.xyz</div>
+    <div class="detail" style="font-size: 14px; line-height: 1.8;">
+      This is the product I currently run on my jobs. Mud2Marble is a high-quality metallic epoxy system that gives you those insane, Instagram-worthy marble effects with excellent self-leveling and workability.
+      <br/><br/>
+      <strong style="color: #fff;">Why I chose it:</strong>
+      <br/>
+      • Great flow and self-leveling — fewer roller marks<br/>
+      • Excellent metallic pigment compatibility<br/>
+      • Available in multiple formulations (100% solids, UV-stable topcoats)<br/>
+      • Direct-to-consumer pricing — no middleman markup<br/>
+      • Ships fast so you're not waiting around between jobs
+    </div>
+  </div>
+
+  <p>
+    <strong style="color:#fff;">Pro Tip:</strong> Don't try to cheap out on epoxy. A bad product will fish-eye, bubble, or yellow in 6 months — and then you're doing a free redo on YOUR dime. The product is the one thing you do NOT cut corners on.
+  </p>
+
+  <div class="divider"></div>
+
+  <div class="section-label cyan">● Chapter 04</div>
+  <h2>What Every Service Pays</h2>
+  <p>Here's the real pricing breakdown that no one talks about. These are approximate ranges based on standard residential jobs.</p>
+
+  <div style="margin: 24px 0;">
+    <table style="width: 100%; border-collapse: separate; border-spacing: 0 8px;">
+      <tr>
+        <td style="padding: 16px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 12px 0 0 12px; font-weight: 700; color: #fff;">Garage Floor (2-Car)</td>
+        <td style="padding: 16px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 0 12px 12px 0; text-align: right; color: var(--cyan); font-weight: 700; font-family: 'Space Grotesk', sans-serif;">$2,500 – $5,000+</td>
+      </tr>
+      <tr>
+        <td style="padding: 16px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 12px 0 0 12px; font-weight: 700; color: #fff;">Metallic Epoxy Floor</td>
+        <td style="padding: 16px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 0 12px 12px 0; text-align: right; color: var(--cyan); font-weight: 700; font-family: 'Space Grotesk', sans-serif;">$6 – $12/sqft</td>
+      </tr>
+      <tr>
+        <td style="padding: 16px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 12px 0 0 12px; font-weight: 700; color: #fff;">Flake / Chip System</td>
+        <td style="padding: 16px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 0 12px 12px 0; text-align: right; color: var(--cyan); font-weight: 700; font-family: 'Space Grotesk', sans-serif;">$4 – $8/sqft</td>
+      </tr>
+      <tr>
+        <td style="padding: 16px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 12px 0 0 12px; font-weight: 700; color: #fff;">Countertop Resurfacing</td>
+        <td style="padding: 16px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 0 12px 12px 0; text-align: right; color: var(--cyan); font-weight: 700; font-family: 'Space Grotesk', sans-serif;">$800 – $2,500+</td>
+      </tr>
+      <tr>
+        <td style="padding: 16px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 12px 0 0 12px; font-weight: 700; color: #fff;">Commercial / Large Job</td>
+        <td style="padding: 16px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 0 12px 12px 0; text-align: right; color: var(--cyan); font-weight: 700; font-family: 'Space Grotesk', sans-serif;">$10,000 – $50,000+</td>
+      </tr>
+    </table>
+  </div>
+
+  <p>
+    <strong style="color:#fff;">The takeaway:</strong> Even a single garage job can put $3,000+ in your pocket in one day. Most beginners book 2–4 jobs per month after getting set up. Do the math.
+  </p>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!--       5 MISTAKES + LANDING JOBS         -->
+<!-- ════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-label red">● Chapter 05</div>
+  <h2>5 Mistakes That Will Ruin Your First Job</h2>
+
+  <ol class="num-list">
+    <li>
+      <div>
+        <strong>Skipping Surface Prep</strong>
+        <span>This is the #1 killer. If you don't grind and profile the concrete properly, your epoxy will peel up in weeks. No amount of beautiful metallic work saves a bad prep job. Grind it, vacuum it, grind it again.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Not Checking Moisture Levels</strong>
+        <span>Concrete holds moisture. If the slab is too wet, the epoxy won't bond. Use a simple moisture test (tape a plastic sheet down for 24 hours) or invest in a moisture meter. One $20 test saves you a $3,000 redo.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Mixing The Wrong Ratios</strong>
+        <span>Epoxy is chemistry. If you eyeball the Part A / Part B ratio instead of measuring it, you'll get a soft, sticky mess that never fully cures. Follow the product spec sheet to the letter.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Working In Extreme Temperatures</strong>
+        <span>Epoxy doesn't cure properly in freezing cold or extreme heat. Ideal application range is 55°F – 85°F. If it's 100°F in a garage with no AC, you have about 10 minutes before your product starts kicking too fast.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Undercharging Your First Jobs</strong>
+        <span>Everyone does this. You're scared to charge "too much" so you bid $800 on a job that should be $3,000. You burn yourself out, hate the work, and quit. Price for profit from Day 1. This isn't a hobby — it's a business.</span>
+      </div>
+    </li>
+  </ol>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!--         LANDING JOBS (AI)               -->
+<!-- ════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-label cyan">● Chapter 06</div>
+  <h2>How To Land Jobs With No Portfolio</h2>
+
+  <p class="lead">
+    This is the question I get more than anything: "How do I get clients when I have no photos of my own work?" Here's the cheat code.
+  </p>
+
+  <h3>The Old Way (Slow & Painful)</h3>
+  <p>
+    Most people tell you to do free jobs for friends and family, take photos, build up a portfolio over months, then start marketing. That works — but it's slow, and you're doing free labor while your bills keep coming.
+  </p>
+
+  <h3 style="color: var(--cyan);">The Resin OS Way (Instant Portfolio)</h3>
+  <p>
+    <strong style="color:#fff;">Resin OS has a built-in AI Flooring Visualizer.</strong> Here's how it works:
+  </p>
+
+  <ol class="num-list">
+    <li>
+      <div>
+        <strong>Take a photo of ANY floor</strong>
+        <span>Walk into a client's garage or kitchen and snap a photo of their current, ugly concrete floor with your phone.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Upload it to Resin OS</strong>
+        <span>The AI Visualizer takes that photo and generates a stunning, photorealistic rendering of what their floor WILL look like after your epoxy install — metallic, flake, solid color, whatever you want.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Send it to the client instantly</strong>
+        <span>Now you have a "portfolio piece" that's literally THEIR floor. They can see the transformation before you even mix a single batch. This closes deals on the spot. No past work needed.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Attach it to a professional quote</strong>
+        <span>Resin OS lets you generate a full, branded proposal in 60 seconds — complete with the AI visualization, pricing, payment schedule, and terms. You look like a $10M company from Day 1.</span>
+      </div>
+    </li>
+  </ol>
+
+  <div class="quote-block">
+    "I built Resin OS because I was tired of losing jobs to guys who had flashier websites and bigger portfolios — even when my work was better. Now the playing field is leveled. A brand new contractor using Resin OS looks more professional than a 10-year guy using text messages and handshakes."
+  </div>
+
+  <p>
+    This is the unfair advantage. While other guys are telling prospects "trust me, it'll look great" — you're SHOWING them exactly what it'll look like. That's a different game.
+  </p>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!--              CTA / CLOSE                -->
+<!-- ════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-label purple">● What's Next</div>
+  <h2>You've Got The Playbook.<br/>Now Execute.</h2>
+
+  <p class="lead">
+    You now know more than 90% of people who "want to start an epoxy business." The difference between you and them is going to be action. Go buy the grinder. Go practice on a scrap piece of concrete. Go run your first quote through Resin OS.
+  </p>
+
+  <p>
+    This industry is wide open. Homeowners are spending more on their garages and interiors than ever before, and there aren't enough skilled contractors to meet demand. That's your window. Don't waste it.
+  </p>
+
+  <div class="cta-box">
+    <h3>Ready to Go Pro?</h3>
+    <p>Start your free 7-day trial of Resin OS — the CRM, quoting engine, AI visualizer, and operations hub built for contractors like you.</p>
+    <a href="https://www.resinacademics.com/admin" class="cta-btn">
+      Start Free Trial →
+    </a>
+    <p style="font-size: 12px; margin-top: 16px; margin-bottom: 0;">No credit card required. Cancel anytime.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div style="text-align: center;">
+    <p style="font-size: 13px; color: var(--muted); margin-bottom: 6px;">Follow the journey</p>
+    <p style="margin-bottom: 4px;">
+      <strong style="color: #fff; font-size: 16px;">@jake.epoxy</strong>
+    </p>
+    <p style="font-size: 12px; color: var(--muted);">Instagram · TikTok · YouTube</p>
+  </div>
+
+  <div class="pdf-footer">
+    <p>© 2025 Resin OS & Resin Academics. All rights reserved.</p>
+    <p><a href="https://www.resinacademics.com">www.resinacademics.com</a> · <a href="https://mud2marble.xyz">mud2marble.xyz</a></p>
+  </div>
+</div>
+
+</body>
+</html>

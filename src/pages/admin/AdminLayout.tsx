@@ -163,24 +163,56 @@ export default function AdminLayout() {
   }
 
   if (installerProfile && installerProfile.subscription_active === false && userEmail !== 'jakeflowers222@gmail.com') {
-    // Webhook Falback: If they just returned from Stripe correctly, immediately save them!
-    if (window.location.search.includes('success=true')) {
-       // Fire off a background update to ensure they are active in DB just in case webhook didn't route
-       supabase.from('installer_profiles').update({ subscription_active: true }).eq('user_id', installerProfile.user_id).then(() => fetchProfile(installerProfile.user_id));
-       return <div className="min-h-screen bg-black flex items-center justify-center text-white/50">Activating your terminal...</div>;
-    }
+    // 7-Day No-Card Free Trial Logic
+    const createdAt = new Date(installerProfile.created_at).getTime();
+    const trialEndsAt = createdAt + (7 * 24 * 60 * 60 * 1000); 
+    const isTrialActive = Date.now() < trialEndsAt;
 
-    return (
-      <PaywallGuard 
-        userId={installerProfile.user_id} 
-        userEmail={userEmail || undefined}
-        paymentLink="https://buy.stripe.com/9B63cv2338Od9qPgBN6J201" 
-      />
-    );
+    if (isTrialActive) {
+      // Still in trial, bypass paywall! 
+      // (We could optionally show a banner here saying "X days left in trial")
+    } else {
+      // Trial expired, prompt for payment
+      if (window.location.search.includes('success=true')) {
+         supabase.from('installer_profiles').update({ subscription_active: true }).eq('user_id', installerProfile.user_id).then(() => fetchProfile(installerProfile.user_id));
+         return <div className="min-h-screen bg-black flex items-center justify-center text-white/50">Activating your terminal...</div>;
+      }
+  
+      return (
+        <PaywallGuard 
+          userId={installerProfile.user_id} 
+          userEmail={userEmail || undefined}
+          paymentLink="https://buy.stripe.com/9B63cv2338Od9qPgBN6J201" 
+        />
+      );
+    }
   }
+
+  // Calculate days left for optional banner
+  const isTrialActive = installerProfile && installerProfile.subscription_active === false && userEmail !== 'jakeflowers222@gmail.com' ? (Date.now() < new Date(installerProfile.created_at).getTime() + (7 * 24 * 60 * 60 * 1000)) : false;
+  const daysLeft = isTrialActive ? Math.ceil(((new Date(installerProfile.created_at).getTime() + (7 * 24 * 60 * 60 * 1000)) - Date.now()) / (1000 * 60 * 60 * 24)) : 0;
 
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col text-white font-inter">
+      {isTrialActive && (
+        <div className="bg-[#78c8ff] text-black text-xs font-bold uppercase tracking-wider text-center py-2 flex items-center justify-center gap-2">
+          <span>🚀 You are on day {8 - daysLeft} of your 7-Day Free Trial. No card required.</span>
+          <button 
+             onClick={async () => {
+                const res = await fetch('/api/create-checkout', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ subscription: true, userId: installerProfile.user_id, email: userEmail })
+                });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+             }}
+             className="ml-4 bg-black text-white px-3 py-1 rounded hover:bg-zinc-800 transition-colors"
+          >
+            Upgrade Now
+          </button>
+        </div>
+      )}
       {/* Sleek Top Header for Branding and Logout */}
       <header className="sticky top-0 z-40 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/10 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -188,7 +220,7 @@ export default function AdminLayout() {
              {installerProfile?.company_name ? (
                 <span className="text-[#78c8ff] font-bold text-base md:text-lg">{installerProfile.company_name.charAt(0)}</span>
              ) : (
-                <img src="/logo.png" alt="Resin Academics" className="w-full h-full object-cover" />
+                <img src="/logo.png" alt="Resin Academics" className="w-[150%] h-[150%] object-cover" />
              )}
           </div>
           <span className="font-space font-bold tracking-widest text-[#78c8ff] uppercase text-xs md:text-sm leading-tight">
