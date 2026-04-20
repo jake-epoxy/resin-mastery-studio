@@ -12,6 +12,7 @@ import CertificationSection from "@/components/CertificationSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import MarketingSection from "@/components/MarketingSection";
 import SoftwareMarketingSection from "@/components/SoftwareMarketingSection";
+import CloneAISection from "@/components/CloneAISection";
 import { Link } from "react-router-dom";
 import InstallerMapSection from "@/components/InstallerMapSection";
 import QuoteGeneratorDemo from "@/components/QuoteGeneratorDemo";
@@ -55,6 +56,10 @@ const Index = () => {
         <SoftwareMarketingSection />
       </div>
       
+      <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade my-12" />
+      
+      <CloneAISection />
+
       <div className="w-24 h-px line-gradient mx-auto animate-scroll-fade my-12" />
       
       <div id="quote-engine">
