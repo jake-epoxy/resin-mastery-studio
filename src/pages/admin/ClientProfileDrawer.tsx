@@ -166,14 +166,15 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
   };
 
   return (
-    <AnimatePresence>
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end"
-      >
+    <>
+      <AnimatePresence>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end"
+        >
         <motion.div 
           initial={{ x: '100%' }}
           animate={{ x: 0 }}
@@ -429,6 +430,7 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
         </motion.div>
       </motion.div>
 
+      </AnimatePresence>
       {editingQuote && (
         <QuoteEditorModal 
           quote={editingQuote} 
@@ -436,6 +438,6 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
           onUpdate={fetchLinkedQuotes} 
         />
       )}
-    </AnimatePresence>
+    </>
   );
 }
