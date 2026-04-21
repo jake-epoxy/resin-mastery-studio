@@ -17,6 +17,9 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
   const initialScheduleType = quote?.config?.payment_schedule?.type || '50_50';
   const [scheduleType, setScheduleType] = useState(initialScheduleType);
   const activeMilestones = quote?.config?.payment_schedule?.milestones || SCHEDULE_PRESETS[initialScheduleType]?.milestones || SCHEDULE_PRESETS['50_50'].milestones;
+  const [customMilestones, setCustomMilestones] = useState<{label: string, pct: number}[]>(
+    initialScheduleType === 'custom' ? activeMilestones : SCHEDULE_PRESETS['custom'].milestones
+  );
 
   const [legalTerms, setLegalTerms] = useState(quote?.config?.legal_terms || "");
   const [isSaving, setIsSaving] = useState(false);
@@ -178,12 +181,93 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
                   onChange={(e) => setScheduleType(e.target.value)}
                   className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#78c8ff] outline-none transition appearance-none"
                 >
-                  <option value="custom" disabled>Custom/Active</option>
+                  <option value="custom">Custom Schedule</option>
                   {Object.entries(SCHEDULE_PRESETS).map(([key, preset]) => (
                     <option key={key} value={key}>{preset.name} ({preset.desc})</option>
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* Visual payment breakdown preview */}
+            <div className="bg-black/40 border border-white/10 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-[#78c8ff]"></div>
+                <p className="text-[10px] uppercase font-bold tracking-widest text-white/40">Payment Breakdown</p>
+              </div>
+              <div className="flex gap-1 h-3 rounded-full overflow-hidden mb-3">
+                {(scheduleType === 'custom' ? customMilestones : SCHEDULE_PRESETS[scheduleType].milestones).map((m, i) => {
+                  const colors = ['#78c8ff', '#a78bfa', '#34d399', '#fbbf24'];
+                  return <div key={i} style={{ width: `${m.pct}%`, backgroundColor: colors[i % colors.length] }} className="rounded-full transition-all" />;
+                })}
+              </div>
+              <div className="space-y-2">
+                {(scheduleType === 'custom' ? customMilestones : SCHEDULE_PRESETS[scheduleType].milestones).map((m, i) => {
+                  const colors = ['#78c8ff', '#a78bfa', '#34d399', '#fbbf24'];
+                  const val = Number(amount) * (m.pct / 100);
+                  return (
+                    <div key={i} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: colors[i % colors.length] }}></div>
+                        {scheduleType === 'custom' ? (
+                          <input
+                            value={m.label}
+                            onChange={(e) => {
+                              const updated = [...customMilestones];
+                              updated[i] = { ...updated[i], label: e.target.value };
+                              setCustomMilestones(updated);
+                            }}
+                            className="bg-transparent border-b border-white/10 text-white/80 text-xs focus:outline-none focus:border-[#78c8ff] w-36 py-0.5"
+                          />
+                        ) : (
+                          <span className="text-white/60">{m.label}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {scheduleType === 'custom' ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="1" max="100"
+                              value={m.pct}
+                              onChange={(e) => {
+                                const updated = [...customMilestones];
+                                updated[i] = { ...updated[i], pct: Number(e.target.value) };
+                                setCustomMilestones(updated);
+                              }}
+                              className="w-12 bg-transparent border-b border-white/10 text-white text-xs text-right focus:outline-none focus:border-[#78c8ff] py-0.5"
+                            />
+                            <span className="text-white/30">%</span>
+                          </div>
+                        ) : (
+                          <span className="text-white/40">{m.pct}%</span>
+                        )}
+                        <span className="font-mono font-bold text-white">${val.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {scheduleType === 'custom' && (
+                <div className="flex gap-2 mt-3 pt-3 border-t border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => setCustomMilestones([...customMilestones, { label: 'New Milestone', pct: 10 }])}
+                    className="text-[10px] bg-white/5 hover:bg-white/10 text-white/50 px-3 py-1.5 rounded-lg border border-white/10 transition-colors font-bold"
+                  >
+                    + Add Milestone
+                  </button>
+                  {customMilestones.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setCustomMilestones(customMilestones.slice(0, -1))}
+                      className="text-[10px] bg-white/5 hover:bg-red-500/20 text-white/50 hover:text-red-400 px-3 py-1.5 rounded-lg border border-white/10 hover:border-red-500/30 transition-colors font-bold ml-auto"
+                    >
+                      - Remove Last
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
