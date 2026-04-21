@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
-import { FileText, Download, Send, CheckCircle2, Copy, ExternalLink, Loader2, RefreshCw } from "lucide-react";
+import { FileText, Download, Send, CheckCircle2, Copy, ExternalLink, Loader2, RefreshCw, Pencil } from "lucide-react";
+import QuoteEditorModal from "../../components/admin/QuoteEditorModal";
 
 export default function ProposalsLibrary() {
   const { toast } = useToast();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [editingQuote, setEditingQuote] = useState<any>(null);
 
   useEffect(() => {
     fetchQuotes();
@@ -217,9 +219,14 @@ export default function ProposalsLibrary() {
                       )}
                     </>
                   ) : (
-                    <button onClick={() => handleResend(quote)} disabled={resendingId === quote.id} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-5 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50">
-                      {resendingId === quote.id ? <Loader2 size={16} className="animate-spin" /> : <><Send size={16} /> Remind</>}
-                    </button>
+                    <>
+                      <button onClick={() => setEditingQuote(quote)} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-4 py-3 bg-[#78c8ff]/10 hover:bg-[#78c8ff]/20 text-[#78c8ff] font-bold rounded-xl border border-[#78c8ff]/20 transition-colors">
+                        <Pencil size={16} /> Edit & Re-send
+                      </button>
+                      <button onClick={() => handleResend(quote)} disabled={resendingId === quote.id} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-5 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50">
+                        {resendingId === quote.id ? <Loader2 size={16} className="animate-spin" /> : <><Send size={16} /> Remind</>}
+                      </button>
+                    </>
                   )}
                 </div>
 
@@ -229,6 +236,14 @@ export default function ProposalsLibrary() {
         )}
 
       </div>
+
+      {editingQuote && (
+        <QuoteEditorModal 
+          quote={editingQuote} 
+          onClose={() => setEditingQuote(null)} 
+          onUpdate={fetchQuotes} 
+        />
+      )}
     </div>
   );
 }
