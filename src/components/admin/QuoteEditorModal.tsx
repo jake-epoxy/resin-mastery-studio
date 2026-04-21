@@ -2,12 +2,22 @@ import { useState, useEffect } from "react";
 import { X, Send, Save, Loader2, Eye, RefreshCw } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
+const SCHEDULE_PRESETS: Record<string, { name: string; emoji: string; desc: string; milestones: { label: string; pct: number }[] }> = {
+  '50_50': { name: '50 / 50', emoji: '⚖️', desc: '50% deposit, balance on completion', milestones: [{ label: 'Material Deposit', pct: 50 }, { label: 'Balance Due on Completion', pct: 50 }] },
+  '100_upfront': { name: '100% Upfront', emoji: '💰', desc: 'Full payment before work begins', milestones: [{ label: 'Full Payment Before Start', pct: 100 }] },
+  'staggered': { name: '20 / 40 / 40', emoji: '📊', desc: '20% deposit, 40% at start, 40% on completion', milestones: [{ label: 'Booking Deposit', pct: 20 }, { label: 'Due When Work Begins', pct: 40 }, { label: 'Balance Due on Completion', pct: 40 }] },
+};
 
 export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
   const { toast } = useToast();
   const [serviceType, setServiceType] = useState(quote?.config?.service_type || "");
   const [amount, setAmount] = useState(quote?.total_amount?.toString() || "");
-  const [depositPct, setDepositPct] = useState(quote?.config?.deposit_pct?.toString() || "50");
+  
+  // Payment Schedule State
+  const initialScheduleType = quote?.config?.payment_schedule?.type || '50_50';
+  const [scheduleType, setScheduleType] = useState(initialScheduleType);
+  const activeMilestones = quote?.config?.payment_schedule?.milestones || SCHEDULE_PRESETS[initialScheduleType]?.milestones || SCHEDULE_PRESETS['50_50'].milestones;
+
   const [legalTerms, setLegalTerms] = useState(quote?.config?.legal_terms || "");
   const [isSaving, setIsSaving] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -22,10 +32,15 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
     else setIsSaving(true);
 
     try {
+      const selectedMilestones = SCHEDULE_PRESETS[scheduleType]?.milestones || activeMilestones;
       const updatedConfig = {
         ...quote.config,
         service_type: serviceType,
-        deposit_pct: Number(depositPct),
+        deposit_pct: selectedMilestones[0]?.pct || 50,
+        payment_schedule: {
+          type: scheduleType,
+          milestones: selectedMilestones
+        },
         legal_terms: legalTerms
       };
 
@@ -156,17 +171,18 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
                   />
                 </div>
               </div>
-              <div className="w-28">
-                <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Deposit</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={depositPct}
-                    onChange={(e) => setDepositPct(e.target.value)}
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#78c8ff] outline-none transition"
-                  />
-                  <span className="absolute right-4 top-3 text-white/40">%</span>
-                </div>
+              <div className="flex-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Payment Terms</label>
+                <select
+                  value={scheduleType}
+                  onChange={(e) => setScheduleType(e.target.value)}
+                  className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#78c8ff] outline-none transition appearance-none"
+                >
+                  <option value="custom" disabled>Custom/Active</option>
+                  {Object.entries(SCHEDULE_PRESETS).map(([key, preset]) => (
+                    <option key={key} value={key}>{preset.name} ({preset.desc})</option>
+                  ))}
+                </select>
               </div>
             </div>
 
