@@ -271,7 +271,7 @@ export default function QuoteGenerator() {
     }
   }
 
-  async function uploadFileToSupabase(file: File, folder: 'logos' | 'contracts') {
+  async function uploadFileToSupabase(file: File, folder: 'logos' | 'contracts' | 'mockups') {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 

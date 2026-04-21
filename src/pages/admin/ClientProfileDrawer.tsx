@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import QuoteEditorModal from "../../components/admin/QuoteEditorModal";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Phone, Mail, Trash2, Save, FileText, ExternalLink, Copy, ChevronDown, CheckCircle, Pencil, Send, Banknote } from "lucide-react";
 
 export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) {
   const { toast } = useToast();
