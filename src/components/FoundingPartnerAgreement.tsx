@@ -98,12 +98,21 @@ export const FoundingPartnerAgreement = () => {
         const imgData = canvas.toDataURL('image/jpeg', 0.9);
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
-        // If it's taller than one page, jsPDF handles it if we just add the image, 
-        // but it might cut off. Since it's scaled to 800px, it should fit on 1-2 pages.
-        // For simplicity, we just dump it on one long page or let it scale.
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        let heightLeft = pdfHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - pdfHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+          heightLeft -= pageHeight;
+        }
         
         pdfBase64 = pdf.output('datauristring').split(',')[1];
         pdf.save(`Founding_Partner_Agreement_${formData.fullName.replace(/\s+/g, '_')}.pdf`);
