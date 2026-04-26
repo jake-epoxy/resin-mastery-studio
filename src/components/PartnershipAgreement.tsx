@@ -9,6 +9,8 @@ export const PartnershipAgreement = () => {
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [acceptedRoute, setAcceptedRoute] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [capturedSig, setCapturedSig] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
   // Form State
@@ -53,6 +55,11 @@ export const PartnershipAgreement = () => {
 
     try {
       const signatureData = sigCanvas.current.getCanvas().toDataURL('image/png');
+      setCapturedSig(signatureData);
+      setIsCapturing(true);
+      
+      // Wait a tick for React to swap the canvas for the <img> tag
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // 1. Generate PDF
       let pdfBase64 = '';
@@ -127,6 +134,7 @@ export const PartnershipAgreement = () => {
       console.error(err);
       setErrorMsg(err.message || 'An error occurred while signing.');
     } finally {
+      setIsCapturing(false);
       setIsSubmitting(false);
     }
   };
@@ -260,17 +268,21 @@ export const PartnershipAgreement = () => {
               </button>
             </div>
             
-            <div className="bg-white rounded-xl border border-slate-700 overflow-hidden relative shadow-inner">
-              <SignatureCanvas 
-                ref={sigCanvas}
-                penColor="black"
-                canvasProps={{ className: 'w-full h-48 cursor-crosshair bg-white' }}
-              />
-              {!sigCanvas.current?.isEmpty() && (
-                <div className="absolute bottom-2 left-4 text-xs text-slate-400 uppercase font-bold">
+            <div className="bg-white rounded-xl border border-slate-700 overflow-hidden relative shadow-inner h-48 w-full flex items-center justify-center">
+              {isCapturing && capturedSig ? (
+                <img src={capturedSig} alt="Digital Signature" className="max-w-full max-h-full object-contain" />
+              ) : (
+                <SignatureCanvas 
+                  ref={sigCanvas}
+                  penColor="black"
+                  canvasProps={{ className: 'w-full h-48 cursor-crosshair bg-white' }}
+                />
+              )}
+              {(!isCapturing && !sigCanvas.current?.isEmpty()) || (isCapturing && capturedSig) ? (
+                <div className="absolute bottom-2 left-4 text-xs text-slate-400 uppercase font-bold pointer-events-none">
                   Signed: {new Date().toLocaleDateString()}
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
 
