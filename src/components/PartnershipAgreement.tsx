@@ -59,7 +59,9 @@ export const PartnershipAgreement = () => {
       if (contractRef.current) {
         const canvas = await html2canvas(contractRef.current, { 
           scale: 2,
-          backgroundColor: '#020617' // slate-950
+          backgroundColor: '#0f172a', // slate-900 background to match the theme
+          logging: false,
+          useCORS: true
         });
         const imgData = canvas.toDataURL('image/jpeg', 0.8);
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -166,6 +168,39 @@ export const PartnershipAgreement = () => {
           </div>
 
           <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 space-y-6">
+            <h3 className="text-xl font-semibold text-white border-b border-slate-800 pb-2">Contract Terms</h3>
+            
+            {selectedRoute === 'subcontractor' ? (
+              <div className="space-y-4 text-slate-300 text-sm">
+                <p><strong>Route:</strong> Traditional Subcontractor</p>
+                <p><strong>Compensation:</strong> $650 Flat Rate</p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>Base travel and assistance compensation.</li>
+                  <li>Clear, defined hourly/labor expectations.</li>
+                  <li className="text-red-400">NO authorization to film or photograph the project.</li>
+                  <li className="text-red-400">NO rights to use the completed floor for personal or business advertising.</li>
+                  <li className="text-red-400">EXCLUDED from the Resin Academics Mentorship Program.</li>
+                </ul>
+              </div>
+            ) : (
+              <div className="space-y-4 text-slate-300 text-sm">
+                <p><strong>Route:</strong> Resin Academics Partner</p>
+                <p><strong>Compensation:</strong> $400 Stipend + $5,000 Mentorship Value</p>
+                <ul className="list-disc pl-5 space-y-2 text-emerald-400/90">
+                  <li>Base travel and assistance stipend ($400).</li>
+                  <li className="font-bold text-white">FULL 1-on-1 Resin Academics Mentorship & Training Experience.</li>
+                  <li>FULL authorization to document, film, and photograph the entire installation.</li>
+                  <li>FULL commercial rights to advertise this premium floor in your own portfolio to secure high-paying epoxy clients.</li>
+                </ul>
+              </div>
+            )}
+            
+            <p className="text-xs text-slate-500 italic mt-4">
+              I acknowledge and agree to abide by the media, commercial rights, and compensation terms outlined above for the Cleveland Installation.
+            </p>
+          </div>
+
+          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 space-y-6">
             <h3 className="text-xl font-semibold text-white border-b border-slate-800 pb-2">Contractor Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -225,21 +260,18 @@ export const PartnershipAgreement = () => {
               </button>
             </div>
             
-            <div className="bg-slate-950 rounded-xl border border-slate-800 overflow-hidden relative" data-html2canvas-ignore="false">
+            <div className="bg-white rounded-xl border border-slate-700 overflow-hidden relative shadow-inner">
               <SignatureCanvas 
                 ref={sigCanvas}
-                penColor="white"
-                canvasProps={{ className: 'w-full h-48 cursor-crosshair' }}
+                penColor="black"
+                canvasProps={{ className: 'w-full h-48 cursor-crosshair bg-white' }}
               />
               {!sigCanvas.current?.isEmpty() && (
-                <div className="absolute bottom-2 left-4 text-xs text-slate-600 uppercase font-bold">
+                <div className="absolute bottom-2 left-4 text-xs text-slate-400 uppercase font-bold">
                   Signed: {new Date().toLocaleDateString()}
                 </div>
               )}
             </div>
-            <p className="text-xs text-slate-500 text-center">
-              By signing above, you agree to the terms outlined in the {selectedRoute === 'partner' ? 'Resin Academics Partner' : 'Traditional Subcontractor'} agreement.
-            </p>
           </div>
 
           {errorMsg && (
