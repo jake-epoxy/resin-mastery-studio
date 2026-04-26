@@ -26,6 +26,7 @@ export const FoundingPartnerAgreement = () => {
 
   const sigCanvas = useRef<any>(null);
   const contractRef = useRef<HTMLDivElement>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -66,17 +67,28 @@ export const FoundingPartnerAgreement = () => {
       
       // 1. Generate PDF
       let pdfBase64 = '';
-      if (contractRef.current) {
-        const canvas = await html2canvas(contractRef.current, { 
+      if (pdfRef.current) {
+        // Temporarily make it visible for html2canvas to capture reliably
+        pdfRef.current.style.display = 'block';
+        
+        const canvas = await html2canvas(pdfRef.current, { 
           scale: 2,
-          backgroundColor: '#0a0a0a', // very dark background for VIP
+          backgroundColor: '#ffffff',
           logging: false,
-          useCORS: true
+          useCORS: true,
+          windowWidth: 800
         });
-        const imgData = canvas.toDataURL('image/jpeg', 0.8);
+        
+        pdfRef.current.style.display = 'none';
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.9);
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        // If it's taller than one page, jsPDF handles it if we just add the image, 
+        // but it might cut off. Since it's scaled to 800px, it should fit on 1-2 pages.
+        // For simplicity, we just dump it on one long page or let it scale.
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
         
         pdfBase64 = pdf.output('datauristring').split(',')[1];
@@ -384,6 +396,82 @@ export const FoundingPartnerAgreement = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* Hidden PDF Render Target - Strictly for professional B&W document export */}
+      <div 
+        ref={pdfRef} 
+        className="fixed top-[200vh] left-0 w-[800px] bg-white text-black p-12 font-serif z-[-100] hidden"
+      >
+        <div className="text-center mb-8 border-b-2 border-black pb-6">
+          <h1 className="text-3xl font-bold uppercase tracking-wider mb-2">Resin Academics</h1>
+          <h2 className="text-xl font-bold text-gray-800">Founding Partner & Brand Ambassador Agreement</h2>
+          <p className="mt-4 text-sm font-sans text-gray-600">Effective Date: {formData.date} &nbsp;|&nbsp; Partner: Jason Waller</p>
+        </div>
+
+        <div className="space-y-6 font-sans text-sm leading-relaxed text-gray-900">
+          <div>
+            <h3 className="font-bold text-lg font-serif mb-2 border-b border-gray-300 pb-1">Section 1: The Partnership Status</h3>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>This agreement acknowledges Jason Waller's initial <strong>$3,500 investment</strong> into the organization, granting him lifetime status as a Resin Academics Founding Partner.</li>
+              <li>We confirm that as a Founding Partner, Jason Waller retains <strong>100% of the profits</strong> for any independent epoxy jobs he secures and completes on his own. Resin Academics claims absolutely no royalties or percentages on his independent physical labor.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-lg font-serif mb-2 border-b border-gray-300 pb-1">Section 2: Rights & Authorizations</h3>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Jason Waller is fully authorized to represent himself publicly and professionally as a <strong>Resin Academics Certified Partner</strong>.</li>
+              <li>Jason retains full commercial rights to use photos and videos of all collaborative floors (including the Cleveland, Ohio project) within his personal portfolio and marketing materials to secure his own future clients.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-lg font-serif mb-2 border-b border-gray-300 pb-1">Section 3: Ambassador Duties & The Value Exchange</h3>
+            <p className="italic mb-2">In exchange for royalty-free independence and grandfathered benefits, Jason Waller agrees to act as a Brand Ambassador for Resin Academics under the following terms:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>Content Collaboration:</strong> Jason agrees to actively participate on-camera during collaborative jobs, allowing Resin Academics full rights in perpetuity to use his likeness, voice, and footage for marketing, social media, and course material.</li>
+              <li><strong>Network Collaboration:</strong> Jason agrees to leverage his high-level network (including relationships such as the Mike Tyson connection) to secure high-profile collaborative floors, which will be executed jointly alongside Resin Academics.</li>
+              <li><strong>Software Adoption:</strong> Jason agrees to utilize "Resin OS" as his primary operational software, allowing Resin Academics to utilize his success and business growth as an official public Case Study.</li>
+            </ul>
+          </div>
+
+          <div className="pt-8 mt-8 border-t-2 border-black">
+            <h3 className="font-bold text-lg font-serif mb-4">Section 4: Execution</h3>
+            <p className="mb-8">By signing below, both parties acknowledge and agree to the terms outlined in this document.</p>
+            
+            <div className="grid grid-cols-2 gap-8 mb-8">
+              <div>
+                <p className="font-bold mb-1">Full Legal Name:</p>
+                <p className="p-2 border-b border-gray-400 bg-gray-50">{formData.fullName || ' '}</p>
+              </div>
+              <div>
+                <p className="font-bold mb-1">Email Address:</p>
+                <p className="p-2 border-b border-gray-400 bg-gray-50">{formData.email || ' '}</p>
+              </div>
+              <div>
+                <p className="font-bold mb-1">Phone Number:</p>
+                <p className="p-2 border-b border-gray-400 bg-gray-50">{formData.phone || ' '}</p>
+              </div>
+              <div>
+                <p className="font-bold mb-1">Date:</p>
+                <p className="p-2 border-b border-gray-400 bg-gray-50">{formData.date}</p>
+              </div>
+            </div>
+
+            <div className="mt-12">
+              <p className="font-bold mb-4 text-gray-600 uppercase tracking-widest text-xs">Digital Signature</p>
+              <div className="w-full h-40 border-2 border-gray-300 bg-gray-50 flex items-center justify-center">
+                {capturedSig ? (
+                  <img src={capturedSig} alt="Signature" className="max-w-full max-h-full object-contain" />
+                ) : (
+                  <span className="text-gray-300 italic">No signature provided</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">Digitally Signed by {formData.fullName || 'Signer'}</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
