@@ -27,6 +27,7 @@ export const FoundingPartnerAgreement = () => {
   const sigCanvas = useRef<any>(null);
   const contractRef = useRef<HTMLDivElement>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
+  const pdfSigImgRef = useRef<HTMLImageElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -62,8 +63,13 @@ export const FoundingPartnerAgreement = () => {
       setCapturedSig(signatureData);
       setIsCapturing(true);
       
-      // Wait a tick for React to swap the canvas for the <img> tag
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Directly inject into the PDF DOM node to bypass React's async rendering cycle
+      if (pdfSigImgRef.current) {
+        pdfSigImgRef.current.src = signatureData;
+      }
+      
+      // Wait a tick for image to decode in the browser
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       // 1. Generate PDF
       let pdfBase64 = '';
@@ -461,12 +467,8 @@ export const FoundingPartnerAgreement = () => {
 
             <div className="mt-12">
               <p className="font-bold mb-4 text-gray-600 uppercase tracking-widest text-xs">Digital Signature</p>
-              <div className="w-full h-40 border-2 border-gray-300 bg-gray-50 flex items-center justify-center">
-                {capturedSig ? (
-                  <img src={capturedSig} alt="Signature" className="max-w-full max-h-full object-contain" />
-                ) : (
-                  <span className="text-gray-300 italic">No signature provided</span>
-                )}
+              <div className="w-full h-40 border-2 border-gray-300 bg-gray-50 flex items-center justify-center p-4">
+                <img ref={pdfSigImgRef} alt="Signature" className="max-w-full max-h-full object-contain" />
               </div>
               <p className="text-xs text-gray-500 mt-2">Digitally Signed by {formData.fullName || 'Signer'}</p>
             </div>
