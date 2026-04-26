@@ -6,6 +6,10 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
 export const FoundingPartnerAgreement = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
+  const [accessError, setAccessError] = useState(false);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [capturedSig, setCapturedSig] = useState<string | null>(null);
@@ -150,6 +154,49 @@ export const FoundingPartnerAgreement = () => {
               A copy of the Founding Partner Agreement has been securely logged and emailed to you and Resin Academics. Let's build an empire.
             </p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+        
+        <div className="max-w-md w-full bg-[#0a0a0a] border border-white/10 rounded-3xl p-10 space-y-8 relative z-10 shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <div className="text-center space-y-3">
+            <div className="inline-block px-4 py-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 mb-2">
+              <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Classified</span>
+            </div>
+            <h2 className="text-2xl font-serif font-bold text-white">VIP Access Verification</h2>
+            <p className="text-slate-400 text-sm">Please enter your authorized access code to view the Founding Partner agreement.</p>
+          </div>
+
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (accessCode.toUpperCase() === 'TYSON26' || accessCode.toUpperCase() === 'FOUNDER') {
+              setIsAuthenticated(true);
+            } else {
+              setAccessError(true);
+              setTimeout(() => setAccessError(false), 2000);
+            }
+          }} className="space-y-4">
+            <input 
+              type="password"
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
+              placeholder="ENTER CODE"
+              className={`w-full bg-[#050505] border ${accessError ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-4 text-center text-white font-bold tracking-[0.3em] uppercase focus:outline-none focus:border-amber-500 transition-colors`}
+            />
+            <button 
+              type="submit"
+              className="w-full py-4 rounded-xl font-bold text-[#050505] bg-amber-500 hover:bg-amber-400 transition-colors uppercase tracking-wider text-sm"
+            >
+              Unlock Document
+            </button>
+          </form>
         </div>
       </div>
     );
