@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { ShieldAlert, Users, TrendingUp, Building, Download, Share2 } from "lucide-react";
+import { ShieldAlert, Users, TrendingUp, Building, Download, Share2, FileSignature } from "lucide-react";
 
 export default function MasterControl() {
   const [installers, setInstallers] = useState<any[]>([]);
+  const [officialPartners, setOfficialPartners] = useState<any[]>([]);
   const [totalClients, setTotalClients] = useState(0);
   const [totalGmv, setTotalGmv] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -61,6 +62,20 @@ export default function MasterControl() {
 
     if (count !== undefined && count !== null) setTotalClients(count);
     if (gmv !== undefined && gmv !== null) setTotalGmv(gmv);
+
+    // Fetch Official Partners
+    try {
+      const { data: partnersData, error: partnersErr } = await supabase
+        .from('official_partners')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (!partnersErr && partnersData) {
+        setOfficialPartners(partnersData);
+      }
+    } catch (e) {
+      console.log("Official partners table might not exist yet", e);
+    }
 
     } catch (err) {
       console.error(err);
@@ -150,6 +165,69 @@ export default function MasterControl() {
           </div>
         </div>
       )}
+
+      {/* Official Partners Library */}
+      <div className="mb-12">
+        <h2 className="text-xl font-space font-bold text-white mb-6 flex items-center gap-3">
+          <FileSignature size={20} className="text-amber-500" />
+          Official Partners Library
+          {officialPartners.length > 0 && (
+            <span className="text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2.5 py-1 rounded-full">
+              {officialPartners.length} signed
+            </span>
+          )}
+        </h2>
+        
+        {officialPartners.length === 0 ? (
+          <div className="bg-[#111] border border-white/10 p-6 rounded-2xl text-center">
+             <p className="text-white/40 text-sm">No official partner agreements signed yet.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             {officialPartners.map((partner) => (
+                <div key={partner.id} className="bg-[#0a0a0a] border border-amber-500/20 rounded-2xl p-5 flex flex-col justify-between hover:border-amber-500/40 transition-colors">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-bold text-white text-lg">{partner.full_name}</h3>
+                      <p className="text-xs text-white/50">{partner.company_name || 'No Company listed'}</p>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                      partner.selected_route === 'partner' 
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 
+                        : 'bg-slate-800 text-slate-300 border border-slate-700'
+                    }`}>
+                      {partner.selected_route === 'partner' ? 'Resin Academics Partner' : 'Subcontractor'}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-xs text-white/60 mb-4 border-t border-white/5 pt-4">
+                    <div>
+                      <p className="font-bold text-white/40 uppercase tracking-wider text-[9px] mb-1">Email</p>
+                      <p>{partner.email}</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-white/40 uppercase tracking-wider text-[9px] mb-1">Phone</p>
+                      <p>{partner.phone || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-end border-t border-white/5 pt-4 mt-auto">
+                    <p className="text-[10px] text-white/30">
+                      Signed: {new Date(partner.created_at).toLocaleString()}
+                    </p>
+                    <div className="h-8 w-24 bg-white/5 rounded flex items-center justify-center overflow-hidden">
+                      {partner.signature_data ? (
+                        <img src={partner.signature_data} alt="Signature" className="h-full object-contain filter invert opacity-70" />
+                      ) : (
+                        <span className="text-[8px] text-white/30 uppercase">No Sig</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+             ))}
+          </div>
+        )}
+      </div>
 
       {/* Affiliate Referrals Panel */}
       {(() => {

@@ -13,6 +13,8 @@ import LeadCaptureWidget from "./pages/LeadCaptureWidget";
 import ReviewPortal from "./pages/ReviewPortal";
 import EmbedWidget from "./pages/EmbedWidget";
 import AffiliateLanding from "./pages/AffiliateLanding";
+import PartnershipAgreement from "./components/PartnershipAgreement";
+
 
 // SaaS Admin Routes
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -56,6 +58,7 @@ const App = () => (
           
           {/* Affiliate Referral Pages */}
           <Route path="/ref/:affiliateSlug" element={<AffiliateLanding />} />
+          <Route path="/NikkiGivens" element={<PartnershipAgreement />} />
           
           {/* Admin SaaS Portal */}
           <Route path="/admin" element={<AdminLayout />}>
