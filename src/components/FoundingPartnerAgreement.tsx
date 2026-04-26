@@ -74,17 +74,25 @@ export const FoundingPartnerAgreement = () => {
       // 1. Generate PDF
       let pdfBase64 = '';
       if (pdfRef.current) {
-        // Temporarily make it visible for html2canvas to capture reliably
+        // Position it at the top left but behind everything so the browser physically paints it
         pdfRef.current.style.display = 'block';
+        pdfRef.current.style.position = 'absolute';
+        pdfRef.current.style.top = '0';
+        pdfRef.current.style.left = '0';
+        pdfRef.current.style.zIndex = '-50';
+        
+        // Wait a tiny bit longer to ensure browser paints the newly visible DOM node
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         const canvas = await html2canvas(pdfRef.current, { 
           scale: 2,
           backgroundColor: '#ffffff',
-          logging: false,
+          logging: true, // helpful if debugging is needed in console
           useCORS: true,
           windowWidth: 800
         });
         
+        // Hide it again
         pdfRef.current.style.display = 'none';
 
         const imgData = canvas.toDataURL('image/jpeg', 0.9);
@@ -363,14 +371,18 @@ export const FoundingPartnerAgreement = () => {
               </button>
             </div>
             
-            <div className="bg-white rounded-xl border-4 border-[#050505] overflow-hidden relative shadow-inner h-48 w-full flex items-center justify-center ring-1 ring-white/10">
+            <div className="bg-white rounded-xl border-4 border-[#050505] overflow-hidden relative shadow-inner flex items-center justify-center ring-1 ring-white/10" style={{ height: '200px' }}>
               {isCapturing && capturedSig ? (
                 <img src={capturedSig} alt="Digital Signature" className="max-w-full max-h-full object-contain" />
               ) : (
                 <SignatureCanvas 
                   ref={sigCanvas}
                   penColor="black"
-                  canvasProps={{ className: 'w-full h-full cursor-crosshair bg-white' }}
+                  canvasProps={{ 
+                    width: 600, 
+                    height: 200, 
+                    className: 'cursor-crosshair bg-white' 
+                  }}
                 />
               )}
               {(!isCapturing && !sigCanvas.current?.isEmpty()) || (isCapturing && capturedSig) ? (
@@ -407,7 +419,7 @@ export const FoundingPartnerAgreement = () => {
       {/* Hidden PDF Render Target - Strictly for professional B&W document export */}
       <div 
         ref={pdfRef} 
-        className="fixed top-[200vh] left-0 w-[800px] bg-white text-black p-12 font-serif z-[-100] hidden"
+        className="w-[800px] bg-white text-black p-12 font-serif hidden"
       >
         <div className="text-center mb-8 border-b-2 border-black pb-6">
           <h1 className="text-3xl font-bold uppercase tracking-wider mb-2">Resin Academics</h1>
