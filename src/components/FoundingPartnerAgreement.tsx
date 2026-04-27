@@ -15,6 +15,7 @@ export const FoundingPartnerAgreement = () => {
   const [capturedSig, setCapturedSig] = useState<string | null>(null);
   const [isAccepted, setIsAccepted] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [pdfData, setPdfData] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -115,7 +116,7 @@ export const FoundingPartnerAgreement = () => {
         }
         
         pdfBase64 = pdf.output('datauristring').split(',')[1];
-        pdf.save(`Founding_Partner_Agreement_${formData.fullName.replace(/\s+/g, '_')}.pdf`);
+        setPdfData(pdfBase64);
       }
 
       // 2. Save to Supabase (Official Partners)
@@ -185,9 +186,22 @@ export const FoundingPartnerAgreement = () => {
             Welcome to the inner circle. Your status as a <span className="text-amber-400 font-bold">Founding Partner</span> is officially active.
           </p>
           <div className="pt-8 mt-4 border-t border-white/10">
-            <p className="text-slate-500 text-sm">
+            <p className="text-slate-500 text-sm mb-6">
               A copy of the Founding Partner Agreement has been securely logged and emailed to you and Resin Academics. Let's build an empire.
             </p>
+            {pdfData && (
+              <button 
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = `data:application/pdf;base64,${pdfData}`;
+                  link.download = `Founding_Partner_Agreement_${formData.fullName.replace(/\s+/g, '_')}.pdf`;
+                  link.click();
+                }}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-amber-500 font-bold tracking-wider uppercase text-sm transition-colors"
+              >
+                Download PDF Copy
+              </button>
+            )}
           </div>
         </div>
       </div>

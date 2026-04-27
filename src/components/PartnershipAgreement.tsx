@@ -12,6 +12,7 @@ export const PartnershipAgreement = () => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [capturedSig, setCapturedSig] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [pdfData, setPdfData] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -78,9 +79,7 @@ export const PartnershipAgreement = () => {
         
         // Get PDF as base64 for email attachment
         pdfBase64 = pdf.output('datauristring').split(',')[1];
-        
-        // Also download locally
-        pdf.save(`Partnership_Agreement_${formData.fullName.replace(/\s+/g, '_')}.pdf`);
+        setPdfData(pdfBase64);
       }
 
       // 2. Save to Supabase (Official Partners)
@@ -154,9 +153,22 @@ export const PartnershipAgreement = () => {
             You have selected the <span className="text-amber-400 font-semibold">{acceptedRoute === 'partner' ? 'Resin Academics Partner' : 'Traditional Subcontractor'}</span> route.
           </p>
           <div className="pt-8 mt-4 border-t border-slate-800/60">
-            <p className="text-slate-500 text-sm">
+            <p className="text-slate-500 text-sm mb-6">
               A copy of these terms has been securely logged and emailed to you and Pourmastersllc@gmail.com. We look forward to a successful project together!
             </p>
+            {pdfData && (
+              <button 
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = `data:application/pdf;base64,${pdfData}`;
+                  link.download = `Agreement_${formData.fullName.replace(/\s+/g, '_')}.pdf`;
+                  link.click();
+                }}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-emerald-400 font-bold tracking-wider uppercase text-sm transition-colors"
+              >
+                Download PDF Copy
+              </button>
+            )}
           </div>
         </div>
       </div>
