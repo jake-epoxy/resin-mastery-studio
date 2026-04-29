@@ -316,6 +316,7 @@ export const PartnershipAgreement = () => {
           </button>
         </div>
       </div>
+      </div>
       
       {/* Hidden PDF template */}
       <div className="absolute top-0 left-0 w-[800px] opacity-0 pointer-events-none z-[-1] bg-white text-slate-900 font-sans p-12" ref={pdfRef}>
