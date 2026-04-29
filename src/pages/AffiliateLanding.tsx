@@ -240,7 +240,7 @@ export default function AffiliateLanding() {
               {/* Social proof stats */}
               <div className="flex gap-8 mt-12 pt-8 border-t border-white/10">
                 {[
-                  { value: "$97", label: "/ month after trial" },
+                  { value: "$39", label: "/ month after trial" },
                   { value: "7", label: "day free trial" },
                   { value: "30s", label: "to generate a quote" },
                 ].map((stat, i) => (
@@ -679,7 +679,7 @@ export default function AffiliateLanding() {
 
               <div className="text-center mb-8 pb-8 border-b border-white/10">
                 <div className="text-5xl font-bold text-white mb-1">
-                  $97<span className="text-xl text-white/40 font-normal">/mo</span>
+                  $39<span className="text-xl text-white/40 font-normal">/mo</span>
                 </div>
                 <p
                   className="text-sm font-bold tracking-widest uppercase mt-2"

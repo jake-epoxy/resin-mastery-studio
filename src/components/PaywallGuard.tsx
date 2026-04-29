@@ -88,7 +88,7 @@ export default function PaywallGuard({ userId, userEmail }: PaywallGuardProps) {
                  {agreedToTerms && <CheckCircle2 size={16} className="text-black" />}
                </div>
                <p className="text-sm text-white/80 text-left leading-relaxed">
-                 I understand my card will <strong>not</strong> be charged today. After my 7-day free trial concludes, I will be securely billed $97/month. I can easily cancel anytime from my dashboard.
+                 I understand my card will <strong>not</strong> be charged today. After my 7-day free trial concludes, I will be securely billed $39/month. I can easily cancel anytime from my dashboard.
                </p>
             </div>
 
@@ -104,7 +104,7 @@ export default function PaywallGuard({ userId, userEmail }: PaywallGuardProps) {
             </button>
             
             <div className="flex flex-col items-center justify-center gap-2 mt-6 text-xs text-white/40 font-mono text-center">
-              <span className="text-emerald-400 font-bold">$0 due today. Then $97/mo.</span>
+              <span className="text-emerald-400 font-bold">$0 due today. Then $39/mo.</span>
               <span className="mt-1">Cancel anytime before day 7 via dashboard to avoid being charged.</span>
               <div className="flex items-center gap-2 mt-3 text-white/30">
                 <ShieldCheck size={14} className="text-emerald-500/50" /> Secured natively by Stripe

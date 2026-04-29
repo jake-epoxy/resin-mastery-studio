@@ -35,7 +35,7 @@ FUNNEL DETECTION:
 - Link: mud2marble.xyz
 
 💻 RESIN OS (app, software, subscription, resin os, ai visualizer, crm, business tool)
-- Free to try, Pro $97/month
+- Free to try, Pro $39/month
 - Link: resinacademics.com
 
 🤝 GENERAL / COMPLIMENTS

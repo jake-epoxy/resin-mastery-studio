@@ -152,7 +152,7 @@ export default function AdminLayout() {
               
               <div className="mt-8 pt-6 border-t border-white/5 w-full">
                 <p className="text-sm text-zinc-500">
-                  Don't have an account? <button type="button" onClick={() => setIsSignUp(true)} className="text-[#78c8ff] hover:underline font-bold">Subscribe ($97/mo)</button>
+                  Don't have an account? <button type="button" onClick={() => setIsSignUp(true)} className="text-[#78c8ff] hover:underline font-bold">Subscribe ($39/mo)</button>
                 </p>
               </div>
             </>
