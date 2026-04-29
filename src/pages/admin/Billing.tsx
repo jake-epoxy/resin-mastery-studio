@@ -28,7 +28,7 @@ export default function Billing() {
 
         <div className="text-center mb-8">
           <div className="text-5xl font-space font-bold text-white mb-2">$39<span className="text-xl text-white/50 font-normal">/mo</span></div>
-          <p className="text-white/50 text-emerald-400 font-bold mb-1">Includes 7-Day Free Trial</p>
+
           <p className="text-white/40 text-sm">Cancel anytime. No hidden fees.</p>
         </div>
 

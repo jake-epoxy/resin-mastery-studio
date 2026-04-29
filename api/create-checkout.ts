@@ -23,7 +23,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         payment_method_types: ['card'],
         line_items: [{ price: 'price_1TRg5uI38c9rHtE9ewIO2H3Z', quantity: 1 }],
         mode: 'subscription',
-        subscription_data: { trial_period_days: 7 },
         client_reference_id: userId,
         customer_email: email,
         success_url: `https://www.resinacademics.com/admin?success=true&session_id={CHECKOUT_SESSION_ID}`,
