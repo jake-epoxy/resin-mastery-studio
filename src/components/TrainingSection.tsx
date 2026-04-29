@@ -32,7 +32,7 @@ const TrainingSection = ({ onEnroll }: TrainingSectionProps) => {
             <Calculator className="w-12 h-12 text-muted-foreground mb-6 group-hover:text-[#78c8ff] transition-colors" strokeWidth={1.2} />
             <h3 className="text-2xl font-display font-bold text-primary mb-1">Platform Access</h3>
             <div className="flex items-baseline gap-2 mb-4">
-              <p className="text-[#78c8ff] text-lg font-display font-bold">$97<span className="text-sm font-medium text-muted-foreground">/mo</span></p>
+              <p className="text-[#78c8ff] text-lg font-display font-bold">$39<span className="text-sm font-medium text-muted-foreground">/mo</span></p>
             </div>
             <p className="text-muted-foreground leading-relaxed mb-6">
               Instant access to our automated Quote Generator, interactive PDF contracts, lead tracking CRM, and the full video Mastery Vault.
