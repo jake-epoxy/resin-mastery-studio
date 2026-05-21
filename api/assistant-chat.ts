@@ -540,11 +540,23 @@ CRITICAL RULE 5: VERY IMPORTANT! If you are regenerating or updating a quote dra
             toolResult = `Success! ${newClient.first_name} has been added to the CRM successfully.`;
           }
         } else if (functionName === "start_lead_gen_campaign") {
-          const q = encodeURIComponent(functionArgs.search_query || "Car Dealerships");
-          const l = encodeURIComponent(functionArgs.location || "");
-          const link = `/admin/autopilot?query=${q}&location=${l}&auto=true`;
-          
-          toolResult = `Success! Tell the user: "I've configured your new Lead Gen Campaign for ${functionArgs.search_query}. [Launch Campaign Now](${link})"`;
+          try {
+            const { data: profile } = await supabaseAdmin.from('installer_profiles').select('service_pricing').eq('user_id', installerId).single();
+            const settings = typeof profile?.service_pricing === 'string' ? JSON.parse(profile.service_pricing || "{}") : (profile?.service_pricing || {});
+            
+            settings.autopilot_config = {
+              ...(settings.autopilot_config || {}),
+              active: true,
+              query: functionArgs.search_query || "Car Dealerships",
+              location: functionArgs.location || "",
+            };
+
+            await supabaseAdmin.from('installer_profiles').update({ service_pricing: settings }).eq('user_id', installerId);
+            
+            toolResult = `Success! Tell the user: "Done broski! I've fully activated Autonomous Sleep Mode in the background. Tonight at 3:00 AM, I'll start hunting for ${functionArgs.search_query} ${functionArgs.location ? 'in ' + functionArgs.location : ''}, rendering their floors, and firing off quotes."`;
+          } catch (err: any) {
+            toolResult = `Error starting campaign: ${err.message}`;
+          }
         }
 
         // Add tool response to messages
