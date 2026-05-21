@@ -48,31 +48,58 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const config = settings.autopilot_config;
       console.log(`[Sleep Mode] Processing for ${profile.company_name || profile.full_name}. Query: ${config.query}`);
 
-      // 2. Hit Google Places API
+      // 2. Hit Google Places API (With Auto-Rollover)
       const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-      const fullQuery = config.location ? `${config.query} in ${config.location}` : config.query;
+      const FALLBACK_NICHES = ["Car Dealerships", "Warehouses", "Auto Garages", "Gyms", "Restaurants", "Retail Stores", "Salons", "Event Centers"];
       
-      const placesRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': apiKey || '',
-          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.rating,places.websiteUri,places.photos,places.nationalPhoneNumber,places.primaryTypeDisplayName,nextPageToken',
-        },
-        body: JSON.stringify({
-          textQuery: fullQuery,
-          maxResultCount: 20, // Fetch up to 20 leads
-          ...(config.nextPageToken && { pageToken: config.nextPageToken }),
-        }),
-      });
+      let places = [];
+      let placesData: any = {};
+      
+      // We wrap the API call in a loop that can execute up to 2 times.
+      // If the first niche returns 0 results, we rollover to the next niche and fetch immediately.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const fullQuery = config.location ? `${config.query} in ${config.location}` : config.query;
+        
+        const placesRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': apiKey || '',
+            'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.rating,places.websiteUri,places.photos,places.nationalPhoneNumber,places.primaryTypeDisplayName,nextPageToken',
+          },
+          body: JSON.stringify({
+            textQuery: fullQuery,
+            maxResultCount: 20, // Fetch up to 20 leads
+            ...(config.nextPageToken && { pageToken: config.nextPageToken }),
+          }),
+        });
 
-      if (!placesRes.ok) {
-        console.error(`[Sleep Mode] Places API Error for ${profile.id}`);
+        if (placesRes.ok) {
+          placesData = await placesRes.json();
+          places = placesData.places || [];
+        }
+
+        if (places.length > 0) {
+          break; // We found leads, break the attempt loop!
+        } else {
+          // AUTO-ROLLOVER LOGIC: We ran out of leads for this niche.
+          console.log(`[Sleep Mode] Niche exhausted: ${config.query}. Rolling over...`);
+          const currentIndex = FALLBACK_NICHES.indexOf(config.query);
+          const nextIndex = currentIndex !== -1 && currentIndex < FALLBACK_NICHES.length - 1 ? currentIndex + 1 : 0;
+          config.query = FALLBACK_NICHES[nextIndex];
+          config.nextPageToken = null; // Reset pagination for the new niche
+          
+          // Save the new niche to the database so the UI reflects the change
+          settings.autopilot_config.query = config.query;
+          settings.autopilot_config.nextPageToken = null;
+          await supabase.from('installer_profiles').update({ service_pricing: settings }).eq('id', profile.id);
+        }
+      }
+      
+      if (places.length === 0) {
+        console.log(`[Sleep Mode] Could not find any leads even after rollover for ${profile.id}`);
         continue;
       }
-
-      const placesData = await placesRes.json();
-      const places = placesData.places || [];
 
       // Process up to 20 leads per run now that we have Vercel Pro (300s timeout)
       let currentRunPitched = 0;
