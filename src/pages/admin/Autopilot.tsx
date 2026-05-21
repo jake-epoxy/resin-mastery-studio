@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import CalendarManager from "./CalendarManager";
+import { supabase } from "@/lib/supabase";
 
 // Recommended keywords for quick searching
 const RECOMMENDED_BADGES = [
@@ -81,6 +82,52 @@ export default function Autopilot() {
 
   // Carousel Photo Index Map
   const [carouselIndex, setCarouselIndex] = useState<Record<string, number>>({});
+
+  // Sleep Mode
+  const [isSleepModeActive, setIsSleepModeActive] = useState(false);
+  const [profileId, setProfileId] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadProfile() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase.from('installer_profiles').select('*').eq('user_id', user.id).single();
+      if (profile) {
+        setProfileId(profile.id);
+        const settings = typeof profile.service_pricing === 'string' ? JSON.parse(profile.service_pricing || "{}") : (profile.service_pricing || {});
+        if (settings.autopilot_config) {
+          setIsSleepModeActive(settings.autopilot_config.active);
+          if (settings.autopilot_config.query) setQuery(settings.autopilot_config.query);
+          if (settings.autopilot_config.location) setLocation(settings.autopilot_config.location);
+        }
+      }
+    }
+    loadProfile();
+  }, []);
+
+  const handleToggleSleepMode = async () => {
+    if (!profileId) return;
+    const newState = !isSleepModeActive;
+    setIsSleepModeActive(newState);
+    
+    const { data: profile } = await supabase.from('installer_profiles').select('service_pricing').eq('id', profileId).single();
+    const settings = typeof profile?.service_pricing === 'string' ? JSON.parse(profile.service_pricing || "{}") : (profile?.service_pricing || {});
+    
+    settings.autopilot_config = {
+      ...settings.autopilot_config,
+      active: newState,
+      query: query,
+      location: location,
+    };
+
+    await supabase.from('installer_profiles').update({ service_pricing: settings }).eq('id', profileId);
+    
+    if (newState) {
+      toast({ title: "Sleep Mode Activated", description: `We will automatically hunt & pitch "${query}" tonight.` });
+    } else {
+      toast({ title: "Sleep Mode Deactivated", description: "Autonomous queue paused." });
+    }
+  };
 
   // Visualization Modal States
   const [selectedBiz, setSelectedBiz] = useState<Business | null>(null);
@@ -392,6 +439,32 @@ export default function Autopilot() {
                 {badge.label}
               </button>
             ))}
+          </div>
+
+          {/* Autonomous Sleep Mode */}
+          <div className="pt-4 pb-2 border-t border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <Bot size={18} className="text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-white text-sm font-bold">Autonomous Sleep Mode</h3>
+                <p className="text-white/40 text-[10px]">Automatically hunt, render, and pitch leads while you sleep.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleToggleSleepMode}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                isSleepModeActive ? 'bg-blue-500' : 'bg-white/10'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  isSleepModeActive ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
 
           {/* Search Button */}
