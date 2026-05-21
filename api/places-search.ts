@@ -5,7 +5,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { query, location } = req.body;
+  const { query, location, pageToken } = req.body;
 
   if (!query) {
     return res.status(400).json({ error: 'Missing query parameter' });
@@ -25,12 +25,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        // Request the fields we need: id, display name, address, rating, website, photos, phone, type
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.rating,places.websiteUri,places.photos,places.nationalPhoneNumber,places.primaryTypeDisplayName',
+        // Request the fields we need, including nextPageToken
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.rating,places.websiteUri,places.photos,places.nationalPhoneNumber,places.primaryTypeDisplayName,nextPageToken',
       },
       body: JSON.stringify({
         textQuery: fullQuery,
-        maxResultCount: 20, // Max supported is 20 for this endpoint
+        maxResultCount: 20,
+        ...(pageToken && { pageToken }),
       }),
     });
 

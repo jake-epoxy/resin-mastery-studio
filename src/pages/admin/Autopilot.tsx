@@ -75,6 +75,8 @@ export default function Autopilot() {
   const [location, setLocation] = useState(initialLocation);
   const [isScanning, setIsScanning] = useState(false);
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [scanMessageIndex, setScanMessageIndex] = useState(0);
 
   // Carousel Photo Index Map
@@ -124,6 +126,7 @@ export default function Autopilot() {
 
     setIsScanning(true);
     setBusinesses([]);
+    setNextPageToken(null);
     
     try {
       const response = await fetch('/api/places-search', {
@@ -138,6 +141,7 @@ export default function Autopilot() {
         toast({ title: "Scan Failed", description: data.error, variant: "destructive" });
       } else if (data.places && data.places.length > 0) {
         setBusinesses(data.places);
+        setNextPageToken(data.nextPageToken || null);
         // Initialize carousel indices to 0
         const initialIndices: Record<string, number> = {};
         data.places.forEach((biz: Business) => {
@@ -152,6 +156,41 @@ export default function Autopilot() {
       toast({ title: "Network Error", description: err.message, variant: "destructive" });
     } finally {
       setIsScanning(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (!nextPageToken) return;
+    setIsLoadingMore(true);
+    
+    try {
+      const response = await fetch('/api/places-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, location, pageToken: nextPageToken }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        toast({ title: "Load Failed", description: data.error, variant: "destructive" });
+      } else if (data.places && data.places.length > 0) {
+        setBusinesses(prev => [...prev, ...data.places]);
+        setNextPageToken(data.nextPageToken || null);
+        
+        setCarouselIndex(prev => {
+          const newIndices = { ...prev };
+          data.places.forEach((biz: Business) => {
+            newIndices[biz.id] = 0;
+          });
+          return newIndices;
+        });
+        toast({ title: "More Leads Loaded", description: `Added ${data.places.length} new businesses.` });
+      }
+    } catch (err: any) {
+      toast({ title: "Network Error", description: err.message, variant: "destructive" });
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -384,6 +423,7 @@ export default function Autopilot() {
           <p className="text-white/40 text-sm font-medium animate-pulse">Running geo-targeted search coordinates...</p>
         </div>
       ) : businesses.length > 0 ? (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {businesses.map((biz) => {
             const hasPhotos = biz.photos && biz.photos.length > 0;
@@ -513,6 +553,29 @@ export default function Autopilot() {
             );
           })}
         </div>
+        
+        {nextPageToken && (
+          <div className="flex justify-center mt-12 mb-8">
+            <button
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+              className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold transition-all flex items-center gap-2 text-white/80 hover:text-white"
+            >
+              {isLoadingMore ? (
+                <>
+                  <Loader2 className="animate-spin text-blue-400" size={18} />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <Download className="text-blue-400" size={18} />
+                  Load More Leads
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </>
       ) : (
         <div className="py-24 bg-white/[0.01] border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center text-center px-6">
           <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
