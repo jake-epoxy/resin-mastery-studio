@@ -302,7 +302,7 @@ export default function QuoteViewLive() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, scale: 1.05 }}
               transition={{ duration: 0.6 }}
-              className="absolute inset-0 z-50 flex flex-col items-center justify-end pb-20 md:pb-24 cursor-pointer touch-none"
+              className="absolute inset-0 z-50 flex flex-col items-center justify-end pb-36 md:pb-24 cursor-pointer touch-none"
               onClick={() => setIsRevealed(true)}
               drag="y"
               dragConstraints={{ top: 0, bottom: 0 }}
