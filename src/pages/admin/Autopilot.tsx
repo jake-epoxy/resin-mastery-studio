@@ -703,6 +703,8 @@ export default function Autopilot() {
           </div>
         </div>
       )}
+      </>
+      )}
       
       {activeTab === 'calendar' && (
         <CalendarManager />
