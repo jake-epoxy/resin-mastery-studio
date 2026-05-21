@@ -28,9 +28,10 @@ const RECOMMENDED_BADGES = [
   { label: "🚗 Car Dealerships", query: "Car Dealerships" },
   { label: "🏢 Warehouses", query: "Warehouses" },
   { label: "🛠️ Auto Garages", query: "Auto Repair Shops" },
+  { label: "🥩 Meat Production", query: "Meat Production Facilities" },
+  { label: "🍽️ Restaurants", query: "Restaurants" },
+  { label: "🏗️ General Contractors", query: "General Contractors" },
   { label: "🏋️ Gyms & Fitness", query: "Gyms" },
-  { label: "🛍️ Showrooms", query: "Retail Showrooms" },
-  { label: "🍷 Art Galleries", query: "Art Galleries" },
 ];
 
 const COATING_STYLES = [

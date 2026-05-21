@@ -50,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // 2. Hit Google Places API (With Auto-Rollover)
       const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-      const FALLBACK_NICHES = ["Car Dealerships", "Warehouses", "Auto Garages", "Gyms", "Restaurants", "Retail Stores", "Salons", "Event Centers"];
+      const FALLBACK_NICHES = ["Car Dealerships", "Warehouses", "Meat Production Facilities", "Restaurants", "General Contractors", "Auto Garages", "Gyms", "Retail Stores"];
       
       let places = [];
       let placesData: any = {};
