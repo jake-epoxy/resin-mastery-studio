@@ -88,7 +88,7 @@ export default function PaywallGuard({ userId, userEmail }: PaywallGuardProps) {
                  {agreedToTerms && <CheckCircle2 size={16} className="text-black" />}
                </div>
                <p className="text-sm text-white/80 text-left leading-relaxed">
-                 I understand my free trial has concluded. By proceeding, I agree to activate my Resin OS Pro subscription for $39/month. I can easily cancel anytime from my dashboard.
+                 I understand my free trial has concluded. By proceeding, I agree to activate my Resin OS Pro subscription for $19.99/month. I can easily cancel anytime from my dashboard.
                </p>
             </div>
 
@@ -104,7 +104,7 @@ export default function PaywallGuard({ userId, userEmail }: PaywallGuardProps) {
             </button>
             
             <div className="flex flex-col items-center justify-center gap-2 mt-6 text-xs text-white/40 font-mono text-center">
-              <span className="text-emerald-400 font-bold">$39 due today.</span>
+              <span className="text-emerald-400 font-bold">$19.99 due today.</span>
               <span className="mt-1">Securely billed monthly. Cancel anytime via dashboard.</span>
               <div className="flex items-center gap-2 mt-3 text-white/30">
                 <ShieldCheck size={14} className="text-emerald-500/50" /> Secured natively by Stripe

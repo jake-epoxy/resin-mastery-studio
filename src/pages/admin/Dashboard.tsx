@@ -109,11 +109,42 @@ export default function AdminDashboard() {
         </div>
       </header>
 
+      {/* Guided Track: Daily Tasks */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8 bg-zinc-950 border border-white/5 p-6 rounded-2xl relative overflow-hidden"
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#78c8ff]/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10">
+          <h2 className="text-xl font-space font-bold text-white flex items-center gap-2 mb-2">
+            <CheckCircle size={20} className="text-[#78c8ff]" /> Your Daily Immersion Tasks
+          </h2>
+          <p className="text-white/50 text-sm mb-6">Complete these 3 tasks today to advance your epoxy business.</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {localStorage.getItem('resin_guided_track') === 'advanced' ? (
+              <>
+                <TaskCard num={1} title="Setup Quote Engine" desc="Configure your pricing & custom PDF contract." />
+                <TaskCard num={2} title="Closing Scripts" desc="Review the masterclass on closing high-ticket leads." />
+                <TaskCard num={3} title="Controlled Veining" desc="Advanced technique: Spray paint highlights for precise designs." isAction />
+              </>
+            ) : (
+              <>
+                <TaskCard num={1} title="Watch Day 1 Primer" desc="Safety, prep, and basic mixing ratios." />
+                <TaskCard num={2} title="Order Starter Kit" desc="Get your gear. Your student discount is applied." />
+                <TaskCard num={3} title="Spray Paint Technique" desc="Practice highlights & veins for easy, controlled designs." isAction />
+              </>
+            )}
+          </div>
+        </div>
+      </motion.div>
+
       {/* Analytics Chart Row */}
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-[#050505] border border-white/10 p-6 rounded-2xl mb-6 shadow-2xl relative overflow-hidden"
+        className="bg-black border border-white/5 p-6 rounded-2xl mb-6 relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#78c8ff]/5 rounded-full blur-3xl"></div>
         <h3 className="text-white font-bold mb-6 flex items-center gap-3"><BarChart3 size={18} className="text-[#78c8ff]"/> Pipeline Conversion Funnel</h3>
@@ -365,6 +396,34 @@ function PipelineCard({ name, project, status, date, amount, isWon, onClick }: a
         <span className={isWon ? 'text-green-400' : 'text-white/40'}>{status}</span>
         <span className="text-white/30">{date}</span>
       </div>
+    </div>
+  );
+}
+
+function TaskCard({ num, title, desc, isAction }: any) {
+  const taskKey = "resin_task_" + title.replace(/\s+/g, '_');
+  const [done, setDone] = useState(() => localStorage.getItem(taskKey) === 'true');
+
+  const toggleDone = () => {
+    const next = !done;
+    setDone(next);
+    localStorage.setItem(taskKey, next.toString());
+  };
+
+  return (
+    <div 
+      onClick={toggleDone}
+      className={`p-4 rounded-xl border cursor-pointer transition-all ${
+        done ? 'bg-green-950/30 border-green-500/20 opacity-60' : 
+        isAction ? 'bg-[#78c8ff]/5 border-[#78c8ff]/20 hover:bg-[#78c8ff]/10' : 'bg-white/[0.02] border-white/5 hover:border-white/10'
+      }`}
+    >
+      <div className="flex justify-between items-start mb-3">
+        <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-md ${done ? 'bg-green-500/20 text-green-400' : 'bg-black text-white/50'}`}>Task {num}</span>
+        {done && <CheckCircle size={16} className="text-green-400" />}
+      </div>
+      <h4 className={`font-bold text-sm mb-1 ${done ? 'text-green-400/80 line-through' : 'text-white'}`}>{title}</h4>
+      <p className={`text-xs ${done ? 'text-green-400/50' : 'text-white/50'}`}>{desc}</p>
     </div>
   );
 }

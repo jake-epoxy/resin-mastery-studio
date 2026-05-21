@@ -3,6 +3,7 @@ import { supabase } from "../../lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import { FileText, Download, Send, CheckCircle2, Copy, ExternalLink, Loader2, RefreshCw, Pencil } from "lucide-react";
 import QuoteEditorModal from "../../components/admin/QuoteEditorModal";
+import ReceiptPreviewModal from "../../components/admin/ReceiptPreviewModal";
 
 export default function ProposalsLibrary() {
   const { toast } = useToast();
@@ -10,6 +11,7 @@ export default function ProposalsLibrary() {
   const [loading, setLoading] = useState(true);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [editingQuote, setEditingQuote] = useState<any>(null);
+  const [previewReceiptQuote, setPreviewReceiptQuote] = useState<any>(null);
 
   useEffect(() => {
     fetchQuotes();
@@ -118,6 +120,10 @@ export default function ProposalsLibrary() {
     setResendingId(null);
   };
 
+  const handleSendReceipt = (quote: any) => {
+    setPreviewReceiptQuote(quote);
+  };
+
   const getStatusColor = (status: string) => {
     switch(status?.toLowerCase()) {
       case 'paid in full': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
@@ -199,10 +205,13 @@ export default function ProposalsLibrary() {
                     <ExternalLink size={16} className="text-[#ffffff]" />
                   </a>
 
-                  {quote.status === 'Won' ? (
+                  {quote.status === 'Won' || quote.status === 'Paid' ? (
                     <>
                       <button onClick={() => handleResend(quote)} disabled={resendingId === quote.id} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50">
                         {resendingId === quote.id ? <Loader2 size={16} className="animate-spin" /> : <><Send size={16} /> Invoice Balance</>}
+                      </button>
+                      <button onClick={() => handleSendReceipt(quote)} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-5 py-3 bg-[#78c8ff]/10 hover:bg-[#78c8ff]/20 text-[#78c8ff] font-bold rounded-xl border border-[#78c8ff]/20 transition-colors">
+                        <FileText size={16} /> Build Receipt
                       </button>
                       {quote.config?.digital_footprint_pdf && (
                         <a href={`data:application/pdf;base64,${quote.config.digital_footprint_pdf}`} download={`Contract_${quote.client?.last_name || 'Executed'}.pdf`} className="flex-1 lg:flex-none p-3 lg:px-4 bg-[#ffffff]/10 hover:bg-[#ffffff]/20 text-[#ffffff] rounded-xl flex items-center justify-center gap-2 border border-[#ffffff]/30 transition-colors">
@@ -210,8 +219,11 @@ export default function ProposalsLibrary() {
                         </a>
                       )}
                     </>
-                  ) : quote.status === 'Paid In Full' || quote.status === 'Paid' ? (
+                  ) : quote.status === 'Paid In Full' ? (
                     <>
+                      <button onClick={() => handleSendReceipt(quote)} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-5 py-3 bg-[#78c8ff]/10 hover:bg-[#78c8ff]/20 text-[#78c8ff] font-bold rounded-xl border border-[#78c8ff]/20 transition-colors">
+                        <FileText size={16} /> Build Receipt
+                      </button>
                       {quote.config?.digital_footprint_pdf && (
                         <a href={`data:application/pdf;base64,${quote.config.digital_footprint_pdf}`} download={`Contract_${quote.client?.last_name || 'Executed'}.pdf`} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-8 py-3 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700 transition-colors">
                           <Download size={16} /> Receipt PDF
@@ -242,6 +254,14 @@ export default function ProposalsLibrary() {
           quote={editingQuote} 
           onClose={() => setEditingQuote(null)} 
           onUpdate={fetchQuotes} 
+        />
+      )}
+      
+      {previewReceiptQuote && (
+        <ReceiptPreviewModal 
+          quote={previewReceiptQuote} 
+          client={previewReceiptQuote.client}
+          onClose={() => setPreviewReceiptQuote(null)}
         />
       )}
     </div>

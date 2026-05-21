@@ -25,6 +25,7 @@ import Marketplace from "./pages/admin/Marketplace";
 import MasterControl from "./pages/admin/MasterControl";
 import LeadCenter from "./pages/admin/LeadCenter";
 import Visualizer from "./pages/admin/Visualizer";
+import Autopilot from "./pages/admin/Autopilot";
 import OperationsHub from "./pages/admin/OperationsHub";
 import WorkforceHub from "./pages/admin/WorkforceHub";
 import Billing from "./pages/admin/Billing";
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="super" element={<MasterControl />} />
             <Route path="clone" element={<CloneOS />} />
             <Route path="visualizer" element={<Visualizer />} />
+            <Route path="autopilot" element={<Autopilot />} />
             <Route path="billing" element={<Billing />} />
             <Route path="finances" element={<AdminBanking />} />
             <Route path="settings" element={<SettingsPage />} />

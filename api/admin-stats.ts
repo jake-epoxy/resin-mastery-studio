@@ -61,7 +61,7 @@ export default async function handler(req: any, res: any) {
     if (uError) throw uError;
 
     const userMap: Record<string, boolean> = {};
-    usersData.users.forEach(u => {
+    usersData.users.forEach((u: any) => {
        userMap[u.id] = !!u.user_metadata?.stripe_account_id;
     });
 

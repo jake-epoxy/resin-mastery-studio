@@ -2,8 +2,19 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import QuoteEditorModal from "../../components/admin/QuoteEditorModal";
+import ReceiptPreviewModal from "../../components/admin/ReceiptPreviewModal";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Phone, Mail, Trash2, Save, FileText, ExternalLink, Copy, ChevronDown, CheckCircle, Pencil, Send, Banknote } from "lucide-react";
+import { X, Phone, Mail, Trash2, Save, FileText, ExternalLink, Copy, ChevronDown, CheckCircle, Pencil, Send, Banknote, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) {
   const { toast } = useToast();
@@ -23,6 +34,12 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
   const [loadingQuotes, setLoadingQuotes] = useState(false);
   const [expandedQuoteId, setExpandedQuoteId] = useState<string | null>(null);
   const [editingQuote, setEditingQuote] = useState<any>(null);
+  const [previewReceiptQuote, setPreviewReceiptQuote] = useState<any>(null);
+
+  // Custom UI Confirmation States
+  const [paymentConfirmQuote, setPaymentConfirmQuote] = useState<any>(null);
+  const [deleteLeadConfirm, setDeleteLeadConfirm] = useState(false);
+  const [deleteQuoteId, setDeleteQuoteId] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -79,7 +96,7 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
   }
 
   async function handleDelete() {
-    if (!window.confirm("Are you sure you want to permanently delete this lead?")) return;
+    setIsDeleting(true);
     
     setIsDeleting(true);
     const { error } = await supabase.from('clients').delete().eq('id', client.id);
@@ -109,8 +126,6 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
   }
 
   async function handleDeleteQuote(quoteId: string) {
-    if (!window.confirm("Permanently delete this quote? This cannot be undone.")) return;
-
     const { error } = await supabase.from('quotes').delete().eq('id', quoteId);
 
     if (error) {
@@ -126,6 +141,10 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
     toast({ title: "Link Copied", description: "Quote link copied to clipboard!" });
   }
 
+  async function handleSendReceipt(quote: any) {
+    setPreviewReceiptQuote(quote);
+  }
+
   async function handleManualPayment(q: any) {
     const currentMilestonesPaid = q.config?.milestones_paid || 0;
     const totalMilestones = q.config?.payment_schedule?.milestones?.length || 2;
@@ -139,8 +158,6 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
     const milestoneLabel = isDeposit ? "Material Deposit (Milestone 1)" : `Payment ${currentMilestonesPaid + 1}`;
     const newStatus = isDeposit ? "Paid" : "Paid In Full";
     const newMilestoneValue = currentMilestonesPaid + 1;
-
-    if (!window.confirm(`Are you sure you want to manually record ${milestoneLabel} as Paid via Cash/Check? This will instantly update the client's live portal.`)) return;
 
     // Use existing config, default 'opened_at' to now if not set so read receipts don't break
     const updatedConfig = { ...q.config, milestones_paid: newMilestoneValue };
@@ -348,7 +365,7 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
                           {/* Manual Cash Payment Button */}
                           {(!q.config?.milestones_paid || q.config?.milestones_paid < (q.config?.payment_schedule?.milestones?.length || 2)) && (
                             <button
-                              onClick={() => handleManualPayment(q)}
+                              onClick={() => setPaymentConfirmQuote(q)}
                               className="w-full flex items-center justify-center gap-2 px-3 py-3 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-sm font-bold text-white shadow-lg transition-colors"
                             >
                               <Banknote size={16} /> Mark Next Payment Paid (Cash/Check)
@@ -366,6 +383,16 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
                                 <Send size={14} /> Edit & Preview Proposal
                               </button>
                             )}
+
+                            {['Won', 'Paid', 'Paid In Full'].includes(q.status) && (
+                              <button
+                                onClick={() => handleSendReceipt(q)}
+                                className="w-full flex items-center justify-center gap-2 px-3 py-3 bg-[#78c8ff]/10 hover:bg-[#78c8ff]/20 rounded-lg text-sm font-bold text-[#78c8ff] border border-[#78c8ff]/20 transition-colors"
+                              >
+                                <FileText size={14} /> Build Receipt
+                              </button>
+                            )}
+
                             <div className="flex gap-2">
                               <button
                                 onClick={() => setEditingQuote(q)}
@@ -388,7 +415,7 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
                                 <Copy size={13} /> Link
                               </button>
                               <button
-                                onClick={() => handleDeleteQuote(q.id)}
+                                onClick={() => setDeleteQuoteId(q.id)}
                                 className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-xs font-bold text-red-400 border border-red-500/10 transition-colors"
                               >
                                 <Trash2 size={13} />
@@ -420,7 +447,7 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
               </button>
 
               <button 
-                onClick={handleDelete}
+                onClick={() => setDeleteLeadConfirm(true)}
                 disabled={isDeleting}
                 className="w-full flex items-center justify-center gap-2 bg-red-600 text-white py-3.5 rounded-xl font-bold hover:bg-red-700 transition-colors text-sm shadow-lg"
               >
@@ -433,6 +460,8 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
       </motion.div>
 
       </AnimatePresence>
+      
+      {/* Modals */}
       {editingQuote && (
         <QuoteEditorModal 
           quote={editingQuote} 
@@ -440,6 +469,86 @@ export default function ClientProfileDrawer({ client, onClose, onUpdate }: any) 
           onUpdate={fetchLinkedQuotes} 
         />
       )}
+
+      {previewReceiptQuote && (
+        <ReceiptPreviewModal 
+          quote={previewReceiptQuote} 
+          client={client}
+          onClose={() => setPreviewReceiptQuote(null)}
+        />
+      )}
+
+      {/* Manual Payment Confirm Dialog */}
+      <AlertDialog open={!!paymentConfirmQuote} onOpenChange={(open) => !open && setPaymentConfirmQuote(null)}>
+        <AlertDialogContent className="bg-[#111] border-white/10 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Record Manual Payment</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to manually record this milestone as Paid via Cash/Check? This will instantly update the client's live portal.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-white/10 text-white hover:bg-white/10">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (paymentConfirmQuote) handleManualPayment(paymentConfirmQuote);
+                setPaymentConfirmQuote(null);
+              }}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white"
+            >
+              Confirm Payment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Lead Confirm Dialog */}
+      <AlertDialog open={deleteLeadConfirm} onOpenChange={setDeleteLeadConfirm}>
+        <AlertDialogContent className="bg-[#111] border-white/10 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Lead</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to permanently delete this lead? This will erase all of their data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-white/10 text-white hover:bg-white/10">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                handleDelete();
+                setDeleteLeadConfirm(false);
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Quote Confirm Dialog */}
+      <AlertDialog open={!!deleteQuoteId} onOpenChange={(open) => !open && setDeleteQuoteId(null)}>
+        <AlertDialogContent className="bg-[#111] border-white/10 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Quote</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Permanently delete this quote? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-white/10 text-white hover:bg-white/10">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (deleteQuoteId) handleDeleteQuote(deleteQuoteId);
+                setDeleteQuoteId(null);
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

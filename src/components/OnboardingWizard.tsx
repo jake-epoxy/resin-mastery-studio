@@ -35,6 +35,9 @@ export default function OnboardingWizard({ onComplete, onSwitchToLogin }: Onboar
   const [companyName, setCompanyName] = useState("");
   const [companyPhone, setCompanyPhone] = useState("");
 
+  // Step 3: Experience Level
+  const [experienceLevel, setExperienceLevel] = useState<'beginner' | 'advanced' | null>(null);
+
   // Step 3: Services & Pricing
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set(["flake", "metallic"]));
   const [servicePricing, setServicePricing] = useState<Record<string, string>>(() => {
@@ -99,6 +102,9 @@ export default function OnboardingWizard({ onComplete, onSwitchToLogin }: Onboar
         throw new Error("Account created, but failed to save business profile. Please contact support.");
       }
 
+      // 5. Save Guided Track to LocalStorage for Dashboard Customization
+      localStorage.setItem('resin_guided_track', experienceLevel || 'beginner');
+
       // Clear referral tracking after successful signup
       localStorage.removeItem('resin_ref');
       onComplete();
@@ -112,13 +118,13 @@ export default function OnboardingWizard({ onComplete, onSwitchToLogin }: Onboar
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-8 px-2">
-        {[1, 2, 3].map((i) => (
+        {[1, 2, 3, 4].map((i) => (
           <div key={i} className="flex items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${step >= i ? 'bg-[#78c8ff] text-black shadow-[0_0_15px_rgba(120,200,255,0.4)]' : 'bg-white/5 text-white/30 border border-white/10'}`}>
               {step > i ? <CheckCircle2 size={16} /> : i}
             </div>
-            {i < 3 && (
-              <div className={`w-12 h-px mx-2 transition-colors ${step > i ? 'bg-[#78c8ff]/50' : 'bg-white/10'}`} />
+            {i < 4 && (
+              <div className={`w-6 sm:w-12 h-px mx-1 sm:mx-2 transition-colors ${step > i ? 'bg-[#78c8ff]/50' : 'bg-white/10'}`} />
             )}
           </div>
         ))}
@@ -232,8 +238,62 @@ export default function OnboardingWizard({ onComplete, onSwitchToLogin }: Onboar
         </div>
       )}
 
-      {/* STEP 3: SERVICES & PRICING */}
+      {/* STEP 3: EXPERIENCE LEVEL */}
       {step === 3 && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2 flex items-center justify-center gap-2">
+              <Sparkles className="text-[#78c8ff]" size={24} /> Where are you at?
+            </h2>
+            <p className="text-zinc-500 text-sm">We'll build a custom business track for you.</p>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-4">
+            <div 
+              onClick={() => setExperienceLevel('beginner')}
+              className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${
+                experienceLevel === 'beginner' 
+                  ? 'border-[#78c8ff] bg-[#78c8ff]/5 shadow-[0_0_20px_rgba(120,200,255,0.15)]' 
+                  : 'border-white/10 bg-[#111] hover:border-white/20'
+              }`}
+            >
+              <h3 className={`font-bold text-lg mb-1 ${experienceLevel === 'beginner' ? 'text-white' : 'text-white/80'}`}>1. Complete Beginner</h3>
+              <p className="text-sm text-zinc-500">I'm starting from scratch. Give me the Day 1 basics on epoxy systems.</p>
+            </div>
+
+            <div 
+              onClick={() => setExperienceLevel('advanced')}
+              className={`p-5 rounded-2xl border-2 transition-all cursor-pointer ${
+                experienceLevel === 'advanced' 
+                  ? 'border-[#78c8ff] bg-[#78c8ff]/5 shadow-[0_0_20px_rgba(120,200,255,0.15)]' 
+                  : 'border-white/10 bg-[#111] hover:border-white/20'
+              }`}
+            >
+              <h3 className={`font-bold text-lg mb-1 ${experienceLevel === 'advanced' ? 'text-white' : 'text-white/80'}`}>2. Ready to Scale</h3>
+              <p className="text-sm text-zinc-500">I've done a pour/class. Give me the business secrets, client acquisition sauce, and scripts.</p>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-8">
+            <button 
+              onClick={handleBack}
+              className="w-1/3 bg-transparent border border-white/10 text-white font-bold py-4 rounded-xl hover:bg-white/5 transition-colors"
+            >
+              Back
+            </button>
+            <button 
+              onClick={handleNext}
+              disabled={!experienceLevel}
+              className="w-2/3 bg-[#78c8ff] text-black font-bold py-4 rounded-xl hover:bg-white transition-colors shadow-[0_0_20px_rgba(120,200,255,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              Next Step <ArrowRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 4: SERVICES & PRICING */}
+      {step === 4 && (
         <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="text-center mb-4">
             <h2 className="text-2xl font-bold text-white mb-2 flex items-center justify-center gap-2">

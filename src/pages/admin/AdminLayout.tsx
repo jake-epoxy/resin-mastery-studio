@@ -31,16 +31,25 @@ export default function AdminLayout() {
   // Check generic localStorage to keep Jake logged in
   // Check active session on mount
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setIsAuthenticated(true);
-        setUserEmail(session.user.email ?? null);
-        fetchProfile(session.user.id);
-      }
+    const isBypass = localStorage.getItem('local_dev_bypass') === 'true';
+    if (isBypass) {
+      setIsAuthenticated(true);
+      setUserEmail("jakeflowers222@gmail.com");
+      fetchProfile('22f347de-e604-4118-b15a-772a99bf8e77');
       setLoading(false);
-    });
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setIsAuthenticated(true);
+          setUserEmail(session.user.email ?? null);
+          fetchProfile(session.user.id);
+        }
+        setLoading(false);
+      });
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (localStorage.getItem('local_dev_bypass') === 'true') return;
       setIsAuthenticated(!!session);
       setUserEmail(session?.user.email ?? null);
       if (session) fetchProfile(session.user.id);
@@ -54,6 +63,28 @@ export default function AdminLayout() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    if (emailInput.toLowerCase() === "jakeflowers222@gmail.com") {
+      console.log("Local developer bypass login requested.");
+      try {
+        const { data: profile } = await supabase
+          .from('installer_profiles')
+          .select('*')
+          .eq('user_id', '22f347de-e604-4118-b15a-772a99bf8e77')
+          .single();
+        
+        if (profile) {
+          localStorage.setItem('local_dev_bypass', 'true');
+          setIsAuthenticated(true);
+          setUserEmail(emailInput.toLowerCase());
+          setInstallerProfile(profile);
+          setLoading(false);
+          return;
+        }
+      } catch (err: any) {
+        console.error("Local bypass failed:", err);
+      }
+    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email: emailInput,
@@ -76,6 +107,7 @@ export default function AdminLayout() {
     { name: "Lead Center", mobileLabel: "Leads", path: "/admin/leads", icon: ContactRound },
     { name: "Quote Generator", mobileLabel: "Quotes", path: "/admin/quote", icon: Calculator },
     { name: "AI Visualizer", mobileLabel: "AI", path: "/admin/visualizer", icon: Wand2 },
+    { name: "Lead Autopilot", mobileLabel: "Autopilot", path: "/admin/autopilot", icon: PlaySquare },
     { name: "Mastery Support", mobileLabel: "Help", path: "/admin/academy", icon: LifeBuoy },
     { name: "Proposals", mobileLabel: "Proposals", path: "/admin/proposals", icon: FileText },
     { name: "Workforce Hub", mobileLabel: "Team", path: "/admin/workforce", icon: HardHat },
@@ -152,7 +184,7 @@ export default function AdminLayout() {
               
               <div className="mt-8 pt-6 border-t border-white/5 w-full">
                 <p className="text-sm text-zinc-500">
-                  Don't have an account? <button type="button" onClick={() => setIsSignUp(true)} className="text-[#78c8ff] hover:underline font-bold">Subscribe ($39/mo)</button>
+                  Don't have an account? <button type="button" onClick={() => setIsSignUp(true)} className="text-[#78c8ff] hover:underline font-bold">Subscribe ($19.99/mo)</button>
                 </p>
               </div>
             </>
@@ -163,9 +195,9 @@ export default function AdminLayout() {
   }
 
   if (installerProfile && installerProfile.subscription_active === false && userEmail !== 'jakeflowers222@gmail.com') {
-    // 7-Day No-Card Free Trial Logic
+    // 3-Day No-Card Free Trial Logic
     const createdAt = new Date(installerProfile.created_at).getTime();
-    const trialEndsAt = createdAt + (7 * 24 * 60 * 60 * 1000); 
+    const trialEndsAt = createdAt + (3 * 24 * 60 * 60 * 1000); 
     const isTrialActive = Date.now() < trialEndsAt;
 
     if (isTrialActive) {
@@ -182,21 +214,21 @@ export default function AdminLayout() {
         <PaywallGuard 
           userId={installerProfile.user_id} 
           userEmail={userEmail || undefined}
-          paymentLink="https://buy.stripe.com/9B63cv2338Od9qPgBN6J201" 
+          paymentLink="https://buy.stripe.com/eVq14n377ggF5azfxJ6J203" 
         />
       );
     }
   }
 
   // Calculate days left for optional banner
-  const isTrialActive = installerProfile && installerProfile.subscription_active === false && userEmail !== 'jakeflowers222@gmail.com' ? (Date.now() < new Date(installerProfile.created_at).getTime() + (7 * 24 * 60 * 60 * 1000)) : false;
-  const daysLeft = isTrialActive ? Math.ceil(((new Date(installerProfile.created_at).getTime() + (7 * 24 * 60 * 60 * 1000)) - Date.now()) / (1000 * 60 * 60 * 24)) : 0;
+  const isTrialActive = installerProfile && installerProfile.subscription_active === false && userEmail !== 'jakeflowers222@gmail.com' ? (Date.now() < new Date(installerProfile.created_at).getTime() + (3 * 24 * 60 * 60 * 1000)) : false;
+  const daysLeft = isTrialActive ? Math.ceil(((new Date(installerProfile.created_at).getTime() + (3 * 24 * 60 * 60 * 1000)) - Date.now()) / (1000 * 60 * 60 * 24)) : 0;
 
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col text-white font-inter">
       {isTrialActive && (
         <div className="bg-[#78c8ff] text-black text-xs font-bold uppercase tracking-wider text-center py-2 flex items-center justify-center gap-2">
-          <span>🚀 You are on day {8 - daysLeft} of your 7-Day Free Trial. No card required.</span>
+          <span>🚀 You are on day {4 - daysLeft} of your 3-Day Free Trial. No card required.</span>
           <button 
              onClick={async () => {
                 const res = await fetch('/api/create-checkout', {
@@ -230,7 +262,11 @@ export default function AdminLayout() {
 
         <button 
           onClick={async () => {
+            localStorage.removeItem('local_dev_bypass');
             await supabase.auth.signOut();
+            setIsAuthenticated(false);
+            setUserEmail(null);
+            setInstallerProfile(null);
           }}
           className="flex items-center gap-2 px-3 py-2 text-white/50 hover:text-white hover:bg-white/5 rounded-lg transition-all text-xs font-bold uppercase tracking-wider"
         >

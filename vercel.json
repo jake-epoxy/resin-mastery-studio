@@ -5,6 +5,10 @@
             "destination": "/quote-:slug.html"
         },
         {
+            "source": "/observation-agreement-:slug.html",
+            "destination": "/observation-agreement-:slug.html"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }

@@ -88,7 +88,7 @@ export default function SoftwareMarketingSection() {
             <div className="relative bg-[#050505] px-10 py-5 rounded-[14px] flex items-center gap-4 transition-transform hover:scale-[1.02]">
               <div className="text-left">
                 <h4 className="text-white font-bold text-xl">Subscribe to Resin Academics</h4>
-                <p className="text-[#78c8ff] text-sm mt-1 font-mono uppercase tracking-widest">$39/month. Cancel Anytime.</p>
+                <p className="text-[#78c8ff] text-sm mt-1 font-mono uppercase tracking-widest">$19.99/month. Cancel Anytime.</p>
               </div>
               <div className="w-12 h-12 bg-[#78c8ff] rounded-xl flex items-center justify-center shrink-0 ml-4">
                 <ArrowRight className="w-6 h-6 text-black" />

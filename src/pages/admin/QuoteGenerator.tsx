@@ -28,15 +28,15 @@ export default function QuoteGenerator() {
   const [profileServicePricing, setProfileServicePricing] = useState<Record<string, number>>({});
   
   // Customization State (Sticky)
-  const [themeColor, setThemeColor] = useState(() => localStorage.getItem('quoteos_theme') || "#78c8ff");
-  const [logoUrl, setLogoUrl] = useState(() => localStorage.getItem('quoteos_logo') || "");
-  const [contractPdfUrl, setContractPdfUrl] = useState(() => localStorage.getItem('quoteos_pdf') || "");
-  const [brandName, setBrandName] = useState(() => localStorage.getItem('quoteos_brand') || "Epoxy Contractor");
-  const [legalTerms, setLegalTerms] = useState(() => localStorage.getItem('quoteos_terms') || DEFAULT_TERMS);
+  const [themeColor, setThemeColor] = useState(() => localStorage.getItem('resinos_theme') || "#78c8ff");
+  const [logoUrl, setLogoUrl] = useState(() => localStorage.getItem('resinos_logo') || "");
+  const [contractPdfUrl, setContractPdfUrl] = useState(() => localStorage.getItem('resinos_pdf') || "");
+  const [brandName, setBrandName] = useState(() => localStorage.getItem('resinos_brand') || "Epoxy Contractor");
+  const [legalTerms, setLegalTerms] = useState(() => localStorage.getItem('resinos_terms') || DEFAULT_TERMS);
   
-  useEffect(() => { localStorage.setItem('quoteos_theme', themeColor); }, [themeColor]);
-  useEffect(() => { localStorage.setItem('quoteos_brand', brandName); }, [brandName]);
-  useEffect(() => { localStorage.setItem('quoteos_terms', legalTerms); }, [legalTerms]);
+  useEffect(() => { localStorage.setItem('resinos_theme', themeColor); }, [themeColor]);
+  useEffect(() => { localStorage.setItem('resinos_brand', brandName); }, [brandName]);
+  useEffect(() => { localStorage.setItem('resinos_terms', legalTerms); }, [legalTerms]);
   
   // Uploading States
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -56,11 +56,11 @@ export default function QuoteGenerator() {
   
   const [isSendingToClient, setIsSendingToClient] = useState(false);
   const [clientEmailed, setClientEmailed] = useState(false);
-  const [visualizationImage, setVisualizationImage] = useState<string | null>(() => localStorage.getItem('quoteos_viz') || null);
+  const [visualizationImage, setVisualizationImage] = useState<string | null>(() => localStorage.getItem('resinos_viz') || null);
 
   useEffect(() => { 
-    if (visualizationImage) localStorage.setItem('quoteos_viz', visualizationImage); 
-    else localStorage.removeItem('quoteos_viz');
+    if (visualizationImage) localStorage.setItem('resinos_viz', visualizationImage); 
+    else localStorage.removeItem('resinos_viz');
   }, [visualizationImage]);
 
   // Payment Schedule State
@@ -109,7 +109,7 @@ export default function QuoteGenerator() {
 
   // Check for visualization from AI Visualizer (supports both localStorage and sessionStorage)
   useEffect(() => {
-    const viz = sessionStorage.getItem('viz_image') || localStorage.getItem('quoteos_visualization');
+    const viz = sessionStorage.getItem('viz_image') || localStorage.getItem('resinos_visualization');
     if (viz) {
       setVisualizationImage(viz);
       // Read style/color info if available
@@ -122,9 +122,69 @@ export default function QuoteGenerator() {
       sessionStorage.removeItem('viz_image');
       sessionStorage.removeItem('viz_style');
       sessionStorage.removeItem('viz_color');
-      localStorage.removeItem('quoteos_visualization');
+      localStorage.removeItem('resinos_visualization');
     }
   }, []);
+
+  // Check for Autopilot Lead integration to auto-create client profile
+  useEffect(() => {
+    const autopilotName = sessionStorage.getItem('autopilot_client_name');
+    if (autopilotName) {
+      const fetchAndCreate = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Check if client with similar company/first name already exists in db
+        const { data: existing } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('installer_id', user.id)
+          .eq('first_name', autopilotName)
+          .limit(1);
+
+        if (existing && existing.length > 0) {
+          // If already exists, just select it
+          setSelectedClientId(existing[0].id);
+        } else {
+          // Create a new client!
+          const phone = sessionStorage.getItem('autopilot_client_phone') || null;
+          const address = sessionStorage.getItem('autopilot_client_address') || null;
+          
+          const { data: created, error } = await supabase
+            .from('clients')
+            .insert([{
+              installer_id: user.id,
+              first_name: autopilotName,
+              last_name: "(Lead)",
+              phone,
+              address,
+              project_type: serviceType || "Autopilot Pitch",
+              status: "New Lead"
+            }])
+            .select()
+            .single();
+
+          if (!error && created) {
+            // Update clients list state and select it
+            setClients(prev => [created, ...prev]);
+            setSelectedClientId(created.id);
+            toast({
+              title: "Lead Profile Created",
+              description: `Imported ${autopilotName} from Autopilot to your CRM.`
+            });
+          }
+        }
+        
+        // Clean up sessionStorage autopilot info so it doesn't run again on reload
+        sessionStorage.removeItem('autopilot_client_name');
+        sessionStorage.removeItem('autopilot_client_phone');
+        sessionStorage.removeItem('autopilot_client_address');
+        sessionStorage.removeItem('autopilot_client_website');
+      };
+
+      fetchAndCreate();
+    }
+  }, [clients]);
 
   async function handleSendToClient() {
     setIsSendingToClient(true);
@@ -247,9 +307,9 @@ export default function QuoteGenerator() {
         const firstKey = Object.keys(profile.service_pricing)[0];
         if (firstKey) setPricePerSqft(profile.service_pricing[firstKey]);
       }
-      if (profile.company_name && !localStorage.getItem('quoteos_brand')) setBrandName(profile.company_name);
+      if (profile.company_name && !localStorage.getItem('resinos_brand')) setBrandName(profile.company_name);
       if (profile.company_logo_url && !logoUrl) setLogoUrl(profile.company_logo_url);
-    } else if (user?.email && !localStorage.getItem('quoteos_brand')) {
+    } else if (user?.email && !localStorage.getItem('resinos_brand')) {
       setBrandName(user.email.split('@')[0].toUpperCase());
     }
   }
@@ -301,7 +361,7 @@ export default function QuoteGenerator() {
      const url = await uploadFileToSupabase(file, 'logos');
      if (url) {
        setLogoUrl(url);
-       localStorage.setItem('quoteos_logo', url);
+       localStorage.setItem('resinos_logo', url);
        toast({ title: "Logo Uploaded!" });
      }
      setIsUploadingLogo(false);
@@ -326,7 +386,7 @@ export default function QuoteGenerator() {
      const url = await uploadFileToSupabase(file, 'contracts');
      if (url) {
        setContractPdfUrl(url);
-       localStorage.setItem('quoteos_pdf', url);
+       localStorage.setItem('resinos_pdf', url);
        toast({ title: "Custom PDF Contract Uploaded!" });
      }
      setIsUploadingContract(false);
@@ -449,11 +509,11 @@ export default function QuoteGenerator() {
   const activeClientLast = clients.find(c => c.id === selectedClientId)?.last_name || "Doe";
 
   function handleReset() {
-    localStorage.removeItem('quoteos_theme');
-    localStorage.removeItem('quoteos_terms');
-    localStorage.removeItem('quoteos_logo');
-    localStorage.removeItem('quoteos_pdf');
-    localStorage.removeItem('quoteos_viz');
+    localStorage.removeItem('resinos_theme');
+    localStorage.removeItem('resinos_terms');
+    localStorage.removeItem('resinos_logo');
+    localStorage.removeItem('resinos_pdf');
+    localStorage.removeItem('resinos_viz');
     
     setThemeColor("#78c8ff");
     setLegalTerms(DEFAULT_TERMS);
@@ -538,7 +598,7 @@ export default function QuoteGenerator() {
                             onClick={(e) => { 
                               e.preventDefault(); 
                               setLogoUrl(""); 
-                              localStorage.removeItem('quoteos_logo');
+                              localStorage.removeItem('resinos_logo');
                             }}
                             className="bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs px-4 py-1.5 rounded-full transition-colors font-bold"
                           >

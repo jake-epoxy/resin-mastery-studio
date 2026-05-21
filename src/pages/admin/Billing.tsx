@@ -4,12 +4,12 @@ import { supabase } from "../../lib/supabase";
 
 export default function Billing() {
   const [loading, setLoading] = useState(false);
-  const [checkoutUrl, setCheckoutUrl] = useState("https://buy.stripe.com/7sY4gzcHH4xX0Uj71d6J202");
+  const [checkoutUrl, setCheckoutUrl] = useState("https://buy.stripe.com/eVq14n377ggF5azfxJ6J203");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        setCheckoutUrl(`https://buy.stripe.com/7sY4gzcHH4xX0Uj71d6J202?client_reference_id=${user.id}`);
+        setCheckoutUrl(`https://buy.stripe.com/eVq14n377ggF5azfxJ6J203?client_reference_id=${user.id}`);
       }
     });
   }, []);
@@ -27,7 +27,7 @@ export default function Billing() {
         </div>
 
         <div className="text-center mb-8">
-          <div className="text-5xl font-space font-bold text-white mb-2">$39<span className="text-xl text-white/50 font-normal">/mo</span></div>
+          <div className="text-5xl font-space font-bold text-white mb-2">$19.99<span className="text-xl text-white/50 font-normal">/mo</span></div>
 
           <p className="text-white/40 text-sm">Cancel anytime. No hidden fees.</p>
         </div>

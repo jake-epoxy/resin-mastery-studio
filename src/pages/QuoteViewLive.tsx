@@ -7,6 +7,12 @@ import SignaturePad from "react-signature-canvas";
 import { useRef } from "react";
 import jsPDF from "jspdf";
 import { PDFDocument, rgb } from "pdf-lib";
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+import { useWindowSize } from 'react-use';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const DEFAULT_TERMS = `A 50% non-refundable material deposit is required before scheduling.
 Floor must be completely cleared of all items prior to the installation team's arrival.
@@ -27,6 +33,8 @@ export default function QuoteViewLive() {
   const [isSigned, setIsSigned] = useState(false);
   const [depositStatus, setDepositStatus] = useState<'pending' | 'processing' | 'paid' | 'final_processing' | 'final_paid'>('pending');
   const [digitalFootprint, setDigitalFootprint] = useState<any>(null);
+  const [numPages, setNumPages] = useState<number>();
+  const { width: windowWidth } = useWindowSize();
   const [milestonesPaid, setMilestonesPaid] = useState(0);
 
   useEffect(() => {
@@ -341,10 +349,38 @@ export default function QuoteViewLive() {
         {/* Legal Embed or Raw CYA */}
         {pdfUrl && !isSigned ? (
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-8">
-             <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2 pl-4 pt-2">
-               <FileText style={{color: themeColor}}/> Embedded Contract
-             </h3>
-             <iframe src={`${pdfUrl}#toolbar=0`} className="w-full h-[600px] rounded-xl border border-white/10 bg-white" title="Contract PDF" />
+             <div className="flex items-center justify-between mb-4 pl-4 pt-2 pr-2">
+               <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                 <FileText style={{color: themeColor}}/> Embedded Contract
+               </h3>
+             </div>
+             <div className="w-full rounded-xl border border-white/10 bg-white overflow-hidden">
+               {/* Desktop Native Viewer */}
+               <iframe src={`${pdfUrl}#toolbar=0`} className="hidden md:block w-full h-[600px] border-none" title="Contract PDF Desktop" />
+               
+               {/* Mobile Scaled Viewer (react-pdf) */}
+               <div className="md:hidden w-full flex flex-col items-center bg-[#f0f0f0] py-4" style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch', maxHeight: '70vh' }}>
+                 <Document 
+                   file={pdfUrl} 
+                   onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                   className="flex flex-col items-center gap-4"
+                   loading={<div className="text-black/50 py-10">Loading Document...</div>}
+                   error={<div className="text-red-500 py-10">Failed to load PDF.</div>}
+                 >
+                   {Array.from(new Array(numPages), (el, index) => (
+                     <Page 
+                       key={`page_${index + 1}`} 
+                       pageNumber={index + 1} 
+                       renderTextLayer={false} 
+                       renderAnnotationLayer={false} 
+                       width={Math.min(windowWidth - 64, 600)} 
+                       className="shadow-lg"
+                     />
+                   ))}
+                 </Document>
+               </div>
+             </div>
+             <p className="text-xs text-white/40 text-center mt-3 md:hidden">Mobile scaled preview.</p>
           </div>
         ) : !isSigned ? (
           <div className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8 text-sm text-white/70 space-y-5">

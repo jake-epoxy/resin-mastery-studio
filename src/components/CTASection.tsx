@@ -26,7 +26,7 @@ const CTASection = () => {
                  <p className="text-white/60">Everything you need to scale your high-ticket coating business.</p>
                </div>
                <div className="text-center md:text-right shrink-0">
-                 <div className="text-4xl font-bold text-white mb-1">$39<span className="text-xl text-white/50 font-normal">/mo</span></div>
+                 <div className="text-4xl font-bold text-white mb-1">$19.99<span className="text-xl text-white/50 font-normal">/mo</span></div>
                  <p className="text-[#78c8ff] text-sm font-bold tracking-widest uppercase">After 7-Day Free Trial</p>
                </div>
             </div>

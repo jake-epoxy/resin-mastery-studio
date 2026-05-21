@@ -228,7 +228,7 @@ export default function AffiliateLanding() {
                     boxShadow: `0 0 30px ${affiliate.accentGlow}`,
                   }}
                 >
-                  Start Your 7-Day Free Trial
+                  Start Your 3-Day Free Trial
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <div className="flex items-center gap-2 text-white/40 text-sm self-center">
@@ -240,7 +240,7 @@ export default function AffiliateLanding() {
               {/* Social proof stats */}
               <div className="flex gap-8 mt-12 pt-8 border-t border-white/10">
                 {[
-                  { value: "$39", label: "/ month after trial" },
+                  { value: "$19.99", label: "/ month after trial" },
                   { value: "7", label: "day free trial" },
                   { value: "30s", label: "to generate a quote" },
                 ].map((stat, i) => (
@@ -679,13 +679,13 @@ export default function AffiliateLanding() {
 
               <div className="text-center mb-8 pb-8 border-b border-white/10">
                 <div className="text-5xl font-bold text-white mb-1">
-                  $39<span className="text-xl text-white/40 font-normal">/mo</span>
+                  $19.99<span className="text-xl text-white/40 font-normal">/mo</span>
                 </div>
                 <p
                   className="text-sm font-bold tracking-widest uppercase mt-2"
                   style={{ color: affiliate.accentColor }}
                 >
-                  After 7-Day Free Trial
+                  After 3-Day Free Trial
                 </p>
               </div>
 
@@ -714,7 +714,7 @@ export default function AffiliateLanding() {
                   boxShadow: `0 0 30px ${affiliate.accentGlow}`,
                 }}
               >
-                Start Your 7-Day Free Trial
+                Start Your 3-Day Free Trial
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               <p className="mt-4 text-center text-xs tracking-wider uppercase text-white/30 font-bold">

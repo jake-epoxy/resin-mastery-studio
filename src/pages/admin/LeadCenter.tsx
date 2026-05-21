@@ -4,6 +4,9 @@ import { supabase } from "../../lib/supabase";
 import ClientProfileDrawer from "./ClientProfileDrawer";
 import AddLeadModal from "./AddLeadModal";
 import { Link } from "react-router-dom";
+import ReceiptPreviewModal from "../../components/admin/ReceiptPreviewModal";
+import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 export default function LeadCenter() {
   const [clients, setClients] = useState<any[]>([]);
@@ -12,6 +15,36 @@ export default function LeadCenter() {
   
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const { toast } = useToast();
+  const [sendingReceiptId, setSendingReceiptId] = useState<string | null>(null);
+  const [previewReceiptConfig, setPreviewReceiptConfig] = useState<{quote: any, client: any} | null>(null);
+
+  async function handleSendReceiptFast(client: any, e: React.MouseEvent) {
+    e.stopPropagation();
+    setSendingReceiptId(client.id);
+
+    try {
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('client_id', client.id)
+        .in('status', ['Won', 'Paid', 'Paid In Full'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error || !data) {
+         toast({ title: "No Paid Quote Found", description: "This client doesn't have a paid quote on file yet.", variant: "destructive" });
+         setSendingReceiptId(null);
+         return;
+      }
+      
+      setPreviewReceiptConfig({ quote: data, client });
+    } catch (err) {
+      toast({ title: "Error", variant: "destructive" });
+    }
+    setSendingReceiptId(null);
+  }
 
   useEffect(() => {
     fetchClients();
@@ -112,7 +145,16 @@ export default function LeadCenter() {
                         {client.status}
                       </span>
                     </td>
-                    <td className="p-4 align-top text-right">
+                    <td className="p-4 align-top text-right flex flex-col md:flex-row gap-2 justify-end">
+                      {['Won', 'Paid', 'Completed'].includes(client.status) && (
+                        <button 
+                          onClick={(e) => handleSendReceiptFast(client, e)}
+                          disabled={sendingReceiptId === client.id}
+                          className="inline-flex items-center gap-2 text-xs font-bold bg-[#78c8ff]/10 text-[#78c8ff] border border-[#78c8ff]/20 px-3 py-2 rounded-lg hover:bg-[#78c8ff]/20 transition-colors disabled:opacity-50"
+                        >
+                          {sendingReceiptId === client.id ? <Loader2 size={14} className="animate-spin" /> : <><FileText size={14} /> Build Receipt</>}
+                        </button>
+                      )}
                       <Link 
                         to="/admin/quote" 
                         onClick={(e) => e.stopPropagation()} // Prevent opening drawer when trying to quote
@@ -140,8 +182,19 @@ export default function LeadCenter() {
       <AddLeadModal 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
-        onAdd={fetchClients} 
+        onAdd={() => {
+          setIsAddModalOpen(false);
+          fetchClients();
+        }} 
       />
+
+      {previewReceiptConfig && (
+        <ReceiptPreviewModal
+          quote={previewReceiptConfig.quote}
+          client={previewReceiptConfig.client}
+          onClose={() => setPreviewReceiptConfig(null)}
+        />
+      )}
     </div>
   );
 }
