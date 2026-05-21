@@ -64,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log("Sending real request to OpenAI DALL-E 2...");
 
     const response = await openai.images.edit({
-      model: "dall-e-2",
+      model: "gpt-image-1",
       image: new File([originalBuffer], "image.png", { type: "image/png" }),
       mask: new File([maskBuffer], "mask.png", { type: "image/png" }),
       prompt: prompt,

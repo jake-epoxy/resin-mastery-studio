@@ -483,7 +483,7 @@ CRITICAL RULE 5: VERY IMPORTANT! If you are regenerating or updating a quote dra
             // 3. Call OpenAI images.edit
             const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
             const response = await openai.images.edit({
-              model: "dall-e-2",
+              model: "gpt-image-1",
               image: new File([imageBuffer], "image.png", { type: "image/png" }),
               prompt: prompt,
               n: 1,
