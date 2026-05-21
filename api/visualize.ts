@@ -70,18 +70,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       prompt: prompt,
       n: 1,
       size: "1024x1024",
+      response_format: "b64_json",
     });
 
+    console.log("OpenAI Response:", JSON.stringify(response).substring(0, 500)); // Log first 500 chars
+
     const url = response.data?.[0]?.url;
-    console.log("OpenAI Response:", JSON.stringify(response));
-    if (!url) throw new Error("No image returned from OpenAI: " + JSON.stringify(response));
+    const b64 = response.data?.[0]?.b64_json;
+    if (!url && !b64) throw new Error("No image returned from OpenAI: " + JSON.stringify(response).substring(0, 200));
 
     console.log("DALL-E 2 edit successful!");
     
-    // Fetch the resulting image and convert to base64 so frontend doesn't get CORS issues from OpenAI CDN
-    const resultRes = await fetch(url);
-    const resultBuffer = await resultRes.arrayBuffer();
-    const resultBase64 = Buffer.from(resultBuffer).toString('base64');
+    let resultBase64 = b64;
+    
+    if (!resultBase64 && url) {
+      const resultRes = await fetch(url);
+      const resultBuffer = await resultRes.arrayBuffer();
+      resultBase64 = Buffer.from(resultBuffer).toString('base64');
+    }
 
     res.status(200).json({ image: `data:image/png;base64,${resultBase64}` });
 

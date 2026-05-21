@@ -488,13 +488,24 @@ CRITICAL RULE 5: VERY IMPORTANT! If you are regenerating or updating a quote dra
               prompt: prompt,
               n: 1,
               size: "1024x1024",
+              response_format: "b64_json",
             });
 
+            console.log("OpenAI Assistant Chat Response:", JSON.stringify(response).substring(0, 500));
+
+            const url = response.data?.[0]?.url;
             const b64 = response.data?.[0]?.b64_json;
-            if (!b64) throw new Error("No image returned from OpenAI");
+            if (!url && !b64) throw new Error("No image returned from OpenAI edit: " + JSON.stringify(response).substring(0, 200));
+
+            let resultBase64 = b64;
+            if (!resultBase64 && url) {
+              const resultRes = await fetch(url);
+              const resultBuffer = await resultRes.arrayBuffer();
+              resultBase64 = Buffer.from(resultBuffer).toString('base64');
+            }
 
             // 4. Upload resulting Base64 to Supabase
-            const outBuffer = Buffer.from(b64, 'base64');
+            const outBuffer = Buffer.from(resultBase64, 'base64');
             const filePath = `${installerId}/visualizer/${Date.now()}.png`;
             const { error: uploadError } = await supabaseAdmin.storage
               .from('business-assets')
