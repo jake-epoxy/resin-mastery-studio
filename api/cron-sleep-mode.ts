@@ -149,21 +149,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (!aiRenderUrl) continue;
 
-        // 5. Create Client in CRM
+        // 5. Scrape Website for Email
+        let scrapedEmail = '';
+        if (biz.websiteUri) {
+          try {
+            console.log(`[Sleep Mode] Scraping website for email: ${biz.websiteUri}`);
+            const webRes = await fetch(biz.websiteUri, { 
+              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+              signal: AbortSignal.timeout(3000)
+            });
+            const html = await webRes.text();
+            // Regex to find an email address
+            const emailMatch = html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+            if (emailMatch && emailMatch[0]) {
+               // Filter out common image/file extensions or sentry noise
+               const em = emailMatch[0].toLowerCase();
+               if (!em.endsWith('.png') && !em.endsWith('.jpg') && !em.endsWith('.jpeg') && !em.endsWith('.gif') && !em.includes('sentry')) {
+                  scrapedEmail = em;
+                  console.log(`[Sleep Mode] Found email: ${scrapedEmail}`);
+               }
+            }
+          } catch (e) {
+            console.log(`[Sleep Mode] Website scrape failed for ${biz.websiteUri}`);
+          }
+        }
+
+        // 6. Create Client in CRM
         const { data: clientRes, error: clientErr } = await supabase.from('clients').insert({
           installer_id: profile.id,
           first_name: bizName,
           last_name: '(Lead)',
-          email: '', // Not public via Places API, would need scrape
+          email: scrapedEmail,
           phone: biz.nationalPhoneNumber || '',
           project_type: 'Metallic Epoxy',
-          status: 'Auto-Pitched',
+          status: scrapedEmail ? 'Auto-Pitched' : 'Auto-Pitched (No Email)',
           address: address
         }).select().single();
 
         if (clientErr || !clientRes) continue;
 
-        // 6. Create Pitch Quote Link
+        // 7. Create Pitch Quote Link
         const { data: quoteRes } = await supabase.from('quotes').insert({
           client_id: clientRes.id,
           installer_id: profile.id,
@@ -179,8 +204,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         }).select().single();
 
-        // 7. Fire Cold Outreach Email (If email scraping is added later, or send to contractor as notification)
-        console.log(`[Sleep Mode] Successfully generated pitch: /quote-live/${quoteRes?.id}`);
+        // 8. Fire Cold Outreach Email via Resend
+        if (scrapedEmail && RESEND_API_KEY) {
+           console.log(`[Sleep Mode] Dispatching cold email to ${scrapedEmail}...`);
+           const pitchLink = `https://${req.headers.host || 'resinmasterystudio.com'}/quote-live/${quoteRes?.id}`;
+           try {
+             await fetch('https://api.resend.com/emails', {
+               method: 'POST',
+               headers: {
+                 'Authorization': `Bearer ${RESEND_API_KEY}`,
+                 'Content-Type': 'application/json'
+               },
+               body: JSON.stringify({
+                 from: 'Resin OS <onboarding@resend.dev>', // Should be a verified domain in production
+                 to: scrapedEmail,
+                 subject: `Quick question about your floors at ${bizName}`,
+                 html: `
+                   <p>Hi team at ${bizName},</p>
+                   <p>We did a quick AI mockup of what your floors would look like with our Metallic Epoxy system.</p>
+                   <p>Check out your private pitch deck and rendering here: <a href="${pitchLink}">${pitchLink}</a></p>
+                   <p>Best,<br/>${profile.full_name || profile.company_name || 'Resin Contractor'}</p>
+                   <hr/>
+                   <p style="font-size: 10px; color: #888;">This is an automated outreach from ${profile.company_name || 'Resin Contractor'}. To stop receiving these emails, please reply STOP to unsubscribe.</p>
+                 `
+               })
+             });
+             console.log(`[Sleep Mode] Email dispatched successfully!`);
+           } catch (e) {
+             console.error(`[Sleep Mode] Failed to send email via Resend`, e);
+           }
+        } else {
+           console.log(`[Sleep Mode] Successfully generated pitch: /quote-live/${quoteRes?.id} (No email sent)`);
+        }
         
         currentRunPitched++;
         processedCount++;
