@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import LegalTerms from "./components/LegalTerms";
 import LicensingPage from "./pages/LicensingPage";
 import QuoteViewLive from "./pages/QuoteViewLive";
+import BookingLive from "./pages/BookingLive";
 import PortfolioGallery from "./pages/PortfolioGallery";
 import LeadCaptureWidget from "./pages/LeadCaptureWidget";
 import ReviewPortal from "./pages/ReviewPortal";
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/privacy" element={<LegalTerms />} />
           <Route path="/licensing" element={<LicensingPage />} />
           <Route path="/quote-live/:id" element={<QuoteViewLive />} />
+          <Route path="/book/:slug" element={<BookingLive />} />
           <Route path="/portfolio/:id" element={<PortfolioGallery />} />
           <Route path="/quote-form/:id" element={<LeadCaptureWidget />} />
           <Route path="/widget/ai/:installerId" element={<EmbedWidget />} />

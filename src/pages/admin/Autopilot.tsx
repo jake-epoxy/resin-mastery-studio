@@ -20,6 +20,7 @@ import {
   X
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import CalendarManager from "./CalendarManager";
 
 // Recommended keywords for quick searching
 const RECOMMENDED_BADGES = [
@@ -106,6 +107,8 @@ export default function Autopilot() {
     }, 2500);
     return () => clearInterval(interval);
   }, [isScanning]);
+
+  const [activeTab, setActiveTab] = useState<'prospector' | 'calendar'>('prospector');
 
   const hasAutoStarted = useRef(false);
   useEffect(() => {
@@ -278,9 +281,27 @@ export default function Autopilot() {
             <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Google Places API Active</span>
           </div>
         </div>
+
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-2 mt-8 relative z-10 border-b border-white/10 pb-1">
+          <button 
+            onClick={() => setActiveTab('prospector')}
+            className={`px-4 py-2 text-sm font-bold uppercase tracking-wider rounded-t-lg transition-colors ${activeTab === 'prospector' ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/5' : 'text-white/50 hover:text-white/80'}`}
+          >
+            Lead Prospector
+          </button>
+          <button 
+            onClick={() => setActiveTab('calendar')}
+            className={`px-4 py-2 text-sm font-bold uppercase tracking-wider rounded-t-lg transition-colors ${activeTab === 'calendar' ? 'text-purple-400 border-b-2 border-purple-400 bg-purple-500/5' : 'text-white/50 hover:text-white/80'}`}
+          >
+            Calendar Dashboard
+          </button>
+        </div>
       </div>
 
-      {/* Futuristic Scan Dashboard */}
+      {activeTab === 'prospector' && (
+        <>
+          {/* Futuristic Scan Dashboard */}
       <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 mb-8 shadow-xl">
         <form onSubmit={handleScan} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -681,6 +702,10 @@ export default function Autopilot() {
             </div>
           </div>
         </div>
+      )}
+      
+      {activeTab === 'calendar' && (
+        <CalendarManager />
       )}
     </div>
   );

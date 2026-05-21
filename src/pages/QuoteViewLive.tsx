@@ -138,7 +138,7 @@ export default function QuoteViewLive() {
     const { data: clientData } = await supabase.from('clients').select('*').eq('id', quoteData.client_id).single();
     if (clientData) setClient(clientData);
 
-    const { data: instData } = await supabase.from('installer_profiles').select('company_name').eq('user_id', quoteData.installer_id).maybeSingle();
+    const { data: instData } = await supabase.from('installer_profiles').select('company_name, booking_slug').eq('user_id', quoteData.installer_id).maybeSingle();
     if (instData) setInstallerInfo(instData);
 
     setLoading(false);
@@ -417,11 +417,18 @@ export default function QuoteViewLive() {
             <Calendar size={48} className="mx-auto mb-4" style={{color: themeColor}} />
             <h3 className="text-2xl font-space font-bold text-white mb-2">Ready to transform your space?</h3>
             <p className="text-white/60 max-w-md mx-auto mb-8">Schedule a private consultation to discuss your vision, evaluate your floor, and get a precise quote.</p>
-            <button 
-              onClick={() => toast({ title: "Calendar System", description: "The Consultation Booking Engine is currently being built!" })}
-              className="w-full sm:w-auto px-10 py-4 text-black font-bold rounded-xl hover:opacity-90 transition-opacity shadow-lg"
+            <button
+              onClick={() => {
+                if (installerInfo?.booking_slug) {
+                  window.location.href = `/book/${installerInfo.booking_slug}`;
+                } else {
+                  toast({ title: "Booking Unavailable", description: "The installer has not set up their booking link yet." });
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-black font-bold text-lg transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-2xl relative overflow-hidden group"
               style={{backgroundColor: themeColor}}
             >
+              <Calendar className="text-black group-hover:animate-pulse" size={24} />
               Request a Consultation
             </button>
           </div>
