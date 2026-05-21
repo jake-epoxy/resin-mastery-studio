@@ -184,6 +184,64 @@ export default function CalendarManager() {
                    Add Slot
                  </button>
                </div>
+
+               {/* Quick Fill Actions */}
+               <div className="pt-4 mt-4 border-t border-white/5">
+                 <h5 className="text-[10px] text-white/40 font-bold uppercase mb-2 tracking-wider">Quick Fill Actions</h5>
+                 <div className="flex flex-wrap gap-2">
+                   <button 
+                     onClick={() => {
+                       const slots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+                       setAvailability(prev => ({ ...prev, [selectedDate]: Array.from(new Set([...(prev[selectedDate] || []), ...slots])).sort() }));
+                     }}
+                     className="bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20 text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
+                   >
+                     9 AM - 5 PM
+                   </button>
+                   <button 
+                     onClick={() => {
+                       const slots = ['08:00', '09:00', '10:00', '11:00', '12:00'];
+                       setAvailability(prev => ({ ...prev, [selectedDate]: Array.from(new Set([...(prev[selectedDate] || []), ...slots])).sort() }));
+                     }}
+                     className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/20 text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
+                   >
+                     Morning Only
+                   </button>
+                   <button 
+                     onClick={() => {
+                       const currentSlots = availability[selectedDate] || [];
+                       if (currentSlots.length === 0) {
+                         toast({ title: "Nothing to copy", description: "Add slots to this day first." });
+                         return;
+                       }
+                       setAvailability(prev => {
+                         const newAvail = { ...prev };
+                         for (let i = 0; i < 30; i++) {
+                           const d = new Date();
+                           d.setDate(d.getDate() + i);
+                           const dayOfWeek = d.getDay();
+                           // 1=Mon, 5=Fri
+                           if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                             const isoStr = d.toISOString().split('T')[0];
+                             newAvail[isoStr] = [...currentSlots];
+                           }
+                         }
+                         return newAvail;
+                       });
+                       toast({ title: "Copied!", description: "Slots applied to all Weekdays (Mon-Fri) for the next 30 days." });
+                     }}
+                     className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/20 text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
+                   >
+                     Copy to all Mon-Fri
+                   </button>
+                   <button 
+                     onClick={() => setAvailability(prev => ({ ...prev, [selectedDate]: [] }))}
+                     className="bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/20 text-xs font-medium px-3 py-1.5 rounded-md transition-colors ml-auto"
+                   >
+                     Clear Day
+                   </button>
+                 </div>
+               </div>
              </div>
            ) : (
              <div className="text-center text-white/30 text-sm italic py-8 border border-dashed border-white/10 rounded-lg">
