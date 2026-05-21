@@ -287,31 +287,33 @@ export default function QuoteViewLive() {
 
   const legalTermsArray = legalTermsRaw.split('\n').filter((l: string) => l.trim() !== '');
 
+  const cleanName = (name: string | undefined) => name ? name.replace(/\s*\(Lead\)\s*/gi, '') : '';
+
   if (isPitchMode) {
     return (
       <div className="min-h-screen bg-black text-white font-inter relative pb-32">
         {/* Full bleed background */}
         {visualConfig.visualization_image && (
           <div className="absolute inset-0 z-0">
-            <img src={visualConfig.visualization_image} alt="Proposed Design" className="w-full h-[70vh] object-cover opacity-50 select-none pointer-events-none" />
-            <div className="absolute inset-0 h-[70vh] bg-gradient-to-b from-black/60 via-black/40 to-black"></div>
+            <img src={visualConfig.visualization_image} alt="Proposed Design" className="w-full h-full object-cover opacity-50 select-none pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black"></div>
           </div>
         )}
         
         {/* Content */}
         <div className="relative z-10 max-w-4xl mx-auto px-6 pt-20">
-          <header className="text-center mb-16">
+          <header className="text-center mb-24">
             {logoUrl && <img src={logoUrl} alt="Logo" className="w-20 h-20 rounded-full mx-auto mb-6 shadow-2xl border-2 border-white/20 object-cover" />}
             <h1 className="text-4xl md:text-5xl font-space font-bold tracking-tight mb-2 drop-shadow-lg">{brandName}</h1>
             <p className="text-sm text-white/70 uppercase tracking-widest font-bold">Exclusive Vision Pitch</p>
           </header>
 
-          <div className="max-w-xl mx-auto backdrop-blur-2xl bg-black/50 border border-white/10 p-8 md:p-10 rounded-3xl shadow-2xl mb-12 relative overflow-hidden">
+          <div className="max-w-xl mx-auto backdrop-blur-3xl bg-black/40 border border-white/10 p-8 md:p-10 rounded-3xl shadow-2xl mb-12 relative overflow-hidden">
             {/* Glowing Accent */}
             <div className="absolute top-0 right-0 w-64 h-64 opacity-20 blur-3xl rounded-full pointer-events-none" style={{backgroundColor: themeColor}}></div>
             
             <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">Prepared Exclusively For</p>
-            <h2 className="text-2xl font-bold mb-8">{client?.first_name} {client?.last_name}</h2>
+            <h2 className="text-2xl font-bold mb-8">{cleanName(client?.first_name)} {cleanName(client?.last_name)}</h2>
             
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-10 shadow-inner">
               <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2">Proposed Aesthetic</p>

@@ -1148,7 +1148,7 @@ export default function QuoteGenerator() {
                        <div className="mt-auto backdrop-blur-xl bg-black/50 border border-white/10 p-5 rounded-2xl shadow-2xl relative overflow-hidden mb-6">
                          <div className="absolute top-0 right-0 w-32 h-32 opacity-20 blur-2xl rounded-full pointer-events-none" style={{backgroundColor: themeColor}}></div>
                          <p className="text-white/50 text-[9px] font-bold uppercase tracking-widest mb-1">Prepared Exclusively For</p>
-                         <h2 className="text-lg font-bold mb-5">{activeClientName} {activeClientLast}</h2>
+                         <h2 className="text-lg font-bold mb-5">{activeClientName.replace(/\s*\(Lead\)\s*/gi, '')} {activeClientLast.replace(/\s*\(Lead\)\s*/gi, '')}</h2>
                          
                          <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-6 shadow-inner">
                            <p className="text-white/50 text-[9px] font-bold uppercase tracking-widest mb-1">Proposed Aesthetic</p>
