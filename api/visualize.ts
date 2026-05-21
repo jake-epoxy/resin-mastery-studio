@@ -73,7 +73,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     const url = response.data?.[0]?.url;
-    if (!url) throw new Error("No image returned from OpenAI");
+    console.log("OpenAI Response:", JSON.stringify(response));
+    if (!url) throw new Error("No image returned from OpenAI: " + JSON.stringify(response));
 
     console.log("DALL-E 2 edit successful!");
     
