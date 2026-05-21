@@ -61,7 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
         body: JSON.stringify({
           textQuery: fullQuery,
-          maxResultCount: 10, // Keep small to avoid Vercel timeouts
+          maxResultCount: 20, // Fetch up to 20 leads
           ...(config.nextPageToken && { pageToken: config.nextPageToken }),
         }),
       });
@@ -74,12 +74,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const placesData = await placesRes.json();
       const places = placesData.places || [];
 
-      // Process only 1 lead per run to respect Vercel's 10s/15s timeout limit per function
-      // If we want 24 leads a day, run this cron every hour!
-      let leadPitched = false;
+      // Process up to 20 leads per run now that we have Vercel Pro (300s timeout)
+      let currentRunPitched = 0;
 
       for (const biz of places) {
-        if (leadPitched) break; // Only pitch 1 per run
+        if (currentRunPitched >= 20) break; // Hard cap per run just to be safe
 
         const bizName = biz.displayName?.text || 'Business';
         const address = biz.formattedAddress || 'Local Area';
@@ -183,12 +182,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // 7. Fire Cold Outreach Email (If email scraping is added later, or send to contractor as notification)
         console.log(`[Sleep Mode] Successfully generated pitch: /quote-live/${quoteRes?.id}`);
         
-        leadPitched = true;
+        currentRunPitched++;
         processedCount++;
       }
 
       // 8. Update Next Page Token for tomorrow
-      if (placesData.nextPageToken && leadPitched) {
+      if (placesData.nextPageToken && currentRunPitched > 0) {
          settings.autopilot_config.nextPageToken = placesData.nextPageToken;
          await supabase.from('installer_profiles')
            .update({ service_pricing: settings })
