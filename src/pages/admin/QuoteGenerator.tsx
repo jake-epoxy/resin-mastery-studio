@@ -327,9 +327,12 @@ export default function QuoteGenerator() {
         const firstKey = Object.keys(profile.service_pricing)[0];
         if (firstKey) setPricePerSqft(profile.service_pricing[firstKey]);
       }
-      if (profile.company_name && !localStorage.getItem('resinos_brand')) setBrandName(profile.company_name);
+      if (profile.company_name) {
+        setBrandName(profile.company_name);
+        localStorage.setItem('resinos_brand', profile.company_name);
+      }
       if (profile.company_logo_url && !logoUrl) setLogoUrl(profile.company_logo_url);
-    } else if (user?.email && !localStorage.getItem('resinos_brand')) {
+    } else if (user?.email && (!localStorage.getItem('resinos_brand') || localStorage.getItem('resinos_brand') === "Epoxy Contractor")) {
       setBrandName(user.email.split('@')[0].toUpperCase());
     }
   }
