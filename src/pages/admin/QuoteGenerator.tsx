@@ -1129,15 +1129,7 @@ export default function QuoteGenerator() {
              <div className="flex-1 overflow-y-auto no-scrollbar relative">
                 
                 {documentMode === 'pitch' ? (
-                  <div className="min-h-full bg-black text-white flex flex-col relative pb-10">
-                     {/* Full bleed background */}
-                     {visualizationImage && (
-                       <div className="absolute inset-0 z-0">
-                         <img src={visualizationImage} alt="Proposed Design" className="w-full h-1/2 object-cover opacity-50" />
-                         <div className="absolute inset-0 h-1/2 bg-gradient-to-b from-black/60 via-black/40 to-black"></div>
-                       </div>
-                     )}
-                     
+                  <div className="min-h-full bg-[#050505] text-white flex flex-col relative pb-10">
                      <div className="relative z-10 px-5 pt-12 flex-1 flex flex-col">
                        <header className="text-center mb-8">
                          {logoUrl && <img src={logoUrl} alt="Logo" className="w-12 h-12 rounded-full mx-auto mb-3 object-cover shadow-xl border border-white/20" />}
@@ -1145,17 +1137,25 @@ export default function QuoteGenerator() {
                          <p className="text-[9px] text-white/70 uppercase tracking-widest font-bold">Exclusive Vision Pitch</p>
                        </header>
                        
-                       <div className="mt-auto backdrop-blur-xl bg-black/50 border border-white/10 p-5 rounded-2xl shadow-2xl relative overflow-hidden mb-6">
+                       <div className="mt-auto backdrop-blur-3xl bg-[#111]/80 border border-white/10 p-5 rounded-2xl shadow-2xl relative overflow-hidden mb-6">
                          <div className="absolute top-0 right-0 w-32 h-32 opacity-20 blur-2xl rounded-full pointer-events-none" style={{backgroundColor: themeColor}}></div>
-                         <p className="text-white/50 text-[9px] font-bold uppercase tracking-widest mb-1">Prepared Exclusively For</p>
-                         <h2 className="text-lg font-bold mb-5">{activeClientName.replace(/\s*\(Lead\)\s*/gi, '')} {activeClientLast.replace(/\s*\(Lead\)\s*/gi, '')}</h2>
                          
-                         <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-6 shadow-inner">
+                         {/* The Framed Pokemon Card Image */}
+                         {visualizationImage && (
+                           <div className="w-full h-40 rounded-xl overflow-hidden mb-5 border border-white/10 shadow-2xl relative z-10">
+                             <img src={visualizationImage} alt="Proposed Design" className="w-full h-full object-cover select-none pointer-events-none" />
+                           </div>
+                         )}
+
+                         <p className="text-white/50 text-[9px] font-bold uppercase tracking-widest mb-1 relative z-10">Prepared Exclusively For</p>
+                         <h2 className="text-lg font-bold mb-5 relative z-10">{activeClientName.replace(/\s*\(Lead\)\s*/gi, '')} {activeClientLast.replace(/\s*\(Lead\)\s*/gi, '')}</h2>
+                         
+                         <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-6 shadow-inner relative z-10">
                            <p className="text-white/50 text-[9px] font-bold uppercase tracking-widest mb-1">Proposed Aesthetic</p>
                            <h3 className="text-sm font-space font-bold" style={{color: themeColor}}>{serviceType}</h3>
                          </div>
                          
-                         <div className="text-center">
+                         <div className="text-center relative z-10">
                            <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-xs shadow-xl relative overflow-hidden group" style={{backgroundColor: themeColor}}>
                              <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors"></div>
                              <Calendar className="text-black group-hover:animate-pulse relative z-10" size={14} /> 

@@ -11,6 +11,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { useWindowSize } from 'react-use';
+import { motion, AnimatePresence } from "framer-motion";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -287,42 +288,103 @@ export default function QuoteViewLive() {
 
   const legalTermsArray = legalTermsRaw.split('\n').filter((l: string) => l.trim() !== '');
 
+  const [isRevealed, setIsRevealed] = useState(false);
   const cleanName = (name: string | undefined) => name ? name.replace(/\s*\(Lead\)\s*/gi, '') : '';
 
   if (isPitchMode) {
     return (
-      <div className="min-h-screen bg-black text-white font-inter relative pb-32">
-        {/* Full bleed background */}
-        {visualConfig.visualization_image && (
-          <div className="absolute inset-0 z-0">
-            <img src={visualConfig.visualization_image} alt="Proposed Design" className="w-full h-full object-cover opacity-50 select-none pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black"></div>
-          </div>
-        )}
-        
-        {/* Content */}
-        <div className="relative z-10 max-w-4xl mx-auto px-6 pt-20">
-          <header className="text-center mb-24">
-            {logoUrl && <img src={logoUrl} alt="Logo" className="w-20 h-20 rounded-full mx-auto mb-6 shadow-2xl border-2 border-white/20 object-cover" />}
-            <h1 className="text-4xl md:text-5xl font-space font-bold tracking-tight mb-2 drop-shadow-lg">{brandName}</h1>
-            <p className="text-sm text-white/70 uppercase tracking-widest font-bold">Exclusive Vision Pitch</p>
-          </header>
+      <div className="min-h-screen bg-[#050505] text-white font-inter relative overflow-hidden flex flex-col items-center justify-center">
+        <AnimatePresence>
+          {!isRevealed && (
+            <motion.div
+              key="locked-state"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              transition={{ duration: 0.6 }}
+              className="absolute inset-0 z-50 flex flex-col items-center justify-end pb-20 md:pb-24 cursor-pointer touch-none"
+              onClick={() => setIsRevealed(true)}
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(e, info) => {
+                if (info.offset.y < -50 || info.offset.y > 50) {
+                  setIsRevealed(true);
+                }
+              }}
+            >
+              <div className="absolute inset-0 z-0 pointer-events-none">
+                <motion.img 
+                  layoutId="pitch-image"
+                  src={visualConfig.visualization_image} 
+                  alt="Proposed Design" 
+                  className="w-full h-full object-cover opacity-90 select-none" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent pointer-events-none"></div>
+              </div>
+              
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="relative z-10 text-center animate-pulse"
+              >
+                <div className="w-16 h-1.5 bg-white/40 rounded-full mx-auto mb-6 backdrop-blur-sm"></div>
+                <h2 className="text-3xl md:text-5xl font-space font-bold tracking-tight mb-3 drop-shadow-2xl">Your Future Floor Awaits</h2>
+                <p className="text-white/80 uppercase tracking-widest font-bold text-xs md:text-sm drop-shadow-lg flex items-center justify-center gap-2">
+                  <span className="hidden md:inline">Click anywhere to open</span>
+                  <span className="md:hidden">Swipe up to reveal</span>
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          <div className="max-w-xl mx-auto backdrop-blur-3xl bg-black/40 border border-white/10 p-8 md:p-10 rounded-3xl shadow-2xl mb-12 relative overflow-hidden">
+        <motion.div 
+          className="relative z-10 w-full max-w-4xl mx-auto px-4 md:px-6 pt-12 md:pt-20 pb-32 h-screen overflow-y-auto no-scrollbar"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isRevealed ? 1 : 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          style={{ pointerEvents: isRevealed ? 'auto' : 'none' }}
+        >
+          <motion.header 
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: isRevealed ? 0 : -20, opacity: isRevealed ? 1 : 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="text-center mb-16 md:mb-24"
+          >
+            {logoUrl && <img src={logoUrl} alt="Logo" className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-6 shadow-2xl border-2 border-white/20 object-cover" />}
+            <h1 className="text-3xl md:text-5xl font-space font-bold tracking-tight mb-2 drop-shadow-lg">{brandName}</h1>
+            <p className="text-xs md:text-sm text-white/70 uppercase tracking-widest font-bold">Exclusive Vision Pitch</p>
+          </motion.header>
+
+          <motion.div 
+             initial={{ y: 40, opacity: 0 }}
+             animate={{ y: isRevealed ? 0 : 40, opacity: isRevealed ? 1 : 0 }}
+             transition={{ duration: 0.8, delay: 0.7 }}
+             className="max-w-xl mx-auto backdrop-blur-3xl bg-[#111]/80 border border-white/10 p-6 md:p-10 rounded-[2rem] shadow-2xl mb-12 relative overflow-hidden"
+          >
             {/* Glowing Accent */}
             <div className="absolute top-0 right-0 w-64 h-64 opacity-20 blur-3xl rounded-full pointer-events-none" style={{backgroundColor: themeColor}}></div>
             
-            <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">Prepared Exclusively For</p>
-            <h2 className="text-2xl font-bold mb-8">{cleanName(client?.first_name)} {cleanName(client?.last_name)}</h2>
+            {/* The Framed Pokemon Card Image */}
+            {visualConfig.visualization_image && (
+              <motion.div layoutId="pitch-image" className="w-full h-56 md:h-72 rounded-2xl overflow-hidden mb-8 border border-white/10 shadow-2xl relative z-10">
+                <img src={visualConfig.visualization_image} alt="Proposed Design" className="w-full h-full object-cover select-none pointer-events-none" />
+              </motion.div>
+            )}
+
+            <p className="text-white/50 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1 relative z-10">Prepared Exclusively For</p>
+            <h2 className="text-xl md:text-2xl font-bold mb-8 relative z-10">{cleanName(client?.first_name)} {cleanName(client?.last_name)}</h2>
             
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-10 shadow-inner">
-              <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2">Proposed Aesthetic</p>
-              <h3 className="text-2xl font-space font-bold" style={{color: themeColor}}>{serviceType}</h3>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 mb-10 shadow-inner relative z-10">
+              <p className="text-white/50 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-2">Proposed Aesthetic</p>
+              <h3 className="text-xl md:text-2xl font-space font-bold" style={{color: themeColor}}>{serviceType}</h3>
             </div>
             
-            <div className="text-center">
-              <h3 className="text-xl font-bold mb-3">Ready to transform your space?</h3>
-              <p className="text-white/60 mb-8 text-sm">Schedule a private consultation to discuss your vision, evaluate your floor, and lock in your installation date.</p>
+            <div className="text-center relative z-10">
+              <h3 className="text-lg md:text-xl font-bold mb-3">Ready to transform your space?</h3>
+              <p className="text-white/60 mb-8 text-xs md:text-sm">Schedule a private consultation to discuss your vision, evaluate your floor, and lock in your installation date.</p>
               <button
                 onClick={() => {
                   if (installerInfo?.booking_slug) {
@@ -331,16 +393,16 @@ export default function QuoteViewLive() {
                     toast({ title: "Booking Unavailable", description: "The installer has not set up their booking link yet." });
                   }
                 }}
-                className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-black font-bold text-lg transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-2xl relative overflow-hidden group"
+                className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-black font-bold text-base md:text-lg transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-2xl relative overflow-hidden group"
                 style={{backgroundColor: themeColor}}
               >
                 <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors"></div>
-                <Calendar className="text-black group-hover:animate-pulse relative z-10" size={24} />
+                <Calendar className="text-black group-hover:animate-pulse relative z-10" size={20} />
                 <span className="relative z-10">Request a Consultation</span>
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     );
   }
