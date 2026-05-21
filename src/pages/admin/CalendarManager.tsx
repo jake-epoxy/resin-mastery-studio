@@ -122,7 +122,7 @@ export default function CalendarManager() {
            <h3 className="font-bold text-sm mb-4 flex items-center gap-2"><Clock size={16} className="text-purple-400"/> Specific Date Availability</h3>
            <p className="text-xs text-white/50 mb-4">Click dates below to manually add time slots where you are available for calls or estimates. (In V2 this will sync automatically with Google Calendar).</p>
            
-           <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
+           <div className="grid grid-cols-7 gap-2 mb-4">
               {Array.from({length: 30}).map((_, i) => {
                 const date = new Date();
                 date.setDate(date.getDate() + i);
