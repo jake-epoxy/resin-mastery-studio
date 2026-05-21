@@ -1126,47 +1126,80 @@ export default function QuoteGenerator() {
           <div className="relative bg-[#050505] border-[6px] border-[#222] rounded-[3rem] h-[800px] overflow-hidden shadow-2xl flex flex-col font-inter">
              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#222] rounded-b-2xl z-50"></div>
              
-             <div className="flex-1 overflow-y-auto no-scrollbar pt-12 pb-8 px-6 space-y-6">
+             <div className="flex-1 overflow-y-auto no-scrollbar relative">
                 
-                <header className="border-b border-white/10 pb-4 flex items-center gap-4">
-                  {logoUrl && (
-                    <img src={logoUrl} alt="Logo" className="w-12 h-12 rounded-full object-cover shadow-lg border border-white/10 flex-shrink-0" />
-                  )}
-                  <div>
-                    {!logoUrl && <h1 className="text-xl font-space font-bold text-white mb-1">{brandName}</h1>}
-                    {documentMode === 'quote' && (
-                      <>
+                {documentMode === 'pitch' ? (
+                  <div className="min-h-full bg-black text-white flex flex-col relative pb-10">
+                     {/* Full bleed background */}
+                     {visualizationImage && (
+                       <div className="absolute inset-0 z-0">
+                         <img src={visualizationImage} alt="Proposed Design" className="w-full h-1/2 object-cover opacity-50" />
+                         <div className="absolute inset-0 h-1/2 bg-gradient-to-b from-black/60 via-black/40 to-black"></div>
+                       </div>
+                     )}
+                     
+                     <div className="relative z-10 px-5 pt-12 flex-1 flex flex-col">
+                       <header className="text-center mb-8">
+                         {logoUrl && <img src={logoUrl} alt="Logo" className="w-12 h-12 rounded-full mx-auto mb-3 object-cover shadow-xl border border-white/20" />}
+                         <h1 className="text-xl font-space font-bold tracking-tight mb-1 drop-shadow-md">{brandName}</h1>
+                         <p className="text-[9px] text-white/70 uppercase tracking-widest font-bold">Exclusive Vision Pitch</p>
+                       </header>
+                       
+                       <div className="mt-auto backdrop-blur-xl bg-black/50 border border-white/10 p-5 rounded-2xl shadow-2xl relative overflow-hidden mb-6">
+                         <div className="absolute top-0 right-0 w-32 h-32 opacity-20 blur-2xl rounded-full pointer-events-none" style={{backgroundColor: themeColor}}></div>
+                         <p className="text-white/50 text-[9px] font-bold uppercase tracking-widest mb-1">Prepared Exclusively For</p>
+                         <h2 className="text-lg font-bold mb-5">{activeClientName} {activeClientLast}</h2>
+                         
+                         <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-6 shadow-inner">
+                           <p className="text-white/50 text-[9px] font-bold uppercase tracking-widest mb-1">Proposed Aesthetic</p>
+                           <h3 className="text-sm font-space font-bold" style={{color: themeColor}}>{serviceType}</h3>
+                         </div>
+                         
+                         <div className="text-center">
+                           <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-black font-bold text-xs shadow-xl relative overflow-hidden group" style={{backgroundColor: themeColor}}>
+                             <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors"></div>
+                             <Calendar className="text-black group-hover:animate-pulse relative z-10" size={14} /> 
+                             <span className="relative z-10">Request Consultation</span>
+                           </button>
+                         </div>
+                       </div>
+                     </div>
+                  </div>
+                ) : (
+                  <div className="pt-12 pb-8 px-6 space-y-6">
+                    <header className="border-b border-white/10 pb-4 flex items-center gap-4">
+                      {logoUrl && (
+                        <img src={logoUrl} alt="Logo" className="w-12 h-12 rounded-full object-cover shadow-lg border border-white/10 flex-shrink-0" />
+                      )}
+                      <div>
+                        {!logoUrl && <h1 className="text-xl font-space font-bold text-white mb-1">{brandName}</h1>}
                         <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-1">Total Investment</p>
                         <p className="text-3xl font-space font-bold" style={{color: themeColor}}>${estimatedTotal.toLocaleString()}</p>
-                      </>
-                    )}
-                  </div>
-                </header>
+                      </div>
+                    </header>
 
-                <div className="bg-[#111] border border-white/10 rounded-xl p-4 text-xs">
-                  <p className="text-white/40 uppercase tracking-widest font-bold mb-1">Prepared For</p>
-                  <p className="font-bold text-white text-sm">{activeClientName} {activeClientLast}</p>
-                  <p className="text-white/60">{serviceType}</p>
-                </div>
-
-                {/* AI Visualization Preview */}
-                {visualizationImage && (
-                  <div className="bg-[#111] border border-white/10 rounded-xl overflow-hidden">
-                    <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
-                      <p className="text-[10px] text-purple-400 uppercase tracking-widest font-bold">AI Visualization</p>
-                      <button 
-                        onClick={() => setVisualizationImage(null)} 
-                        className="text-white/30 text-[10px] hover:text-white/60"
-                      >
-                        Remove
-                      </button>
+                    <div className="bg-[#111] border border-white/10 rounded-xl p-4 text-xs">
+                      <p className="text-white/40 uppercase tracking-widest font-bold mb-1">Prepared For</p>
+                      <p className="font-bold text-white text-sm">{activeClientName} {activeClientLast}</p>
+                      <p className="text-white/60">{serviceType}</p>
                     </div>
-                    <img src={visualizationImage} alt="Floor visualization" className="w-full h-40 object-cover" />
-                  </div>
-                )}
 
-                {documentMode === 'quote' && (
-                  <>
+                    {/* AI Visualization Preview */}
+                    {visualizationImage && (
+                      <div className="bg-[#111] border border-white/10 rounded-xl overflow-hidden">
+                        <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
+                          <p className="text-[10px] text-purple-400 uppercase tracking-widest font-bold">AI Visualization</p>
+                          <button 
+                            onClick={() => setVisualizationImage(null)} 
+                            className="text-white/30 text-[10px] hover:text-white/60"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <img src={visualizationImage} alt="Floor visualization" className="w-full h-40 object-cover" />
+                      </div>
+                    )}
+
                     {!contractPdfUrl ? (
                       <div className="bg-[#111] border border-white/10 rounded-xl p-4 text-xs space-y-3">
                         <h3 className="text-white font-bold flex items-center gap-2"><ShieldCheck size={14} style={{color: themeColor}}/> Digital Terms</h3>
@@ -1195,9 +1228,8 @@ export default function QuoteGenerator() {
                        <div className="h-24 bg-white rounded-lg mb-4 opacity-50"></div>
                        <button className="w-full text-black font-bold py-3 rounded-lg text-sm" style={{backgroundColor: themeColor}}>I Agree to Terms</button>
                     </div>
-                  </>
+                  </div>
                 )}
-
              </div>
           </div>
         </div>
