@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Save, Link as LinkIcon, Clock, CheckCircle2 } from "lucide-react";
+import { Calendar, Save, Link as LinkIcon, Clock, CheckCircle2, Copy } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -105,6 +105,17 @@ export default function CalendarManager() {
                 placeholder="your-company-name"
                 className="w-full bg-transparent text-white px-3 py-2 outline-none text-sm font-bold"
               />
+              <button
+                onClick={() => {
+                  if (!slug) return;
+                  navigator.clipboard.writeText(`https://resinacademics.com/book/${slug}`);
+                  toast({ title: "Copied!", description: "Link copied to clipboard." });
+                }}
+                className="p-2 hover:bg-white/10 text-white/50 hover:text-white transition-colors border-l border-white/10"
+                title="Copy Link"
+              >
+                <Copy size={16} />
+              </button>
             </div>
           </div>
           
