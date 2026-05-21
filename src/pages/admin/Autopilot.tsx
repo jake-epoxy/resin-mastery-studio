@@ -154,17 +154,23 @@ export default function Autopilot() {
 
   // Carousel Navigation helpers
   const nextPhoto = (bizId: string, maxPhotos: number) => {
-    setCarouselIndex((prev) => ({
-      ...prev,
-      [bizId]: (prev[bizId] + 1) % maxPhotos,
-    }));
+    setCarouselIndex((prev) => {
+      const current = prev[bizId] || 0;
+      return {
+        ...prev,
+        [bizId]: (current + 1) % maxPhotos,
+      };
+    });
   };
 
   const prevPhoto = (bizId: string, maxPhotos: number) => {
-    setCarouselIndex((prev) => ({
-      ...prev,
-      [bizId]: (prev[bizId] - 1 + maxPhotos) % maxPhotos,
-    }));
+    setCarouselIndex((prev) => {
+      const current = prev[bizId] || 0;
+      return {
+        ...prev,
+        [bizId]: (current - 1 + maxPhotos) % maxPhotos,
+      };
+    });
   };
 
   // Triggering the Visualizer Pop-up
