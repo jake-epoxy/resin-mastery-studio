@@ -107,6 +107,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           html: emailHtml
         })
       });
+
+      // 5. Send Email Confirmation to Client
+      const clientEmailHtml = `
+        <div style="font-family: sans-serif; max-w: 600px; margin: 0 auto; padding: 30px; border-radius: 12px; border: 1px solid #e4e4e7; background-color: #ffffff;">
+          <h2 style="color: #18181b; margin-bottom: 10px; font-size: 24px;">Booking Confirmed!</h2>
+          <p style="color: #52525b; font-size: 16px; line-height: 1.6;">Hi ${client_name.split(' ')[0]}, your consultation with <strong>${profile.company_name || 'us'}</strong> is officially confirmed.</p>
+          
+          <div style="background-color: #f4f4f5; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #e4e4e7;">
+            <p style="margin: 0; color: #18181b; font-size: 16px;"><strong>Date & Time:</strong> ${displayDate}</p>
+          </div>
+          <p style="font-size: 15px; color: #52525b; line-height: 1.5;">We will send you a reminder 1 hour before the call. Talk to you soon!</p>
+        </div>
+      `;
+
+      await fetch(`https://${req.headers.host || 'localhost:3000'}/api/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: client_email,
+          subject: `Booking Confirmed: Consultation with ${profile.company_name || 'Us'}`,
+          html: clientEmailHtml
+        })
+      });
     }
 
     return res.status(200).json({ success: true, booking });

@@ -130,15 +130,24 @@ export default function BookingLive() {
               <button onClick={() => setSelectedDate(null)} className="text-xs text-white/40 hover:text-white mb-6 uppercase tracking-wider font-bold flex items-center gap-1"><ChevronRight className="rotate-180" size={14} /> Back to dates</button>
               <h2 className="text-xl font-bold mb-6">Select a Time</h2>
               <div className="grid grid-cols-3 gap-3">
-                {(availability[selectedDate] || []).map((time: string) => (
-                  <button 
-                    key={time}
-                    onClick={() => setSelectedTime(time)}
-                    className="bg-black/40 border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/10 rounded-xl p-4 text-center text-lg font-bold transition-all"
-                  >
-                    {time}
-                  </button>
-                ))}
+                {(availability[selectedDate] || []).map((time: string) => {
+                  const [h, m] = time.split(':');
+                  let hour = parseInt(h, 10);
+                  const ampm = hour >= 12 ? 'PM' : 'AM';
+                  if (hour === 0) hour = 12;
+                  if (hour > 12) hour -= 12;
+                  const displayTime = `${hour}:${m} ${ampm}`;
+                  
+                  return (
+                    <button 
+                      key={time}
+                      onClick={() => setSelectedTime(time)}
+                      className="bg-black/40 border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/10 rounded-xl p-4 text-center text-lg font-bold transition-all"
+                    >
+                      {displayTime}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : (

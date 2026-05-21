@@ -16,12 +16,19 @@
     "functions": {
         "api/cron-sleep-mode.ts": {
             "maxDuration": 300
+        },
+        "api/cron-booking-reminders.ts": {
+            "maxDuration": 60
         }
     },
     "crons": [
         {
             "path": "/api/cron-sleep-mode",
             "schedule": "0 3 * * *"
+        },
+        {
+            "path": "/api/cron-booking-reminders",
+            "schedule": "*/15 * * * *"
         }
     ]
 }
