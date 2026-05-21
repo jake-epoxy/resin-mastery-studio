@@ -488,7 +488,6 @@ CRITICAL RULE 5: VERY IMPORTANT! If you are regenerating or updating a quote dra
               prompt: prompt,
               n: 1,
               size: "1024x1024",
-              response_format: "b64_json",
             });
 
             console.log("OpenAI Assistant Chat Response:", JSON.stringify(response).substring(0, 500));

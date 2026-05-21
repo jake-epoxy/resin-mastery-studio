@@ -70,7 +70,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       prompt: prompt,
       n: 1,
       size: "1024x1024",
-      response_format: "b64_json",
     });
 
     console.log("OpenAI Response:", JSON.stringify(response).substring(0, 500)); // Log first 500 chars
