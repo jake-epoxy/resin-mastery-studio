@@ -529,9 +529,9 @@ export default function AssistantFAB() {
                   {/* Horizontal Tools Wheel */}
                   <div className="shrink-0 mb-2">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-1 mb-3">
-                      Swipe Tools
+                      Explore Tools
                     </p>
-                    <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                    <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory">
                       {/* Render Standard Tools */}
                       {TOOLS.map((tool) => {
                         const Icon = tool.icon;
