@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calculator, ExternalLink, ShieldCheck, CreditCard, Link as LinkIcon, Palette, FileText, Save, UploadCloud, RotateCcw } from "lucide-react";
+import { Calculator, ExternalLink, ShieldCheck, CreditCard, Link as LinkIcon, Palette, FileText, Save, UploadCloud, RotateCcw, Calendar } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 
