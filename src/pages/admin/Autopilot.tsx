@@ -407,10 +407,10 @@ export default function Autopilot() {
                       )}
 
                       {/* Visualizer Trigger Overlay */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                         <button
                           onClick={() => openVisualizer(biz, currentPhoto.name)}
-                          className="px-4 py-2 bg-blue-500 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-xl transition-all scale-95 group-hover:scale-100 hover:bg-blue-600"
+                          className="px-4 py-2 bg-blue-500 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-xl transition-all scale-95 group-hover:scale-100 hover:bg-blue-600 pointer-events-auto"
                         >
                           <Sparkles size={14} />
                           Visualize Epoxy
