@@ -37,6 +37,7 @@ export default function QuoteViewLive() {
   const [numPages, setNumPages] = useState<number>();
   const { width: windowWidth } = useWindowSize();
   const [milestonesPaid, setMilestonesPaid] = useState(0);
+  const [isRevealed, setIsRevealed] = useState(false);
 
   useEffect(() => {
     fetchQuoteData();
@@ -288,7 +289,6 @@ export default function QuoteViewLive() {
 
   const legalTermsArray = legalTermsRaw.split('\n').filter((l: string) => l.trim() !== '');
 
-  const [isRevealed, setIsRevealed] = useState(false);
   const cleanName = (name: string | undefined) => name ? name.replace(/\s*\(Lead\)\s*/gi, '') : '';
 
   if (isPitchMode) {
