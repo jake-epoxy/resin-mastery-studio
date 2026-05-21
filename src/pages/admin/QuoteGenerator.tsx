@@ -15,6 +15,7 @@ export default function QuoteGenerator() {
   const [serviceType, setServiceType] = useState("Premium Residential Flake System");
   
   const [sqft, setSqft] = useState(500);
+  const [documentMode, setDocumentMode] = useState<'quote' | 'pitch'>('quote');
   const [pricePerSqft, setPricePerSqft] = useState(6.50);
   
   const [pricingMode, setPricingMode] = useState<"sqft" | "flat">("sqft");
@@ -125,6 +126,7 @@ export default function QuoteGenerator() {
   useEffect(() => {
     const autopilotName = sessionStorage.getItem('autopilot_client_name');
     if (autopilotName) {
+      setDocumentMode('pitch');
       const fetchAndCreate = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -475,6 +477,7 @@ export default function QuoteGenerator() {
     const firstPct = activeMilestones[0]?.pct || 50;
 
     const configPayload = {
+      document_mode: documentMode,
       theme_color: themeColor,
       brand_name: brandName,
       logo_url: logoUrl,
@@ -520,14 +523,17 @@ export default function QuoteGenerator() {
 
     toast({ title: "Smart Link Generated" });
 
+    const emailSubject = documentMode === 'quote' ? 'Link Ready: Smart Quote Generated' : 'Link Ready: Vision Pitch Generated';
+    const emailHeader = documentMode === 'quote' ? 'Secure Link Ready' : 'Vision Pitch Ready';
+    
     await fetch('/api/send-email', {
       method: "POST",
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
           to: installerEmail,
-          subject: 'Link Ready: Smart Quote Generated',
+          subject: emailSubject,
           html: `<div style="font-family:sans-serif;padding:20px;border-radius:10px;border:1px solid #eee;">
-                  <h2>Secure Link Ready</h2>
+                  <h2>${emailHeader}</h2>
                   <a href="${smartLink}">${smartLink}</a>
                  </div>`
       })
@@ -570,8 +576,29 @@ export default function QuoteGenerator() {
     <div className="p-4 md:p-8 pb-20">
       <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6">
         <div>
-          <h1 className="text-3xl font-space font-bold text-white tracking-tight mb-2">Quote Generator Studio</h1>
-          <p className="text-white/60">Generate branded live contracts featuring your own custom PDF agreements.</p>
+          <h1 className="text-3xl font-space font-bold text-white tracking-tight mb-2">
+            {documentMode === 'quote' ? 'Quote Generator Studio' : 'Vision Pitch Studio'}
+          </h1>
+          <p className="text-white/60 mb-6">
+            {documentMode === 'quote' 
+              ? 'Generate branded live contracts featuring your own custom PDF agreements.'
+              : 'Generate highly visual pitch decks designed for cold outreach and high-end leads.'}
+          </p>
+          
+          <div className="inline-flex bg-black/50 border border-white/10 rounded-xl p-1 mb-2 shadow-inner">
+            <button 
+              onClick={() => setDocumentMode('quote')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold tracking-wide transition-all duration-300 ${documentMode === 'quote' ? 'bg-[#a78bfa] text-white shadow-lg' : 'text-white/40 hover:text-white/80'}`}
+            >
+              Binding Quote
+            </button>
+            <button 
+              onClick={() => setDocumentMode('pitch')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold tracking-wide transition-all duration-300 ${documentMode === 'pitch' ? 'bg-[#a78bfa] text-white shadow-lg' : 'text-white/40 hover:text-white/80'}`}
+            >
+              Vision Pitch
+            </button>
+          </div>
         </div>
         <button 
           onClick={handleReset}
@@ -704,7 +731,8 @@ export default function QuoteGenerator() {
           </div>
 
           {/* Section 2: Estimator */}
-          <div className="bg-[#111] border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+          {documentMode === 'quote' && (
+            <div className="bg-[#111] border border-white/10 rounded-2xl p-6 relative overflow-hidden">
             <h2 className="text-lg font-space font-bold text-white flex items-center justify-between gap-2 mb-6 z-10 relative">
               <span className="flex items-center gap-2"><Calculator size={18} className="text-[#a78bfa]" /> Pricing Engine</span>
               <div className="flex bg-black/50 border border-white/10 rounded-lg p-1">
@@ -790,7 +818,7 @@ export default function QuoteGenerator() {
                  <span className="text-2xl font-space font-bold text-white" style={{color: themeColor}}>${estimatedTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                </div>
             </div>
-          </div>
+          )}
 
           {/* Section 3: Final Generation */}
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
@@ -840,24 +868,26 @@ export default function QuoteGenerator() {
               </div>
             </div>
 
-            <div className="mb-6 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
-               <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 p-2 rounded" onClick={() => setOfferFinancing(!offerFinancing)}>
-                 <div>
-                   <h4 className="text-white font-bold text-sm mb-1 flex items-center gap-2"><CreditCard className="text-[#a78bfa]" size={16}/> Offer Financing</h4>
-                 </div>
-                 <div className={`w-12 h-6 rounded-full transition-colors flex items-center px-1 ${offerFinancing ? 'bg-[#a78bfa]' : 'bg-white/20'}`}>
-                   <div className={`w-4 h-4 bg-white rounded-full transition-transform ${offerFinancing ? 'translate-x-6' : 'translate-x-0'}`} style={offerFinancing ? {backgroundColor: themeColor} : {}} />
-                 </div>
-               </div>
-               {offerFinancing && (
-                 <div className="pt-2 border-t border-white/10">
-                   <input type="url" value={financingLink} onChange={(e) => setFinancingLink(e.target.value)} placeholder="Paste Financing URL" className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:outline-none" />
-                 </div>
-               )}
-            </div>
+            {documentMode === 'quote' && (
+              <>
+                <div className="mb-6 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
+                   <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 p-2 rounded" onClick={() => setOfferFinancing(!offerFinancing)}>
+                     <div>
+                       <h4 className="text-white font-bold text-sm mb-1 flex items-center gap-2"><CreditCard className="text-[#a78bfa]" size={16}/> Offer Financing</h4>
+                     </div>
+                     <div className={`w-12 h-6 rounded-full transition-colors flex items-center px-1 ${offerFinancing ? 'bg-[#a78bfa]' : 'bg-white/20'}`}>
+                       <div className={`w-4 h-4 bg-white rounded-full transition-transform ${offerFinancing ? 'translate-x-6' : 'translate-x-0'}`} style={offerFinancing ? {backgroundColor: themeColor} : {}} />
+                     </div>
+                   </div>
+                   {offerFinancing && (
+                     <div className="pt-2 border-t border-white/10">
+                       <input type="url" value={financingLink} onChange={(e) => setFinancingLink(e.target.value)} placeholder="Paste Financing URL" className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white font-mono text-sm focus:outline-none" />
+                     </div>
+                   )}
+                </div>
 
-            {/* Payment Schedule Selector */}
-            <div className="mb-6">
+                {/* Payment Schedule Selector */}
+                <div className="mb-6">
               <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-3">Payment Schedule</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                 {Object.entries(SCHEDULE_PRESETS).map(([key, preset]) => (
@@ -963,7 +993,8 @@ export default function QuoteGenerator() {
                   </div>
                 )}
               </div>
-            </div>
+              </>
+            )}
 
             {!generatedLink ? (
               <button 
@@ -1101,9 +1132,12 @@ export default function QuoteGenerator() {
                   )}
                   <div>
                     {!logoUrl && <h1 className="text-xl font-space font-bold text-white mb-1">{brandName}</h1>}
-                    <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-1">Total Investment</p>
-                    <p className="text-3xl font-space font-bold" style={{color: themeColor}}>${estimatedTotal.toLocaleString()}</p>
-                  </div>
+                    {documentMode === 'quote' && (
+                      <>
+                        <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-1">Total Investment</p>
+                        <p className="text-3xl font-space font-bold" style={{color: themeColor}}>${estimatedTotal.toLocaleString()}</p>
+                      </>
+                    )}
                 </header>
 
                 <div className="bg-[#111] border border-white/10 rounded-xl p-4 text-xs">
@@ -1128,34 +1162,38 @@ export default function QuoteGenerator() {
                   </div>
                 )}
 
-                {!contractPdfUrl ? (
-                  <div className="bg-[#111] border border-white/10 rounded-xl p-4 text-xs space-y-3">
-                    <h3 className="text-white font-bold flex items-center gap-2"><ShieldCheck size={14} style={{color: themeColor}}/> Digital Terms</h3>
-                    <div className="text-white/60 space-y-2 leading-relaxed">
-                      {legalTerms.split('\n').map((line, idx) => (
-                        <p key={idx} className={line.trim() === '' ? 'h-2' : 'flex gap-2'}>
-                          {line.trim() !== '' && <span style={{color: themeColor}}>•</span>} {line}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-gradient-to-r from-white/5 to-transparent border border-white/5 rounded-xl p-3 flex items-center gap-3">
-                     <div className="p-2 bg-white/5 rounded-lg border border-white/10">
-                       <FileText size={16} className="text-white" />
-                     </div>
-                     <div>
-                       <p className="text-xs font-bold text-white">Custom Contract Attached</p>
-                       <p className="text-[9px] text-white/40 font-mono">Will be embedded live for Client</p>
-                     </div>
-                  </div>
-                )}
+                {documentMode === 'quote' && (
+                  <>
+                    {!contractPdfUrl ? (
+                      <div className="bg-[#111] border border-white/10 rounded-xl p-4 text-xs space-y-3">
+                        <h3 className="text-white font-bold flex items-center gap-2"><ShieldCheck size={14} style={{color: themeColor}}/> Digital Terms</h3>
+                        <div className="text-white/60 space-y-2 leading-relaxed">
+                          {legalTerms.split('\n').map((line, idx) => (
+                            <p key={idx} className={line.trim() === '' ? 'h-2' : 'flex gap-2'}>
+                              {line.trim() !== '' && <span style={{color: themeColor}}>•</span>} {line}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-gradient-to-r from-white/5 to-transparent border border-white/5 rounded-xl p-3 flex items-center gap-3">
+                         <div className="p-2 bg-white/5 rounded-lg border border-white/10">
+                           <FileText size={16} className="text-white" />
+                         </div>
+                         <div>
+                           <p className="text-xs font-bold text-white">Custom Contract Attached</p>
+                           <p className="text-[9px] text-white/40 font-mono">Will be embedded live for Client</p>
+                         </div>
+                      </div>
+                    )}
 
-                <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-5">
-                   <p className="text-white font-bold text-sm mb-3">Signature</p>
-                   <div className="h-24 bg-white rounded-lg mb-4 opacity-50"></div>
-                   <button className="w-full text-black font-bold py-3 rounded-lg text-sm" style={{backgroundColor: themeColor}}>I Agree to Terms</button>
-                </div>
+                    <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-5">
+                       <p className="text-white font-bold text-sm mb-3">Signature</p>
+                       <div className="h-24 bg-white rounded-lg mb-4 opacity-50"></div>
+                       <button className="w-full text-black font-bold py-3 rounded-lg text-sm" style={{backgroundColor: themeColor}}>I Agree to Terms</button>
+                    </div>
+                  </>
+                )}
 
              </div>
           </div>

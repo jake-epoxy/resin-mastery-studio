@@ -277,6 +277,7 @@ export default function QuoteViewLive() {
   </div>;
 
   const visualConfig = quote.config || {};
+  const isPitchMode = visualConfig.document_mode === 'pitch';
   const themeColor = visualConfig.theme_color || '#ffffff';
   const logoUrl = visualConfig.logo_url || '';
   const pdfUrl = visualConfig.contract_pdf_url || '';
@@ -302,21 +303,25 @@ export default function QuoteViewLive() {
             </div>
           </div>
           <div className="text-left md:text-right flex flex-col md:items-start md:items-end gap-3 w-full md:w-auto">
-            <div>
-              <p className="text-white/50 text-sm font-bold uppercase tracking-widest mb-1">Total Investment</p>
-              <p className="text-4xl font-space font-bold" style={{color: themeColor}}>${quote.total_amount.toLocaleString()}</p>
-            </div>
-            
-            {quote.financing_link && (
-              <a 
-                href={quote.financing_link} 
-                target="_blank" 
-                rel="noreferrer" 
-                className="inline-flex items-center justify-center gap-2 border px-6 py-2 rounded-xl font-bold transition-colors text-sm w-full md:w-auto mt-2"
-                style={{ backgroundColor: `${themeColor}15`, color: themeColor, borderColor: `${themeColor}40` }}
-              >
-                Apply for Financing <ExternalLink size={14} />
-              </a>
+            {!isPitchMode && (
+              <>
+                <div>
+                  <p className="text-white/50 text-sm font-bold uppercase tracking-widest mb-1">Total Investment</p>
+                  <p className="text-4xl font-space font-bold" style={{color: themeColor}}>${quote.total_amount.toLocaleString()}</p>
+                </div>
+                
+                {quote.financing_link && (
+                  <a 
+                    href={quote.financing_link} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="inline-flex items-center justify-center gap-2 border px-6 py-2 rounded-xl font-bold transition-colors text-sm w-full md:w-auto mt-2"
+                    style={{ backgroundColor: `${themeColor}15`, color: themeColor, borderColor: `${themeColor}40` }}
+                  >
+                    Apply for Financing <ExternalLink size={14} />
+                  </a>
+                )}
+              </>
             )}
           </div>
         </header>
@@ -328,12 +333,14 @@ export default function QuoteViewLive() {
              <p className="text-xl font-bold">{client?.first_name} {client?.last_name}</p>
              <p className="text-[#ffffff] font-mono text-sm mt-1">{serviceType}</p>
            </div>
-           <div className="text-left sm:text-right">
-             <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-1">Quote Status</p>
-             <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${isSigned ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
-               {isSigned ? 'Digitally Executed' : 'Awaiting Signature'}
+           {!isPitchMode && (
+             <div className="text-left sm:text-right">
+               <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-1">Quote Status</p>
+               <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${isSigned ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
+                 {isSigned ? 'Digitally Executed' : 'Awaiting Signature'}
+               </div>
              </div>
-           </div>
+           )}
         </div>
 
         {/* Dynamic Project/Mockup Visual */}
@@ -347,61 +354,78 @@ export default function QuoteViewLive() {
         )}
 
         {/* Legal Embed or Raw CYA */}
-        {pdfUrl && !isSigned ? (
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-8">
-             <div className="flex items-center justify-between mb-4 pl-4 pt-2 pr-2">
-               <h3 className="text-white font-bold text-lg flex items-center gap-2">
-                 <FileText style={{color: themeColor}}/> Embedded Contract
-               </h3>
-             </div>
-             <div className="w-full rounded-xl border border-white/10 bg-white overflow-hidden">
-               {/* Desktop Native Viewer */}
-               <iframe src={`${pdfUrl}#toolbar=0`} className="hidden md:block w-full h-[600px] border-none" title="Contract PDF Desktop" />
-               
-               {/* Mobile Scaled Viewer (react-pdf) */}
-               <div className="md:hidden w-full flex flex-col items-center bg-[#f0f0f0] py-4" style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch', maxHeight: '70vh' }}>
-                 <Document 
-                   file={pdfUrl} 
-                   onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                   className="flex flex-col items-center gap-4"
-                   loading={<div className="text-black/50 py-10">Loading Document...</div>}
-                   error={<div className="text-red-500 py-10">Failed to load PDF.</div>}
-                 >
-                   {Array.from(new Array(numPages), (el, index) => (
-                     <Page 
-                       key={`page_${index + 1}`} 
-                       pageNumber={index + 1} 
-                       renderTextLayer={false} 
-                       renderAnnotationLayer={false} 
-                       width={Math.min(windowWidth - 64, 600)} 
-                       className="shadow-lg"
-                     />
-                   ))}
-                 </Document>
-               </div>
-             </div>
-             <p className="text-xs text-white/40 text-center mt-3 md:hidden">Mobile scaled preview.</p>
+        {!isPitchMode && (
+          <>
+            {pdfUrl && !isSigned ? (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-8">
+                 <div className="flex items-center justify-between mb-4 pl-4 pt-2 pr-2">
+                   <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                     <FileText style={{color: themeColor}}/> Embedded Contract
+                   </h3>
+                 </div>
+                 <div className="w-full rounded-xl border border-white/10 bg-white overflow-hidden">
+                   {/* Desktop Native Viewer */}
+                   <iframe src={`${pdfUrl}#toolbar=0`} className="hidden md:block w-full h-[600px] border-none" title="Contract PDF Desktop" />
+                   
+                   {/* Mobile Scaled Viewer (react-pdf) */}
+                   <div className="md:hidden w-full flex flex-col items-center bg-[#f0f0f0] py-4" style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch', maxHeight: '70vh' }}>
+                     <Document 
+                       file={pdfUrl} 
+                       onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                       className="flex flex-col items-center gap-4"
+                       loading={<div className="text-black/50 py-10">Loading Document...</div>}
+                       error={<div className="text-red-500 py-10">Failed to load PDF.</div>}
+                     >
+                       {Array.from(new Array(numPages || 0), (el, index) => (
+                         <Page 
+                           key={`page_${index + 1}`} 
+                           pageNumber={index + 1} 
+                           renderTextLayer={false} 
+                           renderAnnotationLayer={false} 
+                           width={Math.min(windowWidth - 64, 600)} 
+                           className="shadow-lg"
+                         />
+                       ))}
+                     </Document>
+                   </div>
+                 </div>
+                 <p className="text-xs text-white/40 text-center mt-3 md:hidden">Mobile scaled preview.</p>
+              </div>
+            ) : !isSigned ? (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8 text-sm text-white/70 space-y-5">
+                <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
+                  <ShieldCheck style={{color: themeColor}}/> Contract Agreement
+                </h3>
+                <p>This document serves as a binding agreement between {brandName} and {client?.first_name} {client?.last_name}.</p>
+                
+                <div className="space-y-3 leading-relaxed bg-[#0a0a0a] p-6 rounded-xl border border-white/5">
+                  {legalTermsArray.map((bullet: string, i: number) => (
+                     <div key={i} className="flex gap-3 items-start">
+                       <span className="text-lg leading-none" style={{color: themeColor}}>•</span>
+                       <p>{bullet}</p>
+                     </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </>
+        )}
+
+        {/* CTA Block (Pitch vs Quote) */}
+        {isPitchMode ? (
+          <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl p-10 text-center shadow-2xl mt-8">
+            <Calendar size={48} className="mx-auto mb-4" style={{color: themeColor}} />
+            <h3 className="text-2xl font-space font-bold text-white mb-2">Ready to transform your space?</h3>
+            <p className="text-white/60 max-w-md mx-auto mb-8">Schedule a private consultation to discuss your vision, evaluate your floor, and get a precise quote.</p>
+            <button 
+              onClick={() => toast({ title: "Calendar System", description: "The Consultation Booking Engine is currently being built!" })}
+              className="w-full sm:w-auto px-10 py-4 text-black font-bold rounded-xl hover:opacity-90 transition-opacity shadow-lg"
+              style={{backgroundColor: themeColor}}
+            >
+              Request a Consultation
+            </button>
           </div>
         ) : !isSigned ? (
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8 text-sm text-white/70 space-y-5">
-            <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
-              <ShieldCheck style={{color: themeColor}}/> Contract Agreement
-            </h3>
-            <p>This document serves as a binding agreement between {brandName} and {client?.first_name} {client?.last_name}.</p>
-            
-            <div className="space-y-3 leading-relaxed bg-[#0a0a0a] p-6 rounded-xl border border-white/5">
-              {legalTermsArray.map((bullet: string, i: number) => (
-                 <div key={i} className="flex gap-3 items-start">
-                   <span className="text-lg leading-none" style={{color: themeColor}}>•</span>
-                   <p>{bullet}</p>
-                 </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {/* Signature Block */}
-        {!isSigned ? (
           <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl p-8">
             <h3 className="text-white font-bold mb-4">Digital Signature</h3>
             <div className="bg-white rounded-xl mb-4 border overflow-hidden" style={{borderColor: `${themeColor}50`}}>
