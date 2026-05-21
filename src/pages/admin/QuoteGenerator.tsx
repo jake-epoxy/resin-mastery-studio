@@ -118,11 +118,6 @@ export default function QuoteGenerator() {
       if (vizStyle && vizColor) {
         setServiceType(`${vizStyle} — ${vizColor}`);
       }
-      // Clean up
-      sessionStorage.removeItem('viz_image');
-      sessionStorage.removeItem('viz_style');
-      sessionStorage.removeItem('viz_color');
-      localStorage.removeItem('resinos_visualization');
     }
   }, []);
 
@@ -323,9 +318,21 @@ export default function QuoteGenerator() {
       }
       if (profile.service_pricing) {
         setProfileServicePricing(profile.service_pricing);
-        // Set default price to first service
-        const firstKey = Object.keys(profile.service_pricing)[0];
-        if (firstKey) setPricePerSqft(profile.service_pricing[firstKey]);
+        // Check if autopilot passed a specific style to override default pricing
+        const vizStyle = sessionStorage.getItem('viz_style')?.toLowerCase() || "";
+        let matchedKey = Object.keys(profile.service_pricing)[0]; // default to first
+
+        if (vizStyle.includes('flake')) matchedKey = 'flake';
+        else if (vizStyle.includes('metallic') || vizStyle.includes('marble')) matchedKey = 'metallic';
+        else if (vizStyle.includes('quartz')) matchedKey = 'quartz';
+        else if (vizStyle.includes('solid')) matchedKey = 'single_color';
+        else if (vizStyle.includes('polish')) matchedKey = 'polishing';
+
+        if (matchedKey && profile.service_pricing[matchedKey]) {
+           setPricePerSqft(profile.service_pricing[matchedKey]);
+        } else if (Object.keys(profile.service_pricing)[0]) {
+           setPricePerSqft(profile.service_pricing[Object.keys(profile.service_pricing)[0]]);
+        }
       }
       if (profile.company_name) {
         setBrandName(profile.company_name);
@@ -335,6 +342,12 @@ export default function QuoteGenerator() {
     } else if (user?.email && (!localStorage.getItem('resinos_brand') || localStorage.getItem('resinos_brand') === "Epoxy Contractor")) {
       setBrandName(user.email.split('@')[0].toUpperCase());
     }
+
+    // Clean up autopilot session storage after initialization
+    sessionStorage.removeItem('viz_image');
+    sessionStorage.removeItem('viz_style');
+    sessionStorage.removeItem('viz_color');
+    localStorage.removeItem('resinos_visualization');
   }
 
   function handleTemplateChange(templateId: string) {
