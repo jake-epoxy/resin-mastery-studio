@@ -149,6 +149,25 @@ export default function QuoteGenerator() {
           // Create a new client!
           const phone = sessionStorage.getItem('autopilot_client_phone') || null;
           const address = sessionStorage.getItem('autopilot_client_address') || null;
+          const website = sessionStorage.getItem('autopilot_client_website') || null;
+          
+          let scrapedEmail = null;
+          if (website) {
+            try {
+              toast({ title: "Scanning website...", description: "Looking for client's email address on their site." });
+              const res = await fetch('/api/scrape-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: website })
+              });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.email) scrapedEmail = data.email;
+              }
+            } catch (err) {
+              console.error("Failed to scrape email:", err);
+            }
+          }
           
           const { data: created, error } = await supabase
             .from('clients')
@@ -157,6 +176,7 @@ export default function QuoteGenerator() {
               first_name: autopilotName,
               last_name: "(Lead)",
               phone,
+              email: scrapedEmail,
               address,
               project_type: serviceType || "Autopilot Pitch",
               status: "New Lead"
