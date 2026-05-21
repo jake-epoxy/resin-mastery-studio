@@ -818,7 +818,8 @@ export default function QuoteGenerator() {
                  <span className="text-2xl font-space font-bold text-white" style={{color: themeColor}}>${estimatedTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                </div>
             </div>
-          )}
+          </div>
+        )}
 
           {/* Section 3: Final Generation */}
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
@@ -993,10 +994,11 @@ export default function QuoteGenerator() {
                   </div>
                 )}
               </div>
-              </>
-            )}
+            </div>
+            </>
+          )}
 
-            {!generatedLink ? (
+          {!generatedLink ? (
               <button 
                 disabled={!selectedClientId || isGenerating}
                 onClick={handleGenerateQuote}
@@ -1138,6 +1140,7 @@ export default function QuoteGenerator() {
                         <p className="text-3xl font-space font-bold" style={{color: themeColor}}>${estimatedTotal.toLocaleString()}</p>
                       </>
                     )}
+                  </div>
                 </header>
 
                 <div className="bg-[#111] border border-white/10 rounded-xl p-4 text-xs">
