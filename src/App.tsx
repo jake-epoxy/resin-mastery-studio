@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LegalTerms from "./components/LegalTerms";
@@ -47,8 +48,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<Index />} />
           <Route path="/legal" element={<LegalTerms />} />
           <Route path="/privacy" element={<LegalTerms />} />
           <Route path="/licensing" element={<LicensingPage />} />
@@ -91,6 +93,7 @@ const App = () => (
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </ErrorBoundary>
 
         {/* Global Assistant Nav/Chatbot visible everywhere EXCEPT on end-client URLs like quote-live */}
         <AssistantFAB />
