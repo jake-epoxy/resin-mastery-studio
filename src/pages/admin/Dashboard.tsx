@@ -202,7 +202,7 @@ export default function AdminDashboard() {
           </h3>
           <div className="space-y-4">
             {newLeads.map(c => (
-              <PipelineCard key={c.id} onClick={() => setSelectedClient(c)} name={`${c.first_name} ${c.last_name}`} project={c.project_type} status={c.status} date="Just Now" />
+              <PipelineCard key={c.id} onClick={() => setSelectedClient(c)} name={`${c.first_name} ${c.last_name}`} project={typeof c.project_type === 'object' ? 'Autopilot Lead' : (c.project_type || 'Quote')} status={c.status} date="Just Now" />
             ))}
           </div>
         </div>
@@ -214,7 +214,7 @@ export default function AdminDashboard() {
           </h3>
           <div className="space-y-4">
             {quoted.map(c => (
-              <PipelineCard key={c.id} onClick={() => setSelectedClient(c)} name={`${c.first_name} ${c.last_name}`} project={c.project_type} status={c.status} date="Recent" amount={`$${c.total_value}`} />
+              <PipelineCard key={c.id} onClick={() => setSelectedClient(c)} name={`${c.first_name} ${c.last_name}`} project={typeof c.project_type === 'object' ? 'Autopilot Lead' : (c.project_type || 'Quote')} status={c.status} date="Recent" amount={`$${c.total_value}`} />
             ))}
           </div>
         </div>
@@ -227,7 +227,7 @@ export default function AdminDashboard() {
           <div className="space-y-4">
             {won.map(c => (
               <div key={c.id} className="relative group">
-                <PipelineCard onClick={() => setSelectedClient(c)} name={`${c.first_name} ${c.last_name}`} project={c.project_type} status={c.status} date="Recent" amount={`$${c.total_value}`} isWon />
+                <PipelineCard onClick={() => setSelectedClient(c)} name={`${c.first_name} ${c.last_name}`} project={typeof c.project_type === 'object' ? 'Autopilot Lead' : (c.project_type || 'Quote')} status={c.status} date="Recent" amount={`$${c.total_value}`} isWon />
                 {/* Archive / Remove from Pipeline button */}
                 <motion.button
                   initial={{ opacity: 0, y: 4 }}
@@ -280,7 +280,7 @@ export default function AdminDashboard() {
                           <h4 className="font-bold text-white/50 text-sm">{c.first_name} {c.last_name}</h4>
                           {c.total_value && <span className="font-space text-xs font-bold text-emerald-400/60">${c.total_value?.toLocaleString()}</span>}
                         </div>
-                        <p className="text-xs text-white/30 mb-3">{c.project_type}</p>
+                        <p className="text-xs text-white/30 mb-3">{typeof c.project_type === 'object' ? 'Autopilot Lead' : (c.project_type || 'Quote')}</p>
                         <div className="flex items-center gap-1.5 text-[9px] uppercase font-bold tracking-wider text-yellow-400/50">
                           <CheckCircle size={10} /> Completed
                         </div>
@@ -339,7 +339,7 @@ export default function AdminDashboard() {
                         <div className="flex justify-between items-start mb-2">
                           <h4 className="font-bold text-white/50 text-sm">{c.first_name} {c.last_name}</h4>
                         </div>
-                        <p className="text-xs text-white/30 mb-3">{c.project_type}</p>
+                        <p className="text-xs text-white/30 mb-3">{typeof c.project_type === 'object' ? 'Autopilot Lead' : (c.project_type || 'Quote')}</p>
                         <div className="flex items-center gap-1.5 text-[9px] uppercase font-bold tracking-wider text-red-400/50">
                           <X size={10} /> Lost Lead
                         </div>

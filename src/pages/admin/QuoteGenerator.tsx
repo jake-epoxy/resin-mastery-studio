@@ -832,7 +832,7 @@ export default function QuoteGenerator() {
                 <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Select Pipeline Client</label>
                 <select value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#a78bfa] appearance-none">
                   <option value="">-- Choose active lead --</option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.first_name} {c.last_name} ({c.project_type})</option>)}
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.first_name} {c.last_name} ({typeof c.project_type === 'object' ? 'Autopilot Lead' : c.project_type})</option>)}
                 </select>
               </div>
               <div>

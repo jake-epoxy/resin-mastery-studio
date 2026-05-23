@@ -134,7 +134,7 @@ export default function LeadCenter() {
                       <div className="flex items-center gap-2 text-sm text-white/70"><Mail size={14} className="text-white/30" /> {client.email || '-'}</div>
                     </td>
                     <td className="p-4 align-top text-sm text-white/80">
-                      {client.project_type || 'Unknown Service'}
+                      {typeof client.project_type === 'object' ? 'Autopilot Lead' : (client.project_type || 'Unknown Service')}
                     </td>
                     <td className="p-4 align-top">
                       <span className={`inline-block px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider border ${
