@@ -322,7 +322,8 @@ export default function QuoteGenerator() {
         setProfileServicePricing(profile.service_pricing);
         // Check if autopilot passed a specific style to override default pricing
         const vizStyle = sessionStorage.getItem('viz_style')?.toLowerCase() || "";
-        let matchedKey = Object.keys(profile.service_pricing)[0]; // default to first
+        const validKeys = Object.keys(profile.service_pricing).filter(k => k !== 'autopilot_config');
+        let matchedKey = validKeys.length > 0 ? validKeys[0] : null; // default to first valid
 
         if (vizStyle.includes('flake')) matchedKey = 'flake';
         else if (vizStyle.includes('metallic') || vizStyle.includes('marble')) matchedKey = 'metallic';
@@ -330,10 +331,10 @@ export default function QuoteGenerator() {
         else if (vizStyle.includes('solid')) matchedKey = 'single_color';
         else if (vizStyle.includes('polish')) matchedKey = 'polishing';
 
-        if (matchedKey && profile.service_pricing[matchedKey]) {
+        if (matchedKey && profile.service_pricing[matchedKey] && typeof profile.service_pricing[matchedKey] === 'number') {
            setPricePerSqft(profile.service_pricing[matchedKey]);
-        } else if (Object.keys(profile.service_pricing)[0]) {
-           setPricePerSqft(profile.service_pricing[Object.keys(profile.service_pricing)[0]]);
+        } else if (validKeys.length > 0 && typeof profile.service_pricing[validKeys[0]] === 'number') {
+           setPricePerSqft(profile.service_pricing[validKeys[0]]);
         }
       }
       if (profile.company_name) {
@@ -755,6 +756,7 @@ export default function QuoteGenerator() {
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {Object.keys(profileServicePricing).length > 0 ? (
                       Object.entries(profileServicePricing).map(([key, price]) => {
+                        if (key === 'autopilot_config') return null;
                         const labels: Record<string, string> = {
                           flake: 'Flake', metallic: 'Metallic', quartz: 'Quartz',
                           grind_seal: 'Grind&Seal', polishing: 'Polish',
@@ -770,14 +772,14 @@ export default function QuoteGenerator() {
                           <button
                             key={key}
                             type="button"
-                            onClick={() => { setPricePerSqft(price); setServiceType(serviceNames[key] || key); }}
+                            onClick={() => { setPricePerSqft(typeof price === 'number' ? price : 0); setServiceType(serviceNames[key] || key); }}
                             className={`text-[10px] px-2.5 py-1.5 rounded-lg font-bold tracking-wider border transition-colors ${
                               pricePerSqft === price
                                 ? 'bg-[#78c8ff]/20 text-[#78c8ff] border-[#78c8ff]/40'
                                 : 'bg-white/5 hover:bg-white/10 text-white/70 border-white/5'
                             }`}
                           >
-                            {labels[key] || key} (${price})
+                            {labels[key] || key} (${typeof price === 'object' ? 'Config' : price})
                           </button>
                         );
                       })
