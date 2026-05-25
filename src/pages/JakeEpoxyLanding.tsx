@@ -19,24 +19,24 @@ function CameraRig() {
   // Define the camera path through the environment
   const path = useMemo(() => {
     return new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 2, 12),     // Start: looking into the entryway
-      new THREE.Vector3(0, 2, 4),      // Move into the first room
-      new THREE.Vector3(0, 2, -4),     // Through to the corridor
-      new THREE.Vector3(3, 2, -12),    // Turn into the garage
-      new THREE.Vector3(0, 2, -20),    // Push through to the lounge
-      new THREE.Vector3(0, 2, -28),    // Final position: the end
+      new THREE.Vector3(0, 2, 8),      // Start: inside the entryway
+      new THREE.Vector3(0, 2, 2),      // Move deeper into the first room
+      new THREE.Vector3(0, 2, -6),     // Enter the corridor
+      new THREE.Vector3(0, 2, -14),    // Through the corridor
+      new THREE.Vector3(0, 2, -22),    // Into the showroom
+      new THREE.Vector3(0, 2, -28),    // Final position
     ], false, 'catmullrom', 0.5);
   }, []);
 
   // Separate lookAt path (slightly ahead of camera)
   const lookAtPath = useMemo(() => {
     return new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 1.8, 4),
-      new THREE.Vector3(0, 1.8, -4),
-      new THREE.Vector3(0, 1.8, -12),
-      new THREE.Vector3(0, 1.8, -20),
+      new THREE.Vector3(0, 1.8, 2),
+      new THREE.Vector3(0, 1.8, -6),
+      new THREE.Vector3(0, 1.8, -14),
+      new THREE.Vector3(0, 1.8, -22),
       new THREE.Vector3(0, 1.8, -28),
-      new THREE.Vector3(0, 1.8, -36),
+      new THREE.Vector3(0, 1.8, -34),
     ], false, 'catmullrom', 0.5);
   }, []);
 
@@ -194,28 +194,30 @@ function LuxuryInterior() {
   return (
     <>
       {/* Lighting */}
-      <ambientLight intensity={0.15} />
-      <fog attach="fog" args={['#000000', 5, 35]} />
+      <ambientLight intensity={0.6} />
+      <fog attach="fog" args={['#000000', 15, 50]} />
 
       {/* Room 1: Grand Entryway */}
-      <RoomSegment position={[0, 0, 4]} width={12} height={6} depth={16} color="#0d0d0d" />
-      <pointLight position={[0, 5, 8]} intensity={8} color="#D4AF37" distance={15} decay={2} castShadow />
-      <pointLight position={[-3, 3, 6]} intensity={3} color="#8b5cf6" distance={10} decay={2} />
+      <RoomSegment position={[0, 0, 4]} width={12} height={6} depth={16} color="#141414" />
+      <pointLight position={[0, 5.5, 8]} intensity={30} color="#D4AF37" distance={20} decay={2} castShadow />
+      <pointLight position={[-4, 3, 6]} intensity={15} color="#8b5cf6" distance={15} decay={2} />
+      <pointLight position={[4, 3, 6]} intensity={15} color="#D4AF37" distance={15} decay={2} />
       <LightStrip position={[0, 5.95, 4]} width={10} color="#D4AF37" />
 
       {/* Room 2: The Corridor */}
-      <RoomSegment position={[0, 0, -10]} width={8} height={4.5} depth={16} color="#0a0a0a" />
-      <pointLight position={[0, 4, -8]} intensity={5} color="#a855f7" distance={12} decay={2} />
-      <pointLight position={[0, 4, -14]} intensity={5} color="#D4AF37" distance={12} decay={2} />
+      <RoomSegment position={[0, 0, -10]} width={8} height={4.5} depth={16} color="#121212" />
+      <pointLight position={[0, 4, -6]} intensity={20} color="#a855f7" distance={18} decay={2} />
+      <pointLight position={[0, 4, -10]} intensity={20} color="#D4AF37" distance={18} decay={2} />
+      <pointLight position={[0, 4, -14]} intensity={20} color="#a855f7" distance={18} decay={2} />
       <LightStrip position={[0, 4.45, -10]} width={6} color="#a855f7" />
       <LightStrip position={[-3.95, 2.25, -10]} width={0.05} color="#D4AF37" />
       <LightStrip position={[3.95, 2.25, -10]} width={0.05} color="#D4AF37" />
 
       {/* Room 3: The Showroom */}
-      <RoomSegment position={[0, 0, -24]} width={14} height={5.5} depth={16} color="#0d0d0d" emissiveColor="#1a0a2e" emissiveIntensity={0.1} />
-      <pointLight position={[-4, 4.5, -22]} intensity={6} color="#D4AF37" distance={12} decay={2} />
-      <pointLight position={[4, 4.5, -26]} intensity={6} color="#D4AF37" distance={12} decay={2} />
-      <pointLight position={[0, 3, -24]} intensity={4} color="#8b5cf6" distance={15} decay={2} />
+      <RoomSegment position={[0, 0, -24]} width={14} height={5.5} depth={16} color="#141414" emissiveColor="#1a0a2e" emissiveIntensity={0.15} />
+      <pointLight position={[-5, 5, -20]} intensity={25} color="#D4AF37" distance={20} decay={2} />
+      <pointLight position={[5, 5, -28]} intensity={25} color="#D4AF37" distance={20} decay={2} />
+      <pointLight position={[0, 3, -24]} intensity={20} color="#8b5cf6" distance={20} decay={2} />
       <LightStrip position={[0, 5.45, -24]} width={12} color="#D4AF37" />
 
       {/* Decorative elements in showroom */}
