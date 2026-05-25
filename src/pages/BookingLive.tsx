@@ -20,8 +20,9 @@ export default function BookingLive() {
   useEffect(() => {
     async function fetchSlug() {
       if (!slug) return;
-      // Mobile keyboards often auto-capitalize the URL, so enforce lowercase 
-      const safeSlug = slug.toLowerCase();
+      // Social media apps (like Instagram) might append tracking params, trailing slashes, or zero-width spaces.
+      // Strip everything except alphanumeric characters and hyphens to ensure a match.
+      const safeSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '');
       const { data } = await supabase.from('installer_profiles').select('*').eq('booking_slug', safeSlug).single();
       setProfile(data);
       setLoading(false);
