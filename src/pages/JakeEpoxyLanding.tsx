@@ -1,7 +1,8 @@
 import React, { Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
-import Spline from '@splinetool/react-spline';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Environment, Float, MeshTransmissionMaterial } from '@react-three/drei';
 import { MapPin, Globe, Star, ShieldCheck, Zap } from 'lucide-react';
 import { LeadCaptureGlassForm } from '../components/LeadCaptureGlassForm';
 
@@ -17,6 +18,36 @@ const staggerContainer = {
     transition: { staggerChildren: 0.2 }
   }
 };
+
+function AnimatedLiquidKnot() {
+  const mesh = React.useRef<any>(null);
+  
+  useFrame((state) => {
+    if (mesh.current) {
+      mesh.current.rotation.x = state.clock.getElapsedTime() * 0.2;
+      mesh.current.rotation.y = state.clock.getElapsedTime() * 0.3;
+    }
+  });
+
+  return (
+    <Float speed={2} rotationIntensity={1} floatIntensity={2}>
+      <mesh ref={mesh} scale={2}>
+        <torusKnotGeometry args={[1, 0.3, 128, 32]} />
+        <MeshTransmissionMaterial 
+          backside
+          samples={4}
+          thickness={3}
+          chromaticAberration={0.4}
+          anisotropy={0.3}
+          distortion={0.5}
+          distortionScale={0.5}
+          temporalDistortion={0.1}
+          color="#9333ea"
+        />
+      </mesh>
+    </Float>
+  );
+}
 
 export default function JakeEpoxyLanding() {
   return (
@@ -68,11 +99,14 @@ export default function JakeEpoxyLanding() {
       {/* Hero Section with 3D Background */}
       <div className="relative min-h-screen w-full flex flex-col justify-center overflow-hidden">
         
-        {/* 3D Spline Canvas */}
-        <div className="absolute inset-0 z-0 pointer-events-none opacity-60 mix-blend-screen">
-          <Suspense fallback={<div className="w-full h-full bg-gradient-to-br from-black via-purple-900/20 to-black animate-pulse" />}>
-            <Spline scene="https://prod.spline.design/6Wq1Q7YGyM-iab9i/scene.splinecode" />
-          </Suspense>
+        {/* 3D R3F Canvas */}
+        <div className="absolute inset-0 z-0 opacity-80 mix-blend-screen pointer-events-none">
+          <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
+            <ambientLight intensity={0.5} />
+            <directionalLight position={[10, 10, 5]} intensity={1} />
+            <AnimatedLiquidKnot />
+            <Environment preset="city" />
+          </Canvas>
         </div>
 
         {/* Floating Grid overlay */}
