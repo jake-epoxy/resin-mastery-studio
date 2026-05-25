@@ -28,43 +28,43 @@ function FlowingEpoxyStream() {
     const t = state.clock.getElapsedTime();
     
     if (mesh1.current) {
-      // First stream snakes around
-      mesh1.current.position.y = Math.sin(t * 0.5) * 2 - (scrollY * 0.003);
-      mesh1.current.rotation.x = t * 0.2;
-      mesh1.current.rotation.y = Math.sin(t * 0.3) * 0.5;
-      mesh1.current.rotation.z = Math.cos(t * 0.2) * 0.3 + (scrollY * 0.001);
+      // First stream snakes around elegantly
+      mesh1.current.position.y = Math.sin(t * 0.5) * 1.5 - (scrollY * 0.003);
+      mesh1.current.rotation.x = t * 0.15;
+      mesh1.current.rotation.y = Math.sin(t * 0.2) * 0.5;
+      mesh1.current.rotation.z = Math.cos(t * 0.2) * 0.2 + (scrollY * 0.001);
     }
     if (mesh2.current) {
       // Second stream intertwined
-      mesh2.current.position.y = Math.cos(t * 0.4) * 2 - (scrollY * 0.004);
+      mesh2.current.position.y = Math.cos(t * 0.4) * 1.5 - (scrollY * 0.004);
       mesh2.current.rotation.x = -t * 0.1;
       mesh2.current.rotation.y = Math.cos(t * 0.2) * 0.5;
-      mesh2.current.rotation.z = -Math.sin(t * 0.3) * 0.3 - (scrollY * 0.001);
+      mesh2.current.rotation.z = -Math.sin(t * 0.3) * 0.2 - (scrollY * 0.001);
     }
   });
 
   const materialProps = {
     backside: true,
     samples: 4,
-    thickness: 2,
-    chromaticAberration: 0.8,
-    anisotropy: 0.5,
-    distortion: 0.8,
-    distortionScale: 0.5,
-    temporalDistortion: 0.2,
+    thickness: 1.5,
+    chromaticAberration: 0.6,
+    anisotropy: 0.8,
+    distortion: 0.4,
+    distortionScale: 0.2,
+    temporalDistortion: 0.1,
     color: "#8b5cf6",
-    attenuationDistance: 1,
+    attenuationDistance: 2,
     attenuationColor: "#4c1d95"
   };
 
   return (
     <>
-      <mesh ref={mesh1} position={[-2, 0, -3]}>
-        <torusKnotGeometry args={[4, 0.8, 256, 64, 2, 3]} />
+      <mesh ref={mesh1} position={[-1, 0, -8]}>
+        <torusKnotGeometry args={[3, 0.15, 256, 64, 2, 3]} />
         <MeshTransmissionMaterial {...materialProps} />
       </mesh>
-      <mesh ref={mesh2} position={[2, 2, -5]}>
-        <torusKnotGeometry args={[5, 1, 256, 64, 3, 4]} />
+      <mesh ref={mesh2} position={[1, 1, -12]}>
+        <torusKnotGeometry args={[3.5, 0.2, 256, 64, 3, 4]} />
         <MeshTransmissionMaterial {...materialProps} color="#a855f7" />
       </mesh>
     </>
