@@ -292,6 +292,9 @@ export default function QuoteViewLive() {
   const cleanName = (name: string | undefined) => name ? name.replace(/\s*\(Lead\)\s*/gi, '') : '';
 
   if (isPitchMode) {
+    const igHandle = '@jake.epoxy';
+    const igUrl = 'https://www.instagram.com/jake.epoxy/';
+    
     return (
       <div className="min-h-screen bg-[#050505] text-white font-inter relative overflow-hidden flex flex-col items-center justify-center">
         <AnimatePresence>
@@ -347,27 +350,57 @@ export default function QuoteViewLive() {
           transition={{ duration: 0.8, delay: 0.2 }}
           style={{ pointerEvents: isRevealed ? 'auto' : 'none' }}
         >
+          {/* ═══ HEADER ═══ */}
           <motion.header 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: isRevealed ? 0 : -20, opacity: isRevealed ? 1 : 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-center mb-16 md:mb-24"
+            className="text-center mb-12 md:mb-16"
           >
             {logoUrl && <img src={logoUrl} alt="Logo" className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-6 shadow-2xl border-2 border-white/20 object-cover" />}
             <h1 className="text-3xl md:text-5xl font-space font-bold tracking-tight mb-2 drop-shadow-lg">{brandName}</h1>
-            <p className="text-xs md:text-sm text-white/70 uppercase tracking-widest font-bold">Exclusive Vision Pitch</p>
+            <p className="text-xs md:text-sm text-white/70 uppercase tracking-widest font-bold mb-4">Exclusive Vision Pitch</p>
+            <a 
+              href={igUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-sm text-white/70 hover:text-white"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+              {igHandle}
+            </a>
           </motion.header>
 
+          {/* ═══ SOCIAL PROOF STATS BAR ═══ */}
+          <motion.div 
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: isRevealed ? 0 : 30, opacity: isRevealed ? 1 : 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            className="grid grid-cols-3 gap-3 mb-12"
+          >
+            {[
+              { stat: '500+', label: 'Projects Completed' },
+              { stat: '100%', label: 'Satisfaction Rate' },
+              { stat: '10+', label: 'Years Experience' },
+            ].map((item) => (
+              <div key={item.label} className="bg-[#111]/80 border border-white/10 rounded-xl p-4 text-center">
+                <p className="text-2xl md:text-3xl font-space font-bold" style={{ color: themeColor }}>{item.stat}</p>
+                <p className="text-[10px] md:text-xs text-white/50 uppercase tracking-wider font-semibold mt-1">{item.label}</p>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* ═══ MAIN PITCH CARD ═══ */}
           <motion.div 
              initial={{ y: 40, opacity: 0 }}
              animate={{ y: isRevealed ? 0 : 40, opacity: isRevealed ? 1 : 0 }}
              transition={{ duration: 0.8, delay: 0.7 }}
-             className="max-w-xl mx-auto backdrop-blur-3xl bg-[#111]/80 border border-white/10 p-6 md:p-10 rounded-[2rem] shadow-2xl mb-12 relative overflow-hidden"
+             className="max-w-xl mx-auto backdrop-blur-3xl bg-[#111]/80 border border-white/10 p-6 md:p-10 rounded-[2rem] shadow-2xl mb-10 relative overflow-hidden"
           >
             {/* Glowing Accent */}
             <div className="absolute top-0 right-0 w-64 h-64 opacity-20 blur-3xl rounded-full pointer-events-none" style={{backgroundColor: themeColor}}></div>
             
-            {/* The Framed Pokemon Card Image */}
+            {/* The Framed Mockup Image */}
             {visualConfig.visualization_image && (
               <motion.div layoutId="pitch-image" className="w-full h-56 md:h-72 rounded-2xl overflow-hidden mb-8 border border-white/10 shadow-2xl relative z-10">
                 <img src={visualConfig.visualization_image} alt="Proposed Design" className="w-full h-full object-cover select-none pointer-events-none" />
@@ -375,16 +408,119 @@ export default function QuoteViewLive() {
             )}
 
             <p className="text-white/50 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1 relative z-10">Prepared Exclusively For</p>
-            <h2 className="text-xl md:text-2xl font-bold mb-8 relative z-10">{cleanName(client?.first_name)} {cleanName(client?.last_name)}</h2>
+            <h2 className="text-xl md:text-2xl font-bold mb-4 relative z-10">{cleanName(client?.first_name)} {cleanName(client?.last_name)}</h2>
             
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 mb-10 shadow-inner relative z-10">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 mb-6 shadow-inner relative z-10">
               <p className="text-white/50 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-2">Proposed Aesthetic</p>
               <h3 className="text-xl md:text-2xl font-space font-bold" style={{color: themeColor}}>{serviceType}</h3>
             </div>
+          </motion.div>
+
+          {/* ═══ WHY YOU NEED THIS — PSYCHOLOGICAL SELLING POINTS ═══ */}
+          <motion.div 
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: isRevealed ? 0 : 40, opacity: isRevealed ? 1 : 0 }}
+            transition={{ duration: 0.8, delay: 0.85 }}
+            className="max-w-xl mx-auto mb-10"
+          >
+            <h3 className="text-center text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mb-6">Why This Floor Changes Everything</h3>
             
-            <div className="text-center relative z-10">
-              <h3 className="text-lg md:text-xl font-bold mb-3">Ready to transform your space?</h3>
-              <p className="text-white/60 mb-8 text-xs md:text-sm">Schedule a private consultation to discuss your vision, evaluate your floor, and lock in your installation date.</p>
+            <div className="space-y-4">
+              {[
+                {
+                  icon: '💎',
+                  title: 'Instant Property Value Increase',
+                  desc: 'Epoxy flooring adds $3–$7 per square foot in perceived home value. Buyers see premium finishes and think premium price.',
+                },
+                {
+                  icon: '🛡️',
+                  title: '15–20 Year Lifespan, Zero Maintenance',
+                  desc: 'No grout to scrub, no tiles to crack, no wax to reapply. One pour. One surface. Decades of beauty with just a mop.',
+                },
+                {
+                  icon: '🧬',
+                  title: '100% Custom — No Two Floors Are Alike',
+                  desc: 'Every pour is a one-of-a-kind work of art. Your neighbors, your friends — nobody will have what you have.',
+                },
+                {
+                  icon: '🏆',
+                  title: 'Installed by El Paso\'s Only Certified Resin Specialist',
+                  desc: 'I don\'t subcontract. I don\'t use generic products. I formulate my own proprietary resin line and personally install every project.',
+                },
+                {
+                  icon: '⚡',
+                  title: 'Walk On It in 24 Hours',
+                  desc: 'Most projects are completed in a single day. You\'re not living in a construction zone for weeks — you\'re living on your new floor tomorrow.',
+                },
+              ].map((point, i) => (
+                <div key={i} className="flex gap-4 bg-[#111]/80 border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-colors">
+                  <div className="text-2xl flex-shrink-0 mt-0.5">{point.icon}</div>
+                  <div>
+                    <h4 className="text-white font-bold text-sm md:text-base mb-1">{point.title}</h4>
+                    <p className="text-white/50 text-xs md:text-sm leading-relaxed">{point.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* ═══ SOCIAL PROOF — "SEE THE WORK" IG CTA ═══ */}
+          <motion.div 
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: isRevealed ? 0 : 40, opacity: isRevealed ? 1 : 0 }}
+            transition={{ duration: 0.8, delay: 0.95 }}
+            className="max-w-xl mx-auto mb-10"
+          >
+            <a 
+              href={igUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center justify-between w-full bg-gradient-to-r from-[#833ab4]/20 via-[#fd1d1d]/20 to-[#fcb045]/20 border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-all group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#833ab4] via-[#fd1d1d] to-[#fcb045] flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm md:text-base">See Hundreds of Completed Projects</p>
+                  <p className="text-white/50 text-xs">Follow {igHandle} for daily transformations</p>
+                </div>
+              </div>
+              <ExternalLink className="w-5 h-5 text-white/30 group-hover:text-white/60 transition-colors flex-shrink-0" />
+            </a>
+          </motion.div>
+
+          {/* ═══ URGENCY / SCARCITY TRIGGER ═══ */}
+          <motion.div 
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: isRevealed ? 0 : 40, opacity: isRevealed ? 1 : 0 }}
+            transition={{ duration: 0.8, delay: 1.0 }}
+            className="max-w-xl mx-auto mb-10"
+          >
+            <div className="bg-[#1a0a0a] border border-red-500/20 rounded-2xl p-5 text-center">
+              <p className="text-red-400/80 text-xs font-bold uppercase tracking-widest mb-2">⏳ Limited Availability</p>
+              <p className="text-white/70 text-sm leading-relaxed">
+                Due to high demand and the hands-on nature of every install, I only take <strong className="text-white">3–4 projects per month</strong>. 
+                Scheduling fills up fast — especially during peak season. Lock in your date before it's gone.
+              </p>
+            </div>
+          </motion.div>
+
+          {/* ═══ FINAL CTA ═══ */}
+          <motion.div 
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: isRevealed ? 0 : 40, opacity: isRevealed ? 1 : 0 }}
+            transition={{ duration: 0.8, delay: 1.1 }}
+            className="max-w-xl mx-auto"
+          >
+            <div className="bg-[#0a0a0a] border border-white/10 rounded-[2rem] p-8 md:p-10 text-center shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/[0.03] via-transparent to-transparent pointer-events-none"></div>
+              
+              <Calendar size={48} className="mx-auto mb-4 relative z-10" style={{color: themeColor}} />
+              <h3 className="text-2xl md:text-3xl font-space font-bold text-white mb-3 relative z-10">Ready to Transform Your Space?</h3>
+              <p className="text-white/60 max-w-md mx-auto mb-8 text-sm relative z-10">
+                Schedule a private consultation to discuss your vision, evaluate your space, and lock in your installation date. No pressure — just expertise.
+              </p>
               <button
                 onClick={() => {
                   if (installerInfo?.booking_slug) {
@@ -398,10 +534,29 @@ export default function QuoteViewLive() {
               >
                 <div className="absolute inset-0 bg-white/20 group-hover:bg-transparent transition-colors"></div>
                 <Calendar className="text-black group-hover:animate-pulse relative z-10" size={20} />
-                <span className="relative z-10">Request a Consultation</span>
+                <span className="relative z-10">Book My Free Consultation</span>
               </button>
+              
+              <p className="text-white/30 text-[10px] mt-4 relative z-10">No obligation · Free estimate · Response within 24 hours</p>
             </div>
           </motion.div>
+
+          {/* ═══ FOOTER TRUST BAR ═══ */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isRevealed ? 1 : 0 }}
+            transition={{ duration: 0.8, delay: 1.2 }}
+            className="max-w-xl mx-auto mt-10 text-center"
+          >
+            <div className="flex items-center justify-center gap-6 text-[10px] text-white/25 uppercase tracking-widest font-semibold">
+              <span className="flex items-center gap-1"><ShieldCheck size={12} /> Insured</span>
+              <span>·</span>
+              <span className="flex items-center gap-1"><Lock size={12} /> Licensed</span>
+              <span>·</span>
+              <span>Nationwide</span>
+            </div>
+          </motion.div>
+
         </motion.div>
       </div>
     );
