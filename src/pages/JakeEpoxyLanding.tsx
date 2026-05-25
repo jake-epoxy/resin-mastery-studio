@@ -1,176 +1,437 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
-import { MapPin, Globe, Star, ShieldCheck, Zap, Award, Gem } from 'lucide-react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Environment, MeshReflectorMaterial, Text, Float } from '@react-three/drei';
+import { motion, AnimatePresence } from 'framer-motion';
+import * as THREE from 'three';
 import { LeadCaptureGlassForm } from '../components/LeadCaptureGlassForm';
 
-/* ─── Room Configuration ─── */
-const rooms = [
+/* ═══════════════════════════════════════════
+   3D SCENE COMPONENTS
+   ═══════════════════════════════════════════ */
+
+/* ─── Camera Rail: moves along a path based on scroll ─── */
+function CameraRig() {
+  const { camera } = useThree();
+  const scrollRef = useRef(0);
+  const targetRef = useRef(0);
+
+  // Define the camera path through the environment
+  const path = useMemo(() => {
+    return new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 2, 12),     // Start: looking into the entryway
+      new THREE.Vector3(0, 2, 4),      // Move into the first room
+      new THREE.Vector3(0, 2, -4),     // Through to the corridor
+      new THREE.Vector3(3, 2, -12),    // Turn into the garage
+      new THREE.Vector3(0, 2, -20),    // Push through to the lounge
+      new THREE.Vector3(0, 2, -28),    // Final position: the end
+    ], false, 'catmullrom', 0.5);
+  }, []);
+
+  // Separate lookAt path (slightly ahead of camera)
+  const lookAtPath = useMemo(() => {
+    return new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 1.8, 4),
+      new THREE.Vector3(0, 1.8, -4),
+      new THREE.Vector3(0, 1.8, -12),
+      new THREE.Vector3(0, 1.8, -20),
+      new THREE.Vector3(0, 1.8, -28),
+      new THREE.Vector3(0, 1.8, -36),
+    ], false, 'catmullrom', 0.5);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      targetRef.current = scrollHeight > 0 ? window.scrollY / scrollHeight : 0;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useFrame(() => {
+    // Smooth lerp for buttery camera movement
+    scrollRef.current += (targetRef.current - scrollRef.current) * 0.05;
+    const t = Math.max(0, Math.min(1, scrollRef.current));
+
+    const pos = path.getPointAt(t);
+    const lookAt = lookAtPath.getPointAt(t);
+
+    camera.position.copy(pos);
+    camera.lookAt(lookAt);
+  });
+
+  return null;
+}
+
+/* ─── Reflective Epoxy Floor ─── */
+function EpoxyFloor() {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -10]} receiveShadow>
+      <planeGeometry args={[30, 60]} />
+      <MeshReflectorMaterial
+        blur={[400, 100]}
+        resolution={1024}
+        mixBlur={0.8}
+        mixStrength={15}
+        roughness={0}
+        depthScale={1.2}
+        minDepthThreshold={0.4}
+        maxDepthThreshold={1.4}
+        color="#0a0a0a"
+        metalness={0.9}
+        mirror={0.75}
+      />
+    </mesh>
+  );
+}
+
+/* ─── Room Walls (box-shaped room segment) ─── */
+function RoomSegment({ position, width = 10, height = 5, depth = 12, color = '#111111', emissiveColor = '#000000', emissiveIntensity = 0 }: any) {
+  const wallMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+    color: new THREE.Color(color),
+    roughness: 0.85,
+    metalness: 0.1,
+    emissive: new THREE.Color(emissiveColor),
+    emissiveIntensity,
+    side: THREE.BackSide,
+  }), [color, emissiveColor, emissiveIntensity]);
+
+  return (
+    <group position={position}>
+      {/* Ceiling */}
+      <mesh position={[0, height, 0]} rotation={[Math.PI / 2, 0, 0]} material={wallMaterial}>
+        <planeGeometry args={[width, depth]} />
+      </mesh>
+      {/* Left wall */}
+      <mesh position={[-width / 2, height / 2, 0]} rotation={[0, Math.PI / 2, 0]} material={wallMaterial}>
+        <planeGeometry args={[depth, height]} />
+      </mesh>
+      {/* Right wall */}
+      <mesh position={[width / 2, height / 2, 0]} rotation={[0, -Math.PI / 2, 0]} material={wallMaterial}>
+        <planeGeometry args={[depth, height]} />
+      </mesh>
+      {/* Back wall */}
+      <mesh position={[0, height / 2, -depth / 2]} material={wallMaterial}>
+        <planeGeometry args={[width, height]} />
+      </mesh>
+    </group>
+  );
+}
+
+/* ─── Glowing Accent Light Strip (like LED trim) ─── */
+function LightStrip({ position, width = 8, color = '#D4AF37' }: any) {
+  return (
+    <mesh position={position}>
+      <boxGeometry args={[width, 0.05, 0.05]} />
+      <meshStandardMaterial emissive={color} emissiveIntensity={3} color={color} />
+    </mesh>
+  );
+}
+
+/* ─── Floating Particles for atmosphere ─── */
+function Particles() {
+  const count = 200;
+  const mesh = useRef<any>(null);
+
+  const positions = useMemo(() => {
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 20;
+      pos[i * 3 + 1] = Math.random() * 5;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 50 - 10;
+    }
+    return pos;
+  }, []);
+
+  useFrame((state) => {
+    if (mesh.current) {
+      mesh.current.rotation.y = state.clock.getElapsedTime() * 0.01;
+    }
+  });
+
+  return (
+    <points ref={mesh}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          array={positions}
+          count={count}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <pointsMaterial size={0.02} color="#D4AF37" transparent opacity={0.4} sizeAttenuation />
+    </points>
+  );
+}
+
+/* ─── 3D Text Labels that exist in the scene ─── */
+function SceneText({ position, text, fontSize = 0.5, color = '#D4AF37' }: any) {
+  return (
+    <Float speed={1} rotationIntensity={0} floatIntensity={0.3}>
+      <Text
+        position={position}
+        fontSize={fontSize}
+        color={color}
+        anchorX="center"
+        anchorY="middle"
+        font="/fonts/Inter-Bold.woff"
+        maxWidth={8}
+        textAlign="center"
+        outlineWidth={0.02}
+        outlineColor="#000000"
+      >
+        {text}
+      </Text>
+    </Float>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   FULL 3D ENVIRONMENT
+   ═══════════════════════════════════════════ */
+function LuxuryInterior() {
+  return (
+    <>
+      {/* Lighting */}
+      <ambientLight intensity={0.15} />
+      <fog attach="fog" args={['#000000', 5, 35]} />
+
+      {/* Room 1: Grand Entryway */}
+      <RoomSegment position={[0, 0, 4]} width={12} height={6} depth={16} color="#0d0d0d" />
+      <pointLight position={[0, 5, 8]} intensity={8} color="#D4AF37" distance={15} decay={2} castShadow />
+      <pointLight position={[-3, 3, 6]} intensity={3} color="#8b5cf6" distance={10} decay={2} />
+      <LightStrip position={[0, 5.95, 4]} width={10} color="#D4AF37" />
+
+      {/* Room 2: The Corridor */}
+      <RoomSegment position={[0, 0, -10]} width={8} height={4.5} depth={16} color="#0a0a0a" />
+      <pointLight position={[0, 4, -8]} intensity={5} color="#a855f7" distance={12} decay={2} />
+      <pointLight position={[0, 4, -14]} intensity={5} color="#D4AF37" distance={12} decay={2} />
+      <LightStrip position={[0, 4.45, -10]} width={6} color="#a855f7" />
+      <LightStrip position={[-3.95, 2.25, -10]} width={0.05} color="#D4AF37" />
+      <LightStrip position={[3.95, 2.25, -10]} width={0.05} color="#D4AF37" />
+
+      {/* Room 3: The Showroom */}
+      <RoomSegment position={[0, 0, -24]} width={14} height={5.5} depth={16} color="#0d0d0d" emissiveColor="#1a0a2e" emissiveIntensity={0.1} />
+      <pointLight position={[-4, 4.5, -22]} intensity={6} color="#D4AF37" distance={12} decay={2} />
+      <pointLight position={[4, 4.5, -26]} intensity={6} color="#D4AF37" distance={12} decay={2} />
+      <pointLight position={[0, 3, -24]} intensity={4} color="#8b5cf6" distance={15} decay={2} />
+      <LightStrip position={[0, 5.45, -24]} width={12} color="#D4AF37" />
+
+      {/* Decorative elements in showroom */}
+      <mesh position={[-5, 1.5, -26]} castShadow>
+        <boxGeometry args={[1.5, 3, 0.8]} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.3} metalness={0.8} />
+      </mesh>
+      <mesh position={[5, 1.5, -26]} castShadow>
+        <boxGeometry args={[1.5, 3, 0.8]} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.3} metalness={0.8} />
+      </mesh>
+
+      {/* The epoxy floor — the star of the show */}
+      <EpoxyFloor />
+
+      {/* Atmospheric particles */}
+      <Particles />
+
+      {/* Camera Rail */}
+      <CameraRig />
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SCROLL-DRIVEN HUD OVERLAY
+   ═══════════════════════════════════════════ */
+const scenes = [
   {
-    id: 'entryway',
-    image: '/assets/epoxy/entryway.png',
+    range: [0, 0.2],
     label: 'THE GRAND ENTRYWAY',
-    icon: Gem,
-    heading: ['Floors That', 'Define Luxury.'],
-    body: 'Handcrafted custom epoxy floors and premium countertops. From celebrity homes to architectural masterpieces nationwide.',
+    heading: 'Floors That Define Luxury.',
+    body: 'Handcrafted seamless epoxy floors and premium countertops. From celebrity homes to architectural masterpieces.',
     badges: ['El Paso\'s #1 Resin Authority', 'Nationwide Travel'],
   },
   {
-    id: 'hallway',
-    image: '/assets/epoxy/hallway.png',
+    range: [0.25, 0.45],
     label: 'THE CORRIDOR',
-    icon: Award,
-    heading: ['Seamless.', 'Unbroken. Infinite.'],
-    body: 'One continuous, mirror-like surface poured directly onto your substrate. No tiles. No seams. No grout lines. Just pure, uninterrupted luxury.',
+    heading: 'Seamless. Unbroken. Infinite.',
+    body: 'One continuous, mirror-like surface poured directly onto your substrate. No tiles. No seams. No grout. Just pure, uninterrupted luxury.',
     badges: ['Seamless Pour Technology', 'Own Resin Product Line'],
   },
   {
-    id: 'garage',
-    image: '/assets/epoxy/garage.png',
-    label: 'THE LUXURY GARAGE',
-    icon: Star,
-    heading: ['Showroom Quality.', 'Industrial Strength.'],
-    body: 'Metallic flake systems and hyper-durable coatings designed to handle heavy exotic vehicles while reflecting light perfectly.',
-    badges: ['Celebrity & Commercial', 'Extreme Durability'],
+    range: [0.5, 0.7],
+    label: 'THE SHOWROOM',
+    heading: 'Showroom Quality. Industrial Strength.',
+    body: 'Metallic flake systems and hyper-durable coatings designed for exotic vehicles, celebrity homes, and commercial giants.',
+    badges: ['Celebrity & Commercial', 'Live Job Site Training'],
   },
   {
-    id: 'kitchen',
-    image: '/assets/epoxy/kitchen.png',
-    label: 'THE KITCHEN & BAR',
-    icon: Globe,
-    heading: ['Built to', 'Outlast.'],
-    body: 'From high-end lounges to industrial warehouses. The only installer in El Paso with a proprietary resin line formulated for extreme conditions.',
-    badges: ['Live Job Site Trainings', 'Satisfaction Guaranteed'],
+    range: [0.78, 1],
+    label: 'YOUR PROJECT',
+    heading: 'Let\'s Build Something Legendary.',
+    body: null,
+    badges: [],
+    showForm: true,
   },
 ];
 
-/* ─── Cinematic Room Component ─── */
-function CinematicRoom({ room, progress }: { room: typeof rooms[0]; progress: any }) {
-  // Image: starts at scale 1.15 (slightly zoomed) and zooms to 1.6 as you scroll through
-  const imgScale = useTransform(progress, [0, 1], [1.15, 1.6]);
-  // Image slowly drifts upward for parallax depth
-  const imgY = useTransform(progress, [0, 1], ['0%', '-8%']);
-  // Content fades in from 0-30%, holds, fades out 70-100%
-  const contentOpacity = useTransform(progress, [0, 0.15, 0.75, 1], [0, 1, 1, 0]);
-  const contentY = useTransform(progress, [0, 0.15, 0.75, 1], [80, 0, 0, -60]);
-  // Vignette intensifies as we "push through"
-  const vignetteOpacity = useTransform(progress, [0, 0.7, 1], [0.4, 0.5, 1]);
+function HUDOverlay() {
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [activeScene, setActiveScene] = useState<number | null>(0);
 
-  const Icon = room.icon;
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = scrollHeight > 0 ? window.scrollY / scrollHeight : 0;
+      setScrollProgress(progress);
+
+      // Determine active scene
+      let found: number | null = null;
+      for (let i = 0; i < scenes.length; i++) {
+        const [start, end] = scenes[i].range;
+        if (progress >= start && progress <= end) {
+          found = i;
+          break;
+        }
+      }
+      setActiveScene(found);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scene = activeScene !== null ? scenes[activeScene] : null;
+
+  // Calculate opacity within scene range for smooth fade
+  let contentOpacity = 0;
+  if (scene && activeScene !== null) {
+    const [start, end] = scene.range;
+    const duration = end - start;
+    const localProgress = (scrollProgress - start) / duration;
+    // Fade in first 20%, hold, fade out last 15%
+    if (localProgress < 0.2) contentOpacity = localProgress / 0.2;
+    else if (localProgress > 0.85) contentOpacity = (1 - localProgress) / 0.15;
+    else contentOpacity = 1;
+    contentOpacity = Math.max(0, Math.min(1, contentOpacity));
+  }
 
   return (
-    <div className="absolute inset-0 w-full h-full">
-      {/* Background Image with Parallax Zoom */}
+    <div className="fixed inset-0 z-20 pointer-events-none" style={{ fontFamily: "'Inter', sans-serif" }}>
+      {/* Cinematic Letterbox */}
+      <div className="absolute top-0 left-0 right-0 h-[4vh] bg-black z-50" />
+      <div className="absolute bottom-0 left-0 right-0 h-[4vh] bg-black z-50" />
+
+      {/* Room Nav Dots */}
+      <div className="absolute right-5 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 pointer-events-auto">
+        {scenes.map((s, i) => (
+          <button
+            key={i}
+            className="group relative flex items-center justify-end"
+            onClick={() => {
+              const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+              const target = ((s.range[0] + s.range[1]) / 2) * scrollHeight;
+              window.scrollTo({ top: target, behavior: 'smooth' });
+            }}
+          >
+            <span className="absolute right-5 whitespace-nowrap text-[9px] tracking-[0.15em] uppercase font-semibold text-white/0 group-hover:text-white/60 transition-all duration-300 pr-1">
+              {s.label}
+            </span>
+            <div className={`w-2 h-2 rounded-full border transition-all duration-500 ${
+              activeScene === i
+                ? 'bg-[#D4AF37] border-[#D4AF37] scale-150 shadow-[0_0_10px_rgba(212,175,55,0.6)]'
+                : 'bg-transparent border-white/25 hover:border-white/50'
+            }`} />
+          </button>
+        ))}
+      </div>
+
+      {/* Scroll Indicator */}
       <motion.div
-        className="absolute inset-0 w-full h-full"
-        style={{ scale: imgScale, y: imgY }}
+        className="absolute bottom-[6vh] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2"
+        animate={{ opacity: scrollProgress < 0.03 ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
       >
-        <div
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${room.image})` }}
-        />
+        <span className="text-[9px] tracking-[0.3em] text-white/35 uppercase font-semibold">Scroll to Walk Through</span>
+        <motion.div
+          className="w-6 h-10 border border-white/15 rounded-full flex justify-center pt-2"
+          animate={{ y: [0, 5, 0] }}
+          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+        >
+          <div className="w-0.5 h-2 bg-[#D4AF37] rounded-full" />
+        </motion.div>
       </motion.div>
 
-      {/* Cinematic Vignette Overlay — creates the "tunnel vision" transport feel */}
-      <motion.div
-        className="absolute inset-0 pointer-events-none"
-        style={{ opacity: vignetteOpacity }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
-      </motion.div>
-
-      {/* Film Grain Texture */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay"
-        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }}
-      />
-
-      {/* Content */}
-      <motion.div
-        className="absolute inset-0 flex items-end pb-24 md:pb-32 px-8 md:px-16 lg:px-24 pointer-events-none"
-        style={{ opacity: contentOpacity, y: contentY }}
-      >
-        <div className="max-w-3xl">
-          {/* Room Label */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/25 backdrop-blur-xl mb-6">
-            <Icon className="w-4 h-4 text-[#D4AF37]" />
-            <span className="text-[10px] font-bold tracking-[0.25em] text-[#D4AF37] uppercase">{room.label}</span>
-          </div>
-
-          {/* Heading */}
-          <h2 className="mb-6">
-            {room.heading.map((line, i) => (
-              <span key={i} className="block text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] drop-shadow-2xl">
-                {i === room.heading.length - 1 ? (
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37]">{line}</span>
-                ) : (
-                  <span className="text-white">{line}</span>
-                )}
-              </span>
-            ))}
-          </h2>
-
-          {/* Body */}
-          <p className="text-lg md:text-xl text-white/80 max-w-xl leading-relaxed mb-8 drop-shadow-lg">
-            {room.body}
-          </p>
-
-          {/* Badges */}
-          <div className="flex flex-wrap gap-3">
-            {room.badges.map((badge) => (
-              <div key={badge} className="flex items-center gap-2 text-xs font-semibold text-white/70 bg-white/5 backdrop-blur-md px-4 py-2.5 rounded-full border border-white/10">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-                {badge}
+      {/* Scene Content */}
+      <AnimatePresence mode="wait">
+        {scene && (
+          <motion.div
+            key={activeScene}
+            className="absolute inset-0 flex items-end pb-[8vh] px-8 md:px-16 lg:px-24"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: contentOpacity, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          >
+            {scene.showForm ? (
+              /* Final scene: Lead Capture */
+              <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-end lg:items-center gap-12 pointer-events-auto">
+                <div className="flex-1">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 backdrop-blur-xl mb-5">
+                    <span className="text-[9px] font-bold tracking-[0.25em] text-[#D4AF37] uppercase">{scene.label}</span>
+                  </div>
+                  <h2 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter leading-[0.9] text-white drop-shadow-2xl">
+                    Let's Build Something{' '}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37]">Legendary.</span>
+                  </h2>
+                </div>
+                <div className="flex-1 w-full max-w-md">
+                  <LeadCaptureGlassForm />
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </motion.div>
+            ) : (
+              /* Regular scene: selling points */
+              <div className="max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 backdrop-blur-xl mb-5">
+                  <span className="text-[9px] font-bold tracking-[0.25em] text-[#D4AF37] uppercase">{scene.label}</span>
+                </div>
+                <h2 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter leading-[0.9] text-white mb-5 drop-shadow-2xl">
+                  {scene.heading.split('. ').map((part, i, arr) => (
+                    <span key={i} className="block">
+                      {i === arr.length - 1 ? (
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37]">{part}</span>
+                      ) : (
+                        <>{part}. </>
+                      )}
+                    </span>
+                  ))}
+                </h2>
+                <p className="text-base md:text-lg text-white/70 max-w-xl leading-relaxed mb-6 drop-shadow-lg">
+                  {scene.body}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {scene.badges.map((badge) => (
+                    <div key={badge} className="flex items-center gap-2 text-[11px] font-semibold text-white/60 bg-white/5 backdrop-blur-md px-3 py-2 rounded-full border border-white/10">
+                      <div className="w-1 h-1 rounded-full bg-[#D4AF37]" />
+                      {badge}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-/* ─── Main Landing Page ─── */
+/* ═══════════════════════════════════════════
+   MAIN PAGE
+   ═══════════════════════════════════════════ */
 export default function JakeEpoxyLanding() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [activeRoom, setActiveRoom] = useState(0);
-
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"]
-  });
-
-  // Track which room we're in for the nav dots
-  useMotionValueEvent(scrollYProgress, "change", (v) => {
-    const idx = Math.min(Math.floor(v * rooms.length), rooms.length - 1);
-    setActiveRoom(idx);
-  });
-
-  // Per-room progress values (each room gets its own 0→1 range)
-  const roomProgresses = rooms.map((_, i) => {
-    const start = i / rooms.length;
-    const end = (i + 1) / rooms.length;
-    return useTransform(scrollYProgress, [start, end], [0, 1]);
-  });
-
-  // Per-room visibility (used for layering — room fades out at end of its segment)
-  const roomVisibilities = rooms.map((_, i) => {
-    const start = i / rooms.length;
-    const end = (i + 1) / rooms.length;
-    // Visible from start, begins fading at 85%, fully gone at 100%
-    if (i < rooms.length - 1) {
-      return useTransform(scrollYProgress, [start, end * 0.85, end], [1, 1, 0]);
-    }
-    // Last room stays visible
-    return useTransform(scrollYProgress, [start, end], [1, 1]);
-  });
-
-  // "Scroll to explore" indicator fades out after first scroll
-  const scrollIndicatorOpacity = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
-
   return (
-    <div className="bg-black text-white selection:bg-[#D4AF37]/30" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="bg-black text-white">
       <Helmet>
         <title>Jake Epoxy | El Paso's Premier Custom Luxurious Epoxy Flooring</title>
         <meta name="description" content="State of the art custom luxurious epoxy flooring and countertops in El Paso, TX. The only installer with a personal Resin product line, traveling nationwide for celebrities, commercial, and residential projects." />
@@ -184,9 +445,8 @@ export default function JakeEpoxyLanding() {
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
             "name": "Jake Epoxy",
-            "description": "El Paso's premier luxury epoxy flooring and countertop installer. The only installer with a proprietary resin product line.",
+            "description": "El Paso's premier luxury epoxy flooring and countertop installer.",
             "url": "https://resinacademics.com/jakeepoxy",
-            "telephone": "+1-915-000-0000",
             "address": { "@type": "PostalAddress", "addressLocality": "El Paso", "addressRegion": "TX" },
             "areaServed": ["El Paso", "Nationwide"],
             "priceRange": "$$$"
@@ -194,84 +454,21 @@ export default function JakeEpoxyLanding() {
         `}</script>
       </Helmet>
 
-      {/* ═══ Scroll Container: each room gets 150vh of scroll space ═══ */}
-      <div ref={containerRef} style={{ height: `${rooms.length * 150}vh` }} className="relative">
-
-        {/* ═══ Sticky Viewport ═══ */}
-        <div className="sticky top-0 w-full h-screen overflow-hidden bg-black">
-
-          {/* Room layers — stacked bottom to top so first room is on top */}
-          {[...rooms].reverse().map((room, reversedIdx) => {
-            const i = rooms.length - 1 - reversedIdx;
-            return (
-              <motion.div
-                key={room.id}
-                className="absolute inset-0"
-                style={{ opacity: roomVisibilities[i], zIndex: i + 1 }}
-              >
-                <CinematicRoom room={room} progress={roomProgresses[i]} />
-              </motion.div>
-            );
-          })}
-
-          {/* ═══ Lead Capture Form — fades in during last room ═══ */}
-          <motion.div
-            className="absolute bottom-8 right-8 md:right-16 lg:right-24 z-50 w-full max-w-md pointer-events-auto"
-            style={{
-              opacity: useTransform(scrollYProgress, [0.82, 0.9], [0, 1]),
-              y: useTransform(scrollYProgress, [0.82, 0.9], [60, 0]),
-            }}
+      {/* Scroll spacer — 600vh gives plenty of room for the camera to travel */}
+      <div className="h-[600vh] relative">
+        {/* Fixed 3D Canvas */}
+        <div className="fixed inset-0 z-10">
+          <Canvas
+            shadows
+            camera={{ fov: 60, near: 0.1, far: 100 }}
+            gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.8 }}
           >
-            <LeadCaptureGlassForm />
-          </motion.div>
-
-          {/* ═══ Room Navigation Dots ═══ */}
-          <div className="absolute right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3">
-            {rooms.map((room, i) => (
-              <button
-                key={room.id}
-                className="group relative flex items-center justify-end"
-                onClick={() => {
-                  if (!containerRef.current) return;
-                  const totalHeight = containerRef.current.scrollHeight - window.innerHeight;
-                  const targetScroll = (i / rooms.length) * totalHeight + 1;
-                  window.scrollTo({ top: targetScroll, behavior: 'smooth' });
-                }}
-              >
-                {/* Label on hover */}
-                <span className="absolute right-6 whitespace-nowrap text-[10px] tracking-[0.15em] uppercase font-semibold text-white/0 group-hover:text-white/70 transition-all duration-300 pr-2">
-                  {room.label}
-                </span>
-                {/* Dot */}
-                <div className={`w-2.5 h-2.5 rounded-full border transition-all duration-500 ${
-                  activeRoom === i
-                    ? 'bg-[#D4AF37] border-[#D4AF37] scale-125 shadow-[0_0_12px_rgba(212,175,55,0.5)]'
-                    : 'bg-transparent border-white/30 hover:border-white/60'
-                }`} />
-              </button>
-            ))}
-          </div>
-
-          {/* ═══ Scroll Indicator ═══ */}
-          <motion.div
-            className="absolute bottom-10 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-3"
-            style={{ opacity: scrollIndicatorOpacity }}
-          >
-            <span className="text-[10px] tracking-[0.3em] text-white/40 uppercase font-semibold">Scroll to Explore</span>
-            <motion.div
-              className="w-7 h-11 border border-white/20 rounded-full flex justify-center pt-2 backdrop-blur-sm"
-              animate={{ y: [0, 6, 0] }}
-              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-            >
-              <div className="w-1 h-2.5 bg-[#D4AF37] rounded-full" />
-            </motion.div>
-          </motion.div>
-
-          {/* ═══ Cinematic Letterbox Bars ═══ */}
-          <div className="absolute top-0 left-0 right-0 h-[3vh] bg-black z-40 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 right-0 h-[3vh] bg-black z-40 pointer-events-none" />
-
+            <LuxuryInterior />
+          </Canvas>
         </div>
+
+        {/* HUD Overlay */}
+        <HUDOverlay />
       </div>
     </div>
   );
