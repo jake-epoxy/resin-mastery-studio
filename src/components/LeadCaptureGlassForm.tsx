@@ -65,9 +65,9 @@ export function LeadCaptureGlassForm() {
   return (
     <div className="relative w-full max-w-md mx-auto">
       {/* Dynamic Glowing Aura */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-indigo-600 rounded-2xl blur-xl opacity-50 animate-pulse" />
+      <div className="absolute -inset-1 bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#B8860B] rounded-2xl blur-xl opacity-20 animate-pulse" />
       
-      <div className="relative bg-black/40 backdrop-blur-2xl border border-white/10 rounded-2xl p-8 overflow-hidden shadow-2xl">
+      <div className="relative bg-black/60 backdrop-blur-2xl border border-[#D4AF37]/30 rounded-2xl p-8 overflow-hidden shadow-2xl">
         <AnimatePresence mode="wait">
           
           {step === 'name' && (
@@ -91,7 +91,7 @@ export function LeadCaptureGlassForm() {
                   placeholder="First & Last Name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full bg-white/5 border border-[#D4AF37]/30 rounded-xl px-4 py-4 text-white placeholder:text-white/30 focus:outline-none focus:border-[#D4AF37] transition-colors"
                 />
               </div>
               <button
@@ -125,7 +125,7 @@ export function LeadCaptureGlassForm() {
                   placeholder="(555) 555-5555"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full bg-white/5 border border-[#D4AF37]/30 rounded-xl px-4 py-4 text-white placeholder:text-white/30 focus:outline-none focus:border-[#D4AF37] transition-colors"
                 />
               </div>
               <div className="flex gap-3">
@@ -166,10 +166,10 @@ export function LeadCaptureGlassForm() {
                     key={service}
                     onClick={() => handleSubmit(service)}
                     disabled={isSubmitting}
-                    className="w-full text-left bg-white/5 border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/10 rounded-xl px-5 py-4 text-white transition-all group flex items-center justify-between"
+                    className="w-full text-left bg-white/5 border border-[#D4AF37]/30 hover:border-[#D4AF37] hover:bg-[#D4AF37]/10 rounded-xl px-5 py-4 text-white transition-all group flex items-center justify-between"
                   >
                     <span className="font-medium">{service}</span>
-                    <ChevronRight className="w-5 h-5 text-white/30 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" />
+                    <ChevronRight className="w-5 h-5 text-white/30 group-hover:text-[#D4AF37] group-hover:translate-x-1 transition-all" />
                   </button>
                 ))}
               </div>
@@ -184,7 +184,7 @@ export function LeadCaptureGlassForm() {
                   Go Back
                 </button>
                 {isSubmitting && (
-                  <div className="flex items-center gap-2 text-purple-400 text-sm font-medium">
+                  <div className="flex items-center gap-2 text-[#D4AF37] text-sm font-medium">
                     <Loader2 className="w-4 h-4 animate-spin" /> Finalizing...
                   </div>
                 )}

@@ -1,222 +1,163 @@
-import React, { Suspense } from 'react';
+import React, { useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { motion } from 'framer-motion';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Environment, Float, MeshTransmissionMaterial } from '@react-three/drei';
-import { MapPin, Globe, Star, ShieldCheck, Zap } from 'lucide-react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { MapPin, Globe, Star, ShieldCheck, Zap, ChevronDown } from 'lucide-react';
 import { LeadCaptureGlassForm } from '../components/LeadCaptureGlassForm';
 
-const fadeInUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.2 }
-  }
-};
-
-function FlowingEpoxyStream() {
-  const mesh1 = React.useRef<any>(null);
-  const mesh2 = React.useRef<any>(null);
+export default function JakeEpoxyLanding() {
+  const containerRef = useRef<HTMLDivElement>(null);
   
-  useFrame((state) => {
-    const scrollY = window.scrollY;
-    const t = state.clock.getElapsedTime();
-    
-    if (mesh1.current) {
-      // First stream snakes around elegantly
-      mesh1.current.position.y = Math.sin(t * 0.5) * 1.5 - (scrollY * 0.003);
-      mesh1.current.rotation.x = t * 0.15;
-      mesh1.current.rotation.y = Math.sin(t * 0.2) * 0.5;
-      mesh1.current.rotation.z = Math.cos(t * 0.2) * 0.2 + (scrollY * 0.001);
-    }
-    if (mesh2.current) {
-      // Second stream intertwined
-      mesh2.current.position.y = Math.cos(t * 0.4) * 1.5 - (scrollY * 0.004);
-      mesh2.current.rotation.x = -t * 0.1;
-      mesh2.current.rotation.y = Math.cos(t * 0.2) * 0.5;
-      mesh2.current.rotation.z = -Math.sin(t * 0.3) * 0.2 - (scrollY * 0.001);
-    }
+  // Track scroll over the entire 400vh container
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
   });
 
-  const materialProps = {
-    backside: true,
-    samples: 4,
-    thickness: 1.5,
-    chromaticAberration: 0.6,
-    anisotropy: 0.8,
-    distortion: 0.4,
-    distortionScale: 0.2,
-    temporalDistortion: 0.1,
-    color: "#8b5cf6",
-    attenuationDistance: 2,
-    attenuationColor: "#4c1d95"
-  };
+  // --- SCENE 1: LIVING ROOM (0% to 33% Scroll) ---
+  const scale1 = useTransform(scrollYProgress, [0, 0.33], [1, 1.5]);
+  const opacity1 = useTransform(scrollYProgress, [0.25, 0.33], [1, 0]);
+  const textY1 = useTransform(scrollYProgress, [0, 0.15, 0.33], [50, 0, -50]);
+  const textOp1 = useTransform(scrollYProgress, [0, 0.1, 0.25, 0.33], [0, 1, 1, 0]);
+
+  // --- SCENE 2: LUXURY GARAGE (33% to 66% Scroll) ---
+  const scale2 = useTransform(scrollYProgress, [0.33, 0.66], [1, 1.5]);
+  const opacity2 = useTransform(scrollYProgress, [0.58, 0.66], [1, 0]);
+  const textY2 = useTransform(scrollYProgress, [0.33, 0.48, 0.66], [50, 0, -50]);
+  const textOp2 = useTransform(scrollYProgress, [0.33, 0.43, 0.58, 0.66], [0, 1, 1, 0]);
+
+  // --- SCENE 3: COMMERCIAL & LEAD CAPTURE (66% to 100% Scroll) ---
+  const scale3 = useTransform(scrollYProgress, [0.66, 1], [1, 1.1]);
+  const textY3 = useTransform(scrollYProgress, [0.66, 0.85, 1], [50, 0, 0]);
+  const textOp3 = useTransform(scrollYProgress, [0.66, 0.8, 1], [0, 1, 1]);
 
   return (
-    <>
-      <mesh ref={mesh1} position={[-1, 0, -8]}>
-        <torusKnotGeometry args={[3, 0.15, 256, 64, 2, 3]} />
-        <MeshTransmissionMaterial {...materialProps} />
-      </mesh>
-      <mesh ref={mesh2} position={[1, 1, -12]}>
-        <torusKnotGeometry args={[3.5, 0.2, 256, 64, 3, 4]} />
-        <MeshTransmissionMaterial {...materialProps} color="#a855f7" />
-      </mesh>
-    </>
-  );
-}
-
-export default function JakeEpoxyLanding() {
-  return (
-    <div className="bg-black min-h-screen text-white font-inter overflow-x-hidden selection:bg-purple-500/30">
+    <div className="bg-black text-white font-inter selection:bg-[#D4AF37]/30">
       <Helmet>
         <title>Jake Epoxy | El Paso's Premier Custom Luxurious Epoxy Flooring</title>
         <meta name="description" content="State of the art custom luxurious epoxy flooring and countertops in El Paso, TX. The only installer with a personal Resin product line, traveling nationwide for celebrities, commercial, and residential projects." />
         <meta name="keywords" content="Epoxy Flooring El Paso, Custom Epoxy, Luxury Countertops, Jake Epoxy, Nationwide Resin Installer, Celebrity Epoxy Installer, Live Job Site Trainings El Paso" />
         
         {/* Open Graph / Social */}
-        <meta property="og:title" content="Jake Epoxy | The Apex of Resin Artistry" />
+        <meta property="og:title" content="Jake Epoxy | Floors That Define Luxury" />
         <meta property="og:description" content="El Paso's exclusive luxury epoxy installer. Custom flooring, premium countertops, and the only installer with a custom resin product line." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://resinacademics.com/jakeepoxy" />
-        
-        {/* Structured Data for SEO Dominance */}
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "LocalBusiness",
-            "name": "Jake Epoxy",
-            "description": "El Paso's premier custom luxurious epoxy flooring and countertops installer. Travels nationwide for celebrity, commercial, and residential clients.",
-            "url": "https://resinacademics.com/jakeepoxy",
-            "address": {
-              "@type": "PostalAddress",
-              "addressLocality": "El Paso",
-              "addressRegion": "TX",
-              "addressCountry": "US"
-            },
-            "geo": {
-              "@type": "GeoCoordinates",
-              "latitude": "31.7619",
-              "longitude": "-106.4850"
-            },
-            "areaServed": ["El Paso, TX", "Nationwide"],
-            "hasOfferCatalog": {
-              "@type": "OfferCatalog",
-              "name": "Epoxy Services",
-              "itemListElement": [
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Custom Luxurious Epoxy Flooring" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Premium Epoxy Countertops" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Live Job Site Training" } }
-              ]
-            }
-          })}
-        </script>
       </Helmet>
 
-      {/* Hero Section */}
-      <div className="relative min-h-screen w-full flex flex-col justify-center overflow-visible">
+      {/* 400vh Scroll Container */}
+      <div ref={containerRef} className="relative w-full h-[400vh] bg-black">
         
-        {/* 3D R3F Canvas - FIXED so it doesn't cut off on scroll */}
-        <div className="fixed inset-0 z-0 opacity-80 mix-blend-screen pointer-events-none">
-          <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[10, 10, 5]} intensity={1} />
-            <FlowingEpoxyStream />
-            <Environment preset="city" />
-          </Canvas>
-        </div>
+        {/* The Sticky Viewport */}
+        <div className="sticky top-0 w-full h-screen overflow-hidden">
 
-        {/* Floating Grid overlay */}
-        <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-
-        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full py-20 flex flex-col lg:flex-row items-center gap-16">
+          {/* SCENE 3: COMMERCIAL (BOTTOM LAYER) */}
+          <motion.div 
+            className="absolute inset-0 bg-cover bg-center" 
+            style={{ backgroundImage: 'url(/assets/epoxy/commercial.png)', scale: scale3 }}
+          >
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          </motion.div>
           
           <motion.div 
-            className="flex-1 text-center lg:text-left"
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
+            className="absolute inset-0 flex flex-col items-center justify-center px-6 pointer-events-auto" 
+            style={{ y: textY3, opacity: textOp3 }}
           >
-            <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
-              <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-              <span className="text-xs font-semibold tracking-widest text-white/80 uppercase">El Paso's #1 Resin Authority</span>
-            </motion.div>
-            
-            <motion.h1 variants={fadeInUp} className="text-5xl md:text-7xl font-black tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/40">
-              The Future of <br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-600">Luxurious Surfaces.</span>
-            </motion.h1>
-            
-            <motion.p variants={fadeInUp} className="text-lg md:text-xl text-white/60 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-              We engineer custom, state-of-the-art epoxy flooring and premium countertops. From celebrity homes to commercial giants nationwide, we don't just install—we redefine.
-            </motion.p>
-            
-            <motion.div variants={fadeInUp} className="flex flex-wrap justify-center lg:justify-start gap-4">
-              <div className="flex items-center gap-2 text-sm text-white/50 bg-white/5 px-4 py-2 rounded-lg border border-white/5">
-                <Globe className="w-4 h-4 text-purple-400" /> Nationwide Travel
-              </div>
-              <div className="flex items-center gap-2 text-sm text-white/50 bg-white/5 px-4 py-2 rounded-lg border border-white/5">
-                <Star className="w-4 h-4 text-yellow-400" /> Celebrity & Commercial
-              </div>
-              <div className="flex items-center gap-2 text-sm text-white/50 bg-white/5 px-4 py-2 rounded-lg border border-white/5">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" /> Own Resin Product Line
-              </div>
-            </motion.div>
-          </motion.div>
-
-          <motion.div 
-            className="flex-1 w-full max-w-lg"
-            initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
-            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-            transition={{ duration: 1, delay: 0.4 }}
-          >
-            <LeadCaptureGlassForm />
-          </motion.div>
-
-        </div>
-      </div>
-
-      {/* Expertise Section */}
-      <div className="relative py-32 border-t border-white/10 bg-black/50">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <motion.div 
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-            className="text-center mb-20"
-          >
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4">Unrivaled Craftsmanship.</h2>
-            <p className="text-white/50 max-w-2xl mx-auto">I am the only installer in El Paso with a personal line of proprietary resin products, and the only one actively conducting live job-site training for the next generation of artisans.</p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { title: "Custom Luxurious Floors", icon: <Star className="w-6 h-6" />, desc: "Metallic sweeps, flawless flakes, and hyper-durable industrial coatings tailored precisely to your aesthetic." },
-              { title: "Premium Countertops", icon: <MapPin className="w-6 h-6" />, desc: "Transform outdated surfaces into seamless, marble-replicating works of art that are heat, scratch, and impact resistant." },
-              { title: "Live Job Site Training", icon: <Zap className="w-6 h-6" />, desc: "The only installer in El Paso training other contractors on real, active job sites using my own proprietary resin line." }
-            ].map((feature, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.2 }}
-                className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 hover:border-purple-500/50 transition-all group"
-              >
-                <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 mb-6 group-hover:scale-110 transition-transform">
-                  {feature.icon}
+            <div className="max-w-7xl w-full flex flex-col lg:flex-row items-center gap-16">
+              <div className="flex-1 text-center lg:text-left">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30 backdrop-blur-md mb-6">
+                  <Globe className="w-4 h-4 text-[#D4AF37]" />
+                  <span className="text-xs font-semibold tracking-widest text-[#D4AF37] uppercase">Commercial & Nationwide</span>
                 </div>
-                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                <p className="text-white/50 leading-relaxed">{feature.desc}</p>
-              </motion.div>
-            ))}
-          </div>
+                <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 drop-shadow-2xl">
+                  Built to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] to-[#F3E5AB]">Outlast.</span>
+                </h2>
+                <p className="text-xl md:text-2xl text-white/80 max-w-2xl leading-relaxed mb-8">
+                  From high-end lounges to 50,000 sqft industrial warehouses. I am the only installer in town with a proprietary resin line formulated for extreme durability.
+                </p>
+                <div className="flex flex-wrap justify-center lg:justify-start gap-4">
+                  <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 px-4 py-2 rounded-lg border border-white/10">
+                    <Zap className="w-4 h-4 text-[#D4AF37]" /> Live Job Site Trainings
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 px-4 py-2 rounded-lg border border-white/10">
+                    <ShieldCheck className="w-4 h-4 text-[#D4AF37]" /> Satisfaction Guaranteed
+                  </div>
+                </div>
+              </div>
+              
+              {/* Lead Capture Form embedded in the final scene */}
+              <div className="flex-1 w-full max-w-lg z-50">
+                <LeadCaptureGlassForm />
+              </div>
+            </div>
+          </motion.div>
+
+
+          {/* SCENE 2: GARAGE (MIDDLE LAYER) */}
+          <motion.div 
+            className="absolute inset-0 bg-cover bg-center" 
+            style={{ backgroundImage: 'url(/assets/epoxy/garage.png)', scale: scale2, opacity: opacity2 }}
+          >
+            <div className="absolute inset-0 bg-black/50 bg-gradient-to-t from-black via-transparent to-black" />
+          </motion.div>
+          
+          <motion.div 
+            className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center pointer-events-none" 
+            style={{ y: textY2, opacity: textOp2 }}
+          >
+            <div className="max-w-4xl mx-auto">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-6">
+                <Star className="w-4 h-4 text-white" />
+                <span className="text-xs font-semibold tracking-widest text-white uppercase">The Luxury Garage</span>
+              </div>
+              <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 drop-shadow-2xl">
+                Showroom Quality. <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-300 to-gray-500">Industrial Strength.</span>
+              </h2>
+              <p className="text-xl md:text-2xl text-white/80 max-w-2xl mx-auto leading-relaxed">
+                Metallic flake systems and hyper-durable coatings designed to handle heavy exotic vehicles while reflecting light perfectly. Tailored precisely to your aesthetic.
+              </p>
+            </div>
+          </motion.div>
+
+
+          {/* SCENE 1: LIVING ROOM (TOP LAYER) */}
+          <motion.div 
+            className="absolute inset-0 bg-cover bg-center" 
+            style={{ backgroundImage: 'url(/assets/epoxy/living_room.png)', scale: scale1, opacity: opacity1 }}
+          >
+            <div className="absolute inset-0 bg-black/40 bg-gradient-to-t from-black via-transparent to-black" />
+          </motion.div>
+          
+          <motion.div 
+            className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center pointer-events-none" 
+            style={{ y: textY1, opacity: textOp1 }}
+          >
+            <div className="max-w-4xl mx-auto mt-20">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30 backdrop-blur-md mb-6">
+                <MapPin className="w-4 h-4 text-[#D4AF37]" />
+                <span className="text-xs font-semibold tracking-widest text-[#D4AF37] uppercase">El Paso's #1 Resin Authority</span>
+              </div>
+              <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-6 drop-shadow-2xl">
+                Floors That <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37]">Define Luxury.</span>
+              </h1>
+              <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed drop-shadow-md">
+                Handcrafted custom epoxy floors and premium countertops. From celebrity homes to architectural masterpieces.
+              </p>
+            </div>
+
+            <motion.div 
+              className="absolute bottom-12 flex flex-col items-center gap-2"
+              animate={{ y: [0, 10, 0] }}
+              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+            >
+              <span className="text-[10px] tracking-[0.3em] text-white/50 uppercase font-semibold">Scroll to Walk Through</span>
+              <div className="w-8 h-12 border border-white/20 rounded-full flex justify-center p-2 backdrop-blur-sm">
+                <div className="w-1 h-3 bg-[#D4AF37] rounded-full" />
+              </div>
+            </motion.div>
+          </motion.div>
+
         </div>
       </div>
 
