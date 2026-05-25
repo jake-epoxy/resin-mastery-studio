@@ -19,46 +19,55 @@ const staggerContainer = {
   }
 };
 
-function FluidResinBackground() {
-  const mesh = React.useRef<any>(null);
+function FlowingEpoxyStream() {
+  const mesh1 = React.useRef<any>(null);
+  const mesh2 = React.useRef<any>(null);
   
   useFrame((state) => {
-    if (mesh.current) {
-      const scrollY = window.scrollY;
-      const t = state.clock.getElapsedTime();
-      
-      // Rotate slowly, accelerate on scroll
-      mesh.current.rotation.x = t * 0.1 + scrollY * 0.001;
-      mesh.current.rotation.y = t * 0.15 + scrollY * 0.002;
-      
-      // Morph and stretch the sphere to simulate liquid flowing
-      const stretch = 1 + scrollY * 0.001;
-      mesh.current.scale.x = 4 + Math.sin(t) * 0.8 * stretch;
-      mesh.current.scale.y = 4 + Math.cos(t * 0.8) * 0.8 * stretch;
-      mesh.current.scale.z = 4 + Math.sin(t * 1.2) * 0.8 * stretch;
-      
-      // Move slightly as you scroll to stay in view and feel immersive
-      mesh.current.position.y = -scrollY * 0.005;
+    const scrollY = window.scrollY;
+    const t = state.clock.getElapsedTime();
+    
+    if (mesh1.current) {
+      // First stream snakes around
+      mesh1.current.position.y = Math.sin(t * 0.5) * 2 - (scrollY * 0.003);
+      mesh1.current.rotation.x = t * 0.2;
+      mesh1.current.rotation.y = Math.sin(t * 0.3) * 0.5;
+      mesh1.current.rotation.z = Math.cos(t * 0.2) * 0.3 + (scrollY * 0.001);
+    }
+    if (mesh2.current) {
+      // Second stream intertwined
+      mesh2.current.position.y = Math.cos(t * 0.4) * 2 - (scrollY * 0.004);
+      mesh2.current.rotation.x = -t * 0.1;
+      mesh2.current.rotation.y = Math.cos(t * 0.2) * 0.5;
+      mesh2.current.rotation.z = -Math.sin(t * 0.3) * 0.3 - (scrollY * 0.001);
     }
   });
 
+  const materialProps = {
+    backside: true,
+    samples: 4,
+    thickness: 2,
+    chromaticAberration: 0.8,
+    anisotropy: 0.5,
+    distortion: 0.8,
+    distortionScale: 0.5,
+    temporalDistortion: 0.2,
+    color: "#8b5cf6",
+    attenuationDistance: 1,
+    attenuationColor: "#4c1d95"
+  };
+
   return (
-    <mesh ref={mesh} position={[0, 0, -2]}>
-      <sphereGeometry args={[1, 128, 128]} />
-      <MeshTransmissionMaterial 
-        backside
-        samples={6}
-        thickness={5}
-        chromaticAberration={0.8}
-        anisotropy={0.5}
-        distortion={2.0}
-        distortionScale={1.5}
-        temporalDistortion={0.5}
-        color="#8b5cf6"
-        attenuationDistance={1}
-        attenuationColor="#4c1d95"
-      />
-    </mesh>
+    <>
+      <mesh ref={mesh1} position={[-2, 0, -3]}>
+        <torusKnotGeometry args={[4, 0.8, 256, 64, 2, 3]} />
+        <MeshTransmissionMaterial {...materialProps} />
+      </mesh>
+      <mesh ref={mesh2} position={[2, 2, -5]}>
+        <torusKnotGeometry args={[5, 1, 256, 64, 3, 4]} />
+        <MeshTransmissionMaterial {...materialProps} color="#a855f7" />
+      </mesh>
+    </>
   );
 }
 
@@ -109,15 +118,15 @@ export default function JakeEpoxyLanding() {
         </script>
       </Helmet>
 
-      {/* Hero Section with 3D Background */}
-      <div className="relative min-h-screen w-full flex flex-col justify-center overflow-hidden">
+      {/* Hero Section */}
+      <div className="relative min-h-screen w-full flex flex-col justify-center overflow-visible">
         
-        {/* 3D R3F Canvas */}
-        <div className="absolute inset-0 z-0 opacity-80 mix-blend-screen pointer-events-none">
+        {/* 3D R3F Canvas - FIXED so it doesn't cut off on scroll */}
+        <div className="fixed inset-0 z-0 opacity-80 mix-blend-screen pointer-events-none">
           <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
             <ambientLight intensity={0.5} />
             <directionalLight position={[10, 10, 5]} intensity={1} />
-            <FluidResinBackground />
+            <FlowingEpoxyStream />
             <Environment preset="city" />
           </Canvas>
         </div>
