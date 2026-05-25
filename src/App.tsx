@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -17,6 +18,7 @@ import EmbedWidget from "./pages/EmbedWidget";
 import AffiliateLanding from "./pages/AffiliateLanding";
 import PartnershipAgreement from "./components/PartnershipAgreement";
 import FoundingPartnerAgreement from "./components/FoundingPartnerAgreement";
+import JakeEpoxyLanding from "./pages/JakeEpoxyLanding";
 
 // SaaS Admin Routes
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -47,10 +49,12 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <HelmetProvider>
       <BrowserRouter>
         <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Index />} />
+          <Route path="/jakeepoxy" element={<JakeEpoxyLanding />} />
           <Route path="/legal" element={<LegalTerms />} />
           <Route path="/privacy" element={<LegalTerms />} />
           <Route path="/licensing" element={<LicensingPage />} />
@@ -98,6 +102,7 @@ const App = () => (
         {/* Global Assistant Nav/Chatbot visible everywhere EXCEPT on end-client URLs like quote-live */}
         <AssistantFAB />
       </BrowserRouter>
+      </HelmetProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
