@@ -20,7 +20,9 @@ export default function BookingLive() {
   useEffect(() => {
     async function fetchSlug() {
       if (!slug) return;
-      const { data } = await supabase.from('installer_profiles').select('*').eq('booking_slug', slug).single();
+      // Mobile keyboards often auto-capitalize the URL, so enforce lowercase 
+      const safeSlug = slug.toLowerCase();
+      const { data } = await supabase.from('installer_profiles').select('*').eq('booking_slug', safeSlug).single();
       setProfile(data);
       setLoading(false);
     }
