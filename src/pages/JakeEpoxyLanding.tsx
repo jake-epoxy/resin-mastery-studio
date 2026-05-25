@@ -19,33 +19,46 @@ const staggerContainer = {
   }
 };
 
-function AnimatedLiquidKnot() {
+function FluidResinBackground() {
   const mesh = React.useRef<any>(null);
   
   useFrame((state) => {
     if (mesh.current) {
-      mesh.current.rotation.x = state.clock.getElapsedTime() * 0.2;
-      mesh.current.rotation.y = state.clock.getElapsedTime() * 0.3;
+      const scrollY = window.scrollY;
+      const t = state.clock.getElapsedTime();
+      
+      // Rotate slowly, accelerate on scroll
+      mesh.current.rotation.x = t * 0.1 + scrollY * 0.001;
+      mesh.current.rotation.y = t * 0.15 + scrollY * 0.002;
+      
+      // Morph and stretch the sphere to simulate liquid flowing
+      const stretch = 1 + scrollY * 0.001;
+      mesh.current.scale.x = 4 + Math.sin(t) * 0.8 * stretch;
+      mesh.current.scale.y = 4 + Math.cos(t * 0.8) * 0.8 * stretch;
+      mesh.current.scale.z = 4 + Math.sin(t * 1.2) * 0.8 * stretch;
+      
+      // Move slightly as you scroll to stay in view and feel immersive
+      mesh.current.position.y = -scrollY * 0.005;
     }
   });
 
   return (
-    <Float speed={2} rotationIntensity={1} floatIntensity={2}>
-      <mesh ref={mesh} scale={2}>
-        <torusKnotGeometry args={[1, 0.3, 128, 32]} />
-        <MeshTransmissionMaterial 
-          backside
-          samples={4}
-          thickness={3}
-          chromaticAberration={0.4}
-          anisotropy={0.3}
-          distortion={0.5}
-          distortionScale={0.5}
-          temporalDistortion={0.1}
-          color="#9333ea"
-        />
-      </mesh>
-    </Float>
+    <mesh ref={mesh} position={[0, 0, -2]}>
+      <sphereGeometry args={[1, 128, 128]} />
+      <MeshTransmissionMaterial 
+        backside
+        samples={6}
+        thickness={5}
+        chromaticAberration={0.8}
+        anisotropy={0.5}
+        distortion={2.0}
+        distortionScale={1.5}
+        temporalDistortion={0.5}
+        color="#8b5cf6"
+        attenuationDistance={1}
+        attenuationColor="#4c1d95"
+      />
+    </mesh>
   );
 }
 
@@ -104,7 +117,7 @@ export default function JakeEpoxyLanding() {
           <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
             <ambientLight intensity={0.5} />
             <directionalLight position={[10, 10, 5]} intensity={1} />
-            <AnimatedLiquidKnot />
+            <FluidResinBackground />
             <Environment preset="city" />
           </Canvas>
         </div>
