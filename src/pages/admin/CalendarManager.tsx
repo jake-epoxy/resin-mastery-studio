@@ -137,7 +137,7 @@ export default function CalendarManager() {
               {Array.from({length: 30}).map((_, i) => {
                 const date = new Date();
                 date.setDate(date.getDate() + i);
-                const isoStr = date.toISOString().split('T')[0];
+                const isoStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
                 const isSelected = selectedDate === isoStr;
                 const hasSlots = availability[isoStr]?.length > 0;
                 

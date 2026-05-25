@@ -60,7 +60,9 @@ export default function BookingLive() {
   if (!profile) return <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center font-inter">No booking profile found for this link.</div>;
 
   const availability = profile.booking_availability || {};
-  const dates = Object.keys(availability).sort().filter(d => new Date(d) >= new Date(new Date().setHours(0,0,0,0)));
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const dates = Object.keys(availability).sort().filter(d => d >= todayStr);
 
   return (
     <div className="min-h-screen bg-[#050505] text-white py-12 px-4 font-inter">
