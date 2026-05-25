@@ -16,8 +16,8 @@ export default function JakeEpoxyLanding() {
   // --- SCENE 1: LIVING ROOM (0% to 33% Scroll) ---
   const scale1 = useTransform(scrollYProgress, [0, 0.33], [1, 1.5]);
   const opacity1 = useTransform(scrollYProgress, [0.25, 0.33], [1, 0]);
-  const textY1 = useTransform(scrollYProgress, [0, 0.15, 0.33], [50, 0, -50]);
-  const textOp1 = useTransform(scrollYProgress, [0, 0.1, 0.25, 0.33], [0, 1, 1, 0]);
+  const textY1 = useTransform(scrollYProgress, [0, 0.33], [0, -50]);
+  const textOp1 = useTransform(scrollYProgress, [0, 0.25, 0.33], [1, 1, 0]);
 
   // --- SCENE 2: LUXURY GARAGE (33% to 66% Scroll) ---
   const scale2 = useTransform(scrollYProgress, [0.33, 0.66], [1, 1.5]);
