@@ -28,7 +28,8 @@ export function LeadCaptureGlassForm() {
     const finalData = { ...formData, service };
     setFormData(finalData);
     
-    // Log directly to CRM via fetch to book-consultation endpoint without scheduled_at
+    // Log directly to CRM
+    try {
       // Primary: Log directly to Supabase CRM
       const { data: profile } = await supabase.from('installer_profiles').select('user_id').eq('booking_slug', 'jake').single();
       
