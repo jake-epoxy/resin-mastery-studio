@@ -37,6 +37,12 @@ const RECOMMENDED_BADGES = [
   { label: "🍽️ Restaurants", query: "Restaurants" },
   { label: "🏗️ General Contractors", query: "General Contractors" },
   { label: "🏋️ Gyms & Fitness", query: "Gyms" },
+  { label: "✈️ Airplane Hangars", query: "Airplane Hangars" },
+  { label: "🍺 Breweries", query: "Breweries" },
+  { label: "🏥 Medical Clinics", query: "Medical Clinics" },
+  { label: "🐕 Dog Kennels & Vets", query: "Dog Kennels" },
+  { label: "💅 Spas & Salons", query: "Beauty Salons" },
+  { label: "🍇 Food Processing", query: "Food Processing Plants" },
 ];
 
 const COATING_STYLES = [
