@@ -561,7 +561,7 @@ export default function Autopilot() {
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-3xl font-black text-white font-space tracking-tight">Lead Autopilot</h1>
+                <h1 className="text-3xl font-black text-white font-space tracking-tight">AI Prospector</h1>
                 <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-300 bg-blue-500/20 border border-blue-500/30 rounded">Stage 1</span>
               </div>
               <p className="text-white/60 text-sm max-w-2xl leading-relaxed">
@@ -581,7 +581,7 @@ export default function Autopilot() {
             onClick={() => setActiveTab('prospector')}
             className={`px-4 py-2 text-sm font-bold uppercase tracking-wider rounded-t-lg transition-colors ${activeTab === 'prospector' ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/5' : 'text-white/50 hover:text-white/80'}`}
           >
-            Lead Prospector
+            AI Prospector
           </button>
           <button 
             onClick={() => setActiveTab('calendar')}

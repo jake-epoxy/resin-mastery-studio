@@ -62,7 +62,7 @@ const TOOLS = [
     desc: "Show clients a photorealistic preview of their new floor.",
   },
   {
-    name: "Lead Autopilot",
+    name: "AI Prospector",
     path: "/admin/autopilot",
     icon: PlaySquare,
     color: "#3b82f6",

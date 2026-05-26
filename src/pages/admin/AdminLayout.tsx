@@ -107,7 +107,7 @@ export default function AdminLayout() {
     { name: "Lead Center", mobileLabel: "Leads", path: "/admin/leads", icon: ContactRound },
     { name: "Quote Generator", mobileLabel: "Quotes", path: "/admin/quote", icon: Calculator },
     { name: "AI Visualizer", mobileLabel: "AI", path: "/admin/visualizer", icon: Wand2 },
-    { name: "Lead Autopilot", mobileLabel: "Autopilot", path: "/admin/autopilot", icon: PlaySquare },
+    { name: "AI Prospector", mobileLabel: "Prospector", path: "/admin/autopilot", icon: PlaySquare },
     { name: "Mastery Support", mobileLabel: "Help", path: "/admin/academy", icon: LifeBuoy },
     { name: "Proposals", mobileLabel: "Proposals", path: "/admin/proposals", icon: FileText },
     { name: "Workforce Hub", mobileLabel: "Team", path: "/admin/workforce", icon: HardHat },
