@@ -58,19 +58,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 1. Subscription Logic
     if (userId) {
       try {
-        console.log(`Upgrading User ${userId} to PREMIUM tier...`);
-        
-        const { error } = await supabase
-          .from('installer_profiles')
-          .update({
-            subscription_active: true,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', userId);
+        if (session.metadata?.type === 'prospector_addon') {
+          console.log(`Activating AI Prospector Add-on for User ${userId}...`);
+          
+          // Fetch current profile
+          const { data: profile, error: fetchError } = await supabase
+            .from('installer_profiles')
+            .select('id, service_pricing')
+            .eq('user_id', userId)
+            .single();
 
-        if (error) throw error;
-        console.log(`Successfully upgraded user: ${userId}`);
+          if (fetchError) throw fetchError;
 
+          if (profile) {
+            const settings = typeof profile.service_pricing === 'string' 
+              ? JSON.parse(profile.service_pricing || "{}") 
+              : (profile.service_pricing || {});
+            
+            settings.prospector_active = true;
+
+            const { error: updateError } = await supabase
+              .from('installer_profiles')
+              .update({
+                service_pricing: settings,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', profile.id);
+
+            if (updateError) throw updateError;
+            console.log(`Successfully activated prospector add-on for user: ${userId}`);
+          }
+        } else {
+          console.log(`Upgrading User ${userId} to PREMIUM tier...`);
+          
+          const { error } = await supabase
+            .from('installer_profiles')
+            .update({
+              subscription_active: true,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId);
+
+          if (error) throw error;
+          console.log(`Successfully upgraded user: ${userId}`);
+        }
       } catch (dbError: any) {
         console.error('Failed to upgrade user tier in database:', dbError);
         return res.status(500).send('Database failure during user upgrade');

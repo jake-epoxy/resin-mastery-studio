@@ -17,7 +17,12 @@ import {
   ArrowRight,
   Star,
   CheckCircle,
-  X
+  X,
+  Zap,
+  Shield,
+  Clock,
+  TrendingUp,
+  Lock
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import CalendarManager from "./CalendarManager";
@@ -91,11 +96,17 @@ export default function Autopilot() {
   const [scrapedEmails, setScrapedEmails] = useState<Record<string, string | null>>({});
   const [scrapingId, setScrapingId] = useState<string | null>(null);
   const [addingToCRM, setAddingToCRM] = useState<string | null>(null);
+  const [prospectorActive, setProspectorActive] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadProfile() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setUserId(user.id);
+      setUserEmail(user.email || null);
       const { data: profile } = await supabase.from('installer_profiles').select('*').eq('user_id', user.id).single();
       if (profile) {
         setProfileId(profile.id);
@@ -105,6 +116,20 @@ export default function Autopilot() {
           if (settings.autopilot_config.query) setQuery(settings.autopilot_config.query);
           if (settings.autopilot_config.location) setLocation(settings.autopilot_config.location);
         }
+        if (settings.prospector_active) {
+          setProspectorActive(true);
+        }
+      }
+
+      // Handle activation redirect from Stripe
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('activated') === 'true' && profile) {
+        const settings = typeof profile.service_pricing === 'string' ? JSON.parse(profile.service_pricing || "{}") : (profile.service_pricing || {});
+        settings.prospector_active = true;
+        await supabase.from('installer_profiles').update({ service_pricing: settings }).eq('id', profile.id);
+        setProspectorActive(true);
+        // Clean URL
+        window.history.replaceState({}, '', '/admin/autopilot');
       }
     }
     loadProfile();
@@ -424,6 +449,106 @@ export default function Autopilot() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto font-inter">
+
+      {/* ═══ PAYWALL ═══ */}
+      {!prospectorActive && (
+        <div className="min-h-[80vh] flex items-center justify-center">
+          <div className="max-w-lg w-full">
+            {/* Glow backdrop */}
+            <div className="relative">
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-blue-500/20 blur-3xl rounded-3xl opacity-50" />
+              
+              <div className="relative bg-[#0a0a0a] border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl overflow-hidden">
+                {/* Corner glow */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full pointer-events-none" />
+                
+                {/* Icon */}
+                <div className="flex justify-center mb-6">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30 flex items-center justify-center">
+                    <Bot size={32} className="text-blue-400" />
+                  </div>
+                </div>
+
+                {/* Header */}
+                <h2 className="text-2xl md:text-3xl font-space font-black text-white text-center tracking-tight mb-2">AI Prospector</h2>
+                <p className="text-white/50 text-center text-sm mb-8">Cold outreach on autopilot — powered by AI</p>
+
+                {/* Price */}
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-baseline gap-1">
+                    <span className="text-5xl font-space font-black text-white">$79</span>
+                    <span className="text-white/40 text-sm font-semibold">/month</span>
+                  </div>
+                  <p className="text-white/30 text-xs mt-1">Cancel anytime · 7-day free trial</p>
+                </div>
+
+                {/* Features */}
+                <div className="space-y-3 mb-8">
+                  {[
+                    { icon: <Sparkles size={16} className="text-blue-400" />, text: '20 AI-rendered pitches per day' },
+                    { icon: <Mail size={16} className="text-purple-400" />, text: 'Emails auto-scraped from websites' },
+                    { icon: <Bot size={16} className="text-emerald-400" />, text: 'Cold outreach sent automatically' },
+                    { icon: <Download size={16} className="text-amber-400" />, text: 'Auto-added to your CRM' },
+                    { icon: <CheckCircle size={16} className="text-cyan-400" />, text: 'Read receipts when they open' },
+                    { icon: <Clock size={16} className="text-rose-400" />, text: 'Runs while you sleep — zero effort' },
+                  ].map((f, i) => (
+                    <div key={i} className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3">
+                      {f.icon}
+                      <span className="text-white/80 text-sm font-medium">{f.text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <button
+                  onClick={async () => {
+                    setIsActivating(true);
+                    try {
+                      const res = await fetch('/api/create-checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ subscription: 'prospector', userId, email: userEmail }),
+                      });
+                      const data = await res.json();
+                      if (data.url) window.location.href = data.url;
+                      else toast({ title: 'Error', description: data.error || 'Failed to create checkout', variant: 'destructive' });
+                    } catch {
+                      toast({ title: 'Error', description: 'Network error', variant: 'destructive' });
+                    }
+                    setIsActivating(false);
+                  }}
+                  disabled={isActivating}
+                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold text-lg rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_30px_rgba(59,130,246,0.3)] flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isActivating ? (
+                    <><Loader2 size={20} className="animate-spin" /> Setting up...</>
+                  ) : (
+                    <><Zap size={20} /> Start 7-Day Free Trial</>
+                  )}
+                </button>
+
+                {/* Trust bar */}
+                <div className="flex items-center justify-center gap-4 mt-5 text-[10px] text-white/25 uppercase tracking-widest font-semibold">
+                  <span className="flex items-center gap-1"><Shield size={10} /> Secure</span>
+                  <span>·</span>
+                  <span className="flex items-center gap-1"><Lock size={10} /> Stripe</span>
+                  <span>·</span>
+                  <span>Cancel Anytime</span>
+                </div>
+
+                {/* Bottom stat */}
+                <div className="mt-8 pt-6 border-t border-white/5 text-center">
+                  <p className="text-white/40 text-xs font-semibold">One closed job pays for <span className="text-white">5 years</span> of this subscription.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ ACTUAL TOOL (behind paywall) ═══ */}
+      {prospectorActive && (
+        <>
       {/* Sleek Glassmorphic Header */}
       <div className="relative mb-8 p-6 md:p-8 bg-gradient-to-r from-blue-900/30 via-slate-900/30 to-purple-900/30 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
         <div className="absolute -right-20 -top-20 w-80 h-80 bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
@@ -953,9 +1078,11 @@ export default function Autopilot() {
       )}
       </>
       )}
-      
+
       {activeTab === 'calendar' && (
         <CalendarManager />
+      )}
+      </>
       )}
     </div>
   );

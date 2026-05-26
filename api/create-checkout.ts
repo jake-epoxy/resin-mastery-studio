@@ -31,6 +31,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ url: session.url });
     }
 
+    // --- AI PROSPECTOR ADD-ON CHECKOUT BRANCH ---
+    if (subscription === 'prospector' && userId) {
+      // Create a Stripe product+price on the fly if no hardcoded price ID
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'AI Prospector — Resin OS Add-on',
+              description: '20 AI-rendered cold pitches per day on autopilot. Auto email scraping, CRM integration, and read receipts.',
+            },
+            unit_amount: 7900, // $79.00
+            recurring: { interval: 'month' },
+          },
+          quantity: 1,
+        }],
+        mode: 'subscription',
+        client_reference_id: userId,
+        customer_email: email,
+        metadata: { type: 'prospector_addon', userId },
+        success_url: `https://www.resinacademics.com/admin/autopilot?activated=true`,
+        cancel_url: `https://www.resinacademics.com/admin/autopilot`,
+      });
+      return res.status(200).json({ url: session.url });
+    }
+
     // --- STANDARD QUOTE PAYMENT BRANCH ---
     if (!quoteId) return res.status(400).json({ error: "Missing quoteId" });
 
