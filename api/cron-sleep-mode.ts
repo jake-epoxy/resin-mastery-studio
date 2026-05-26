@@ -219,7 +219,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { data: quoteRes } = await supabase.from('quotes').insert({
           client_id: clientRes.id,
           installer_id: profile.id,
-          installer_email: profile.full_name || 'installer',
+          installer_email: profile.user_id || 'installer',
           total_amount: 5000, // Placeholder
           deposit_amount: 500,
           status: 'Sent',
@@ -234,32 +234,74 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // 8. Fire Cold Outreach Email via Resend
         if (scrapedEmail && RESEND_API_KEY) {
            console.log(`[Sleep Mode] Dispatching cold email to ${scrapedEmail}...`);
-           const pitchLink = `https://${req.headers.host || 'resinmasterystudio.com'}/quote-live/${quoteRes?.id}`;
+           const pitchLink = `https://www.resinacademics.com/quote-live/${quoteRes?.id}`;
+           const companyName = profile.company_name || 'Resin Contractor';
+           const contactName = profile.full_name || companyName;
            try {
-             await fetch('https://api.resend.com/emails', {
-               method: 'POST',
-               headers: {
-                 'Authorization': `Bearer ${RESEND_API_KEY}`,
-                 'Content-Type': 'application/json'
-               },
-               body: JSON.stringify({
-                 from: 'Resin OS <onboarding@resend.dev>', // Should be a verified domain in production
-                 to: scrapedEmail,
-                 subject: `Quick question about your floors at ${bizName}`,
-                 html: `
-                   <p>Hi team at ${bizName},</p>
-                   <p>We did a quick AI mockup of what your floors would look like with our Metallic Epoxy system.</p>
-                   <p>Check out your private pitch deck and rendering here: <a href="${pitchLink}">${pitchLink}</a></p>
-                   <p>Best,<br/>${profile.full_name || profile.company_name || 'Resin Contractor'}</p>
-                   <hr/>
-                   <p style="font-size: 10px; color: #888;">This is an automated outreach from ${profile.company_name || 'Resin Contractor'}. To stop receiving these emails, please reply STOP to unsubscribe.</p>
-                 `
-               })
-             });
-             console.log(`[Sleep Mode] Email dispatched successfully!`);
-           } catch (e) {
-             console.error(`[Sleep Mode] Failed to send email via Resend`, e);
-           }
+              await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${RESEND_API_KEY}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  from: `${companyName} <updates@resinacademics.com>`,
+                  to: scrapedEmail,
+                  subject: `${bizName} — We mocked up your floors and the result is stunning`,
+                  html: `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;"><tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.05);">
+<tr><td style="padding:32px 40px 20px;text-align:center;">
+  <h1 style="margin:0;font-size:22px;color:#111827;letter-spacing:-0.5px;">We Visualized Your Space</h1>
+  <p style="margin:8px 0 0;color:#6b7280;font-size:15px;">A custom AI rendering for <strong>${bizName}</strong></p>
+</td></tr>
+<tr><td style="padding:0 40px 24px;">
+  <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:24px;text-align:center;margin-bottom:24px;">
+    <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">We took a photo of your location and rendered what your floors could look like with our <strong>Metallic Epoxy System</strong>. The result speaks for itself.</p>
+    <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+      <a href="${pitchLink}" style="background:#111827;color:#fff;text-decoration:none;padding:16px 32px;border-radius:8px;font-weight:700;font-size:16px;display:inline-block;">View Your Custom Mockup &rarr;</a>
+    </td></tr></table>
+  </div>
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+    <tr><td style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+      <table width="100%"><tr>
+        <td style="font-size:13px;color:#6b7280;" width="20">💎</td>
+        <td style="font-size:13px;color:#374151;padding-left:8px;"><strong>Adds $3-$7/sqft</strong> in perceived property value</td>
+      </tr></table>
+    </td></tr>
+    <tr><td style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+      <table width="100%"><tr>
+        <td style="font-size:13px;color:#6b7280;" width="20">🛡️</td>
+        <td style="font-size:13px;color:#374151;padding-left:8px;"><strong>15-20 year lifespan</strong> with zero maintenance</td>
+      </tr></table>
+    </td></tr>
+    <tr><td style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+      <table width="100%"><tr>
+        <td style="font-size:13px;color:#6b7280;" width="20">⚡</td>
+        <td style="font-size:13px;color:#374151;padding-left:8px;"><strong>Installed in 1 day</strong> — walk on it in 24 hours</td>
+      </tr></table>
+    </td></tr>
+  </table>
+  <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">We only take <strong>3-4 projects per month</strong> due to the hands-on nature of our work. If you're interested, let's schedule a quick call.</p>
+</td></tr>
+<tr><td style="padding:20px 40px 24px;text-align:center;">
+  <p style="margin:0;font-size:14px;color:#374151;">— ${contactName}, <strong>${companyName}</strong></p>
+</td></tr>
+<tr><td style="background:#fafafa;padding:20px 40px;text-align:center;border-top:1px solid #f3f4f6;">
+  <p style="margin:0;font-size:11px;color:#9ca3af;">This is a one-time outreach from ${companyName}. If you'd prefer not to hear from us, simply reply STOP.</p>
+</td></tr>
+</table>
+</td></tr></table>
+</body>
+</html>`
+                })
+              });
+              console.log(`[Sleep Mode] Email dispatched successfully!`);
+            } catch (e) {
+              console.error(`[Sleep Mode] Failed to send email via Resend`, e);
+            }
         } else {
            console.log(`[Sleep Mode] Successfully generated pitch: /quote-live/${quoteRes?.id} (No email sent)`);
         }

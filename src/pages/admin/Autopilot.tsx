@@ -88,6 +88,10 @@ export default function Autopilot() {
   const [isSleepModeActive, setIsSleepModeActive] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
 
+  const [scrapedEmails, setScrapedEmails] = useState<Record<string, string | null>>({});
+  const [scrapingId, setScrapingId] = useState<string | null>(null);
+  const [addingToCRM, setAddingToCRM] = useState<string | null>(null);
+
   useEffect(() => {
     async function loadProfile() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -197,6 +201,22 @@ export default function Autopilot() {
         });
         setCarouselIndex(initialIndices);
         toast({ title: "Scan Complete!", description: `Found ${data.places.length} matching businesses.` });
+
+        // Auto-scrape emails from websites
+        for (const biz of data.places) {
+          if (biz.websiteUri) {
+            fetch('/api/scrape-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: biz.websiteUri }),
+            })
+              .then(r => r.json())
+              .then(d => {
+                setScrapedEmails(prev => ({ ...prev, [biz.id]: d.email || null }));
+              })
+              .catch(() => {});
+          }
+        }
       } else {
         toast({ title: "No listings found", description: "Try expanding your keywords or search radius." });
       }
@@ -339,6 +359,67 @@ export default function Autopilot() {
 
     toast({ title: "Heading to Quote Generator", description: "Pre-filling client and custom render." });
     navigate('/admin/quote');
+  };
+
+  const handleScrapeEmail = async (biz: Business) => {
+    if (!biz.websiteUri) return;
+    setScrapingId(biz.id);
+    try {
+      const res = await fetch('/api/scrape-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: biz.websiteUri }),
+      });
+      const data = await res.json();
+      setScrapedEmails(prev => ({ ...prev, [biz.id]: data.email || null }));
+      if (data.email) {
+        toast({ title: "Email Found!", description: data.email });
+      } else {
+        toast({ title: "No Email Found", description: "Could not extract an email from their website.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Scrape Failed", variant: "destructive" });
+    }
+    setScrapingId(null);
+  };
+
+  const handleAddToCRM = async (biz: Business) => {
+    setAddingToCRM(biz.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setAddingToCRM(null); return; }
+
+    // Check for duplicate
+    const { data: existing } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('installer_id', user.id)
+      .eq('first_name', biz.displayName?.text || 'Business')
+      .maybeSingle();
+
+    if (existing) {
+      toast({ title: "Already in CRM", description: "This business is already in your lead center.", variant: "destructive" });
+      setAddingToCRM(null);
+      return;
+    }
+
+    const email = scrapedEmails[biz.id] || '';
+    const { error } = await supabase.from('clients').insert({
+      installer_id: user.id,
+      first_name: biz.displayName?.text || 'Business',
+      last_name: '(Lead)',
+      email: email,
+      phone: biz.nationalPhoneNumber || '',
+      project_type: 'Metallic Epoxy',
+      status: 'New Lead',
+      address: biz.formattedAddress || '',
+    });
+
+    if (error) {
+      toast({ title: "CRM Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Added to CRM!", description: `${biz.displayName?.text} is now in your Lead Center.` });
+    }
+    setAddingToCRM(null);
   };
 
   return (
@@ -596,6 +677,23 @@ export default function Autopilot() {
                     </div>
                   </div>
 
+                  {/* Scraped Email Display */}
+                  {scrapedEmails[biz.id] !== undefined && (
+                    <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg border ${
+                      scrapedEmails[biz.id] 
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                        : 'bg-red-500/10 border-red-500/20 text-red-400'
+                    }`}>
+                      <Mail size={13} className="shrink-0" />
+                      <span className="font-mono truncate">{scrapedEmails[biz.id] || 'No email found'}</span>
+                    </div>
+                  )}
+                  {scrapedEmails[biz.id] === undefined && scrapingId === biz.id && (
+                    <div className="flex items-center gap-2 text-xs text-white/40 px-3 py-2">
+                      <Loader2 size={13} className="animate-spin" /> Scraping email...
+                    </div>
+                  )}
+
                   {/* Actions footer */}
                   <div className="flex items-center gap-2 pt-2">
                     {biz.websiteUri ? (
@@ -622,6 +720,19 @@ export default function Autopilot() {
                       </button>
                     )}
                   </div>
+
+                  {/* Add to CRM Button */}
+                  <button
+                    onClick={() => handleAddToCRM(biz)}
+                    disabled={addingToCRM === biz.id}
+                    className="w-full mt-2 py-2.5 px-3 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {addingToCRM === biz.id ? (
+                      <><Loader2 size={13} className="animate-spin" /> Adding...</>
+                    ) : (
+                      <><Download size={13} /> Add to CRM{scrapedEmails[biz.id] ? ' & Ready to Pitch' : ''}</>
+                    )}
+                  </button>
                 </div>
               </div>
             );
