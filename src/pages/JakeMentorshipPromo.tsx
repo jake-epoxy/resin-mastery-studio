@@ -164,6 +164,57 @@ export default function JakeMentorshipPromo() {
         console.error("Failed to dispatch notification email:", emailErr);
       }
 
+      // 4. Send instant confirmation email to the student
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: formData.email,
+            subject: `🎉 Your Epoxy Mentorship Spot is Locked In!`,
+            html: `
+              <div style="font-family: sans-serif; padding: 25px; color: #111; background-color: #f9f9f9; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #d4af37;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <span style="font-size: 32px;">🎉</span>
+                  <h1 style="color: #b8860b; margin: 10px 0 0 0; font-family: sans-serif; font-weight: 900; letter-spacing: 1px;">JAKE EPOXY MASTERY</h1>
+                  <p style="font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; color: #777; margin: 5px 0 0 0;">THE 30-DAY BUSINESS LAUNCHPAD</p>
+                </div>
+                
+                <p style="font-size: 16px; font-weight: bold; margin-top: 25px; color: #111;">Welcome to the family, ${firstName}!</p>
+                <p style="font-size: 14px; line-height: 1.6; color: #444; margin: 15px 0;">
+                  You have successfully locked in the exclusive **$900 weekend flash rate** (saving 87% off the standard $2,499 pricing). You are officially on the fast track to launching your own high-ticket epoxy flooring business and landing your first client quick!
+                </p>
+                
+                <div style="background-color: #fff; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                  <h3 style="color: #b8860b; margin-top: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Your First Zoom Session Details:</h3>
+                  <p style="font-size: 15px; font-weight: bold; margin: 5px 0; color: #111;">${formattedDate}</p>
+                  <p style="font-size: 13px; margin: 5px 0; color: #666; font-weight: 600;">Time: ${formData.zoomTime} MT</p>
+                  <p style="font-size: 11px; color: #888; margin-top: 10px; font-style: italic; border-top: 1px solid #f9f9f9; padding-top: 8px;">
+                    *Jake will personally text you at <strong>${formData.phone}</strong> shortly to send you the direct Zoom meeting link!
+                  </p>
+                </div>
+                
+                <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #111; margin-top: 25px;">What You Just Unlocked:</h3>
+                <ul style="padding-left: 20px; font-size: 13px; color: #555; line-height: 1.8;">
+                  <li><strong>Lifetime Video Tutorials:</strong> Full masterclass on concrete prep, veining, flake, and solids.</li>
+                  <li><strong>3 Private Zoom Sessions:</strong> Step-by-step 1-on-1 coaching directly with Jake.</li>
+                  <li><strong>Lifetime FaceTime Mentorship:</strong> Direct line to Jake for jobsite support during live installs.</li>
+                  <li><strong>Product Sources & Marketing:</strong> Exclusive supplier list and high-converting ad copy templates.</li>
+                  <li><strong>6 Months of Resin OS Premium Free:</strong> Full access to CRM, Quote Generator, and AI Prospector.</li>
+                </ul>
+                
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #666; font-weight: 500;">
+                  <p style="margin: 0; font-style: italic;">Excited to build this empire with you.</p>
+                  <p style="margin: 5px 0 0 0; color: #b8860b; font-weight: bold; letter-spacing: 1px;">— JAKE FLOWERS</p>
+                </div>
+              </div>
+            `
+          })
+        });
+      } catch (confirmErr) {
+        console.error("Failed to send student confirmation email:", confirmErr);
+      }
+      
       setIsSuccess(true);
       toast({
         title: "Spot Locked In!",
