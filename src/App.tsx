@@ -19,6 +19,7 @@ import AffiliateLanding from "./pages/AffiliateLanding";
 import PartnershipAgreement from "./components/PartnershipAgreement";
 import FoundingPartnerAgreement from "./components/FoundingPartnerAgreement";
 import JakeEpoxyLanding from "./pages/JakeEpoxyLanding";
+import JakeMentorshipPromo from "./pages/JakeMentorshipPromo";
 
 // SaaS Admin Routes
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -55,6 +56,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
           <Route path="/jakeepoxy" element={<JakeEpoxyLanding />} />
+          <Route path="/launchpad" element={<JakeMentorshipPromo />} />
           <Route path="/legal" element={<LegalTerms />} />
           <Route path="/privacy" element={<LegalTerms />} />
           <Route path="/licensing" element={<LicensingPage />} />
