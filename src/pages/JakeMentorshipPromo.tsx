@@ -117,6 +117,53 @@ export default function JakeMentorshipPromo() {
 
       if (insertErr) throw insertErr;
 
+      // 3. Send instant email notification to Jake
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: 'jakeflowers222@gmail.com',
+            subject: `🔥 NEW $900 STUDENT SIGNUP: ${formData.name}`,
+            html: `
+              <div style="font-family: sans-serif; padding: 20px; color: #111; background-color: #f9f9f9; border-radius: 8px; max-width: 600px; margin: 0 auto; border: 1px solid #e2d1a6;">
+                <h2 style="color: #b8860b; border-bottom: 2px solid #b8860b; padding-bottom: 10px; margin-top: 0;">New Launchpad Student Spot Reserved!</h2>
+                <p style="font-size: 15px; margin: 15px 0; line-height: 1.5;">A new student has locked in their $900 weekend rate and booked their first Zoom coaching session.</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                  <tr>
+                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #ddd; width: 150px; font-size: 14px;">Name:</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd; font-size: 14px; color: #333;">${formData.name}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #ddd; font-size: 14px;">Email:</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd; font-size: 14px; color: #333;"><a href="mailto:${formData.email}" style="color: #3b82f6; text-decoration: none;">${formData.email}</a></td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #ddd; font-size: 14px;">Phone:</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd; font-size: 14px; color: #333;"><a href="tel:${formData.phone}" style="color: #3b82f6; text-decoration: none;">${formData.phone}</a></td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #ddd; font-size: 14px;">Zoom Date:</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd; font-size: 14px; color: #333; font-weight: bold;">${formattedDate}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px; font-weight: bold; border-bottom: 1px solid #ddd; font-size: 14px;">Zoom Time:</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd; font-size: 14px; color: #333; font-weight: bold;">${formData.zoomTime} MT</td>
+                  </tr>
+                </table>
+                
+                <p style="margin-top: 30px; font-size: 11px; color: #777; line-height: 1.4; border-top: 1px solid #eee; pt-15px;">
+                  This lead has been automatically inserted into your Resin OS Lead Center under the type 'Epoxy Launchpad Student ($900)' with 'New Lead' status.
+                </p>
+              </div>
+            `
+          })
+        });
+      } catch (emailErr) {
+        console.error("Failed to dispatch notification email:", emailErr);
+      }
+
       setIsSuccess(true);
       toast({
         title: "Spot Locked In!",
