@@ -117,7 +117,59 @@ The user asked: ${userMessage}`;
       } else if (selectedAgent.includes("SCOUT")) {
         agentEmoji = "🕷️"; agentName = "The Scout"; finalReply = "Scanning the web for fresh blood, Boss. (Scraping engine coming soon!)";
       } else if (selectedAgent.includes("CLOSER")) {
-        agentEmoji = "📧"; agentName = "The Closer"; finalReply = "I'm drafting the pitch right now. (Email drafting coming soon!)";
+        agentEmoji = "📧"; agentName = "The Closer"; agentVoice = "I'm drafting the pitch right now. Give me a minute, Boss.";
+
+        // Let the user know the Closer is thinking
+        await fetch('https://slack.com/api/chat.postMessage', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${slackBotToken}`
+          },
+          body: JSON.stringify({ channel: channelId, text: `${agentEmoji} **${agentName}:** ${agentVoice}`, thread_ts: slackEvent.ts })
+        });
+
+        // Use gpt-4o for JSON structured output
+        const closerPrompt = `You are The Closer, the ruthless Email Marketing agent for Resin Academics.
+Your job is to draft highly personalized, aggressive cold emails pitching AI/Digital Marketing services to contractors.
+The user asked: ${userMessage}
+
+Respond in pure JSON format with exactly these fields:
+{
+  "lead_name": "Name of the person/company to email (extract from user message, or default to 'Local Contractor')",
+  "lead_email": "Email address (extract from user message, or default to 'test@example.com')",
+  "subject": "The highly converting subject line",
+  "body": "The actual email body. Use aggressive, confident copywriting. Sign off as Jake from Resin OS."
+}`;
+
+        const closerRes = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: closerPrompt }],
+          response_format: { type: "json_object" }
+        });
+
+        const draftStr = closerRes.choices[0].message.content || "{}";
+        const draftData = JSON.parse(draftStr);
+
+        // Save to Supabase
+        const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://efgveagtdpqownyjspvf.supabase.co';
+        const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+        
+        if (supabaseKey) {
+          // Dynamic import of Supabase to avoid breaking the top-level scope if not used
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+          await supabaseAdmin.from('email_drafts').insert([{
+             lead_name: draftData.lead_name || 'Unknown',
+             lead_email: draftData.lead_email || 'unknown@example.com',
+             subject: draftData.subject || 'Opportunity',
+             body: draftData.body || 'Email body',
+             agent_id: 'CLOSER',
+             slack_thread_ts: slackEvent.ts
+          }]);
+        }
+
+        finalReply = `I just drafted the pitch for **${draftData.lead_name}** (${draftData.lead_email}).\n\n*Subject:* ${draftData.subject}\n\n${draftData.body}\n\n_(Note: I saved this draft to your database. Next up we will build the interactive [Approve & Send] buttons!)_`;
       } else if (selectedAgent.includes("HUSTLER")) {
         agentEmoji = "💼"; agentName = "The Hustler"; agentVoice = "Crunching the data and structuring the plays. Give me a minute to strategize, Boss.";
 
