@@ -5,37 +5,14 @@ import * as THREE from 'three';
 import { Mic, MicOff, BrainCircuit, Activity, Database, Radar } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
-// Mock data to visualize the brain growing
-const generateMockBrainData = () => {
-  const nodes = [{ id: 'core', group: 1, name: 'The Epoxy Brain (Core)', val: 20 }];
-  const links = [];
-  
-  // Marketing Synapses
-  for (let i = 1; i <= 15; i++) {
-    nodes.push({ id: `mkt_${i}`, group: 2, name: `Marketing Node ${i}`, val: 5 });
-    links.push({ source: 'core', target: `mkt_${i}` });
-  }
-  
-  // Lead Gen Synapses
-  for (let i = 1; i <= 40; i++) {
-    nodes.push({ id: `lead_${i}`, group: 3, name: `Scraped Lead: Concrete Co ${i}`, val: 3 });
-    links.push({ source: 'core', target: `lead_${i}` });
-    // Random interconnects
-    if (Math.random() > 0.7) {
-      links.push({ source: `lead_${i}`, target: `mkt_${Math.floor(Math.random() * 15) + 1}` });
-    }
-  }
-
-  return { nodes, links };
-};
+// Live data will be fetched from the API
 
 function EpoxyBrainContent() {
-  const [graphData, setGraphData] = useState({ nodes: [], links: [] });
+  const [graphData, setGraphData] = useState<{nodes: any[], links: any[]}>({ nodes: [], links: [] });
   const [logs, setLogs] = useState([
-    "[SYSTEM] Epoxy Brain initializing...",
-    "[AGENT] Lead Gen Agent standing by.",
-    "[AGENT] Marketing Agent standing by."
+    "[SYSTEM] Hive Mind initializing...",
   ]);
+  const [synapseCount, setSynapseCount] = useState(0);
   const graphRef = useRef<any>();
 
   // ElevenLabs Conversational AI Hook
@@ -88,20 +65,57 @@ function EpoxyBrainContent() {
   };
 
   useEffect(() => {
-    // Simulate the brain growing dynamically
-    setGraphData(generateMockBrainData());
-    
-    const interval = setInterval(() => {
-      setGraphData(prev => {
-        const newId = `lead_new_${Math.random()}`;
-        return {
-          nodes: [...prev.nodes, { id: newId, group: 3, name: `New Lead Discovered`, val: 3 }],
-          links: [...prev.links, { source: 'core', target: newId }]
-        };
-      });
-      setLogs(prev => [`[LEAD GEN] Found new local concrete contractor... embedding synapse.`, ...prev.slice(0, 4)]);
-    }, 4000);
+    const fetchBrainData = async () => {
+      try {
+        const res = await fetch('/api/brain-stats');
+        const data = await res.json();
+        
+        const nodes = [
+          { id: 'core', group: 1, name: 'The Hive Mind (Core)', val: 30 },
+          { id: 'agent_scout', group: 4, name: 'The Scout (Data Gathering)', val: 12 },
+          { id: 'agent_scientist', group: 5, name: 'The Scientist (Content)', val: 12 },
+          { id: 'agent_closer', group: 6, name: 'The Closer (Sales)', val: 12 },
+          { id: 'agent_hustler', group: 7, name: 'The Hustler (Strategy)', val: 12 }
+        ];
 
+        const links: any[] = [
+          { source: 'agent_scout', target: 'core' },
+          { source: 'agent_scientist', target: 'core' },
+          { source: 'agent_closer', target: 'core' },
+          { source: 'agent_hustler', target: 'core' }
+        ];
+
+        if (data.synapses) {
+          setSynapseCount(data.synapses.length);
+          data.synapses.forEach((syn: any) => {
+             const synId = `syn_${syn.id}`;
+             nodes.push({ id: synId, group: 3, name: `Memory: ${syn.metadata?.source || 'Unknown'}`, val: 3 });
+             links.push({ source: 'agent_scout', target: synId }); // Scout feeds the memories
+             links.push({ source: synId, target: 'core' }); // Memories feed the core
+             
+             // Randomly connect some synapses to agents to show them using it
+             if (Math.random() > 0.7) links.push({ source: synId, target: 'agent_scientist' });
+             if (Math.random() > 0.7) links.push({ source: synId, target: 'agent_closer' });
+          });
+        }
+
+        setGraphData({ nodes, links });
+
+        const newLogs = ["[SYSTEM] Hive Mind Synced."];
+        if (data.drafts) {
+          data.drafts.forEach((d: any) => {
+            newLogs.push(`[${d.agent_id || 'AGENT'}] Drafted email to ${d.lead_email} (${d.status})`);
+          });
+        }
+        setLogs(newLogs);
+
+      } catch (err) {
+        console.error("Failed to fetch brain stats", err);
+      }
+    };
+
+    fetchBrainData();
+    const interval = setInterval(fetchBrainData, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -122,7 +136,11 @@ function EpoxyBrainContent() {
     switch(group) {
       case 1: return '#00ffff'; // Cyan (Core)
       case 2: return '#3a86ff'; // Deep Blue (Marketing)
-      case 3: return '#9d4edd'; // Purple (Leads)
+      case 3: return '#9d4edd'; // Purple (Synapses)
+      case 4: return '#10b981'; // Green (Scout)
+      case 5: return '#f59e0b'; // Orange (Scientist)
+      case 6: return '#ef4444'; // Red (Closer)
+      case 7: return '#3b82f6'; // Blue (Hustler)
       default: return '#ffffff';
     }
   };
@@ -181,7 +199,9 @@ function EpoxyBrainContent() {
             const color = targetNode ? getNeonColor(targetNode.group) : '#00ffff';
             return color + '70'; // Softened the connections
           }}
-          linkDirectionalParticles={0}
+          linkDirectionalParticles={2}
+          linkDirectionalParticleWidth={2}
+          linkDirectionalParticleSpeed={0.01}
           backgroundColor="#020202"
           onNodeClick={handleNodeClick}
         />
@@ -268,7 +288,7 @@ function EpoxyBrainContent() {
             SYNAPSE COUNT
           </h3>
           <div className="bg-white/5 rounded p-4 font-mono text-center mb-6 border border-white/10">
-            <span className="text-3xl font-bold text-white">{graphData.nodes.length}</span>
+            <span className="text-3xl font-bold text-white">{synapseCount}</span>
             <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Active Memories</p>
           </div>
         </div>
