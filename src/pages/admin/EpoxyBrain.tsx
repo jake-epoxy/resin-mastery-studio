@@ -66,9 +66,9 @@ export default function EpoxyBrain() {
     } else {
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true });
-        // NOTE: Requires a real Agent ID to connect successfully
+        // Connect to the specific ElevenLabs Agent ID
         await conversation.startSession({
-          agentId: process.env.VITE_ELEVENLABS_AGENT_ID || 'dummy_agent_id',
+          agentId: process.env.VITE_ELEVENLABS_AGENT_ID || 'agent_5801kt3fnmp8fr7stsgcpgyr98t0',
         });
       } catch (err: any) {
         setLogs(prev => [`[MIC ERROR] ${err.message || 'Microphone access denied.'}`, ...prev]);
