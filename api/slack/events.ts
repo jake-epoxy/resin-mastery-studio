@@ -150,7 +150,48 @@ The user asked: ${currentInput}`;
 
           finalReply = scientistRes.choices[0].message.content || "My brain short-circuited. Try again.";
         } else if (nextAgent.includes("SCOUT")) {
-          agentEmoji = "🕷️"; agentName = "The Scout"; finalReply = "Scanning the web for fresh blood, Boss. (Scraping engine coming soon!)";
+          agentEmoji = "🕷️"; agentName = "The Scout"; 
+          agentVoice = "Deploying the scraping engine. I'll let you know when the data is in the Brain.";
+
+          await fetch('https://slack.com/api/chat.postMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${slackBotToken}` },
+            body: JSON.stringify({ channel: channelId, text: `${agentEmoji} **${agentName}:** ${agentVoice}`, thread_ts: slackEvent.ts })
+          });
+
+          // Extract requested hashtags
+          const scoutPrompt = `The user wants to trigger a manual Apify scrape. 
+Extract 1-3 hashtags they want to scrape from this message: "${currentInput}".
+Return ONLY a comma-separated list of the hashtags without the # symbol. If none are provided, default to: epoxy,concretecoatings`;
+
+          const scoutRes = await openai.chat.completions.create({
+             model: "gpt-4o-mini",
+             messages: [{ role: "user", content: scoutPrompt }],
+             max_tokens: 20
+          });
+          
+          const tagsStr = scoutRes.choices[0].message.content || "epoxy,concretecoatings";
+          const tags = tagsStr.split(",").map((t: string) => t.trim().replace("#", ""));
+
+          const apifyToken = process.env.APIFY_API_TOKEN;
+          if (apifyToken) {
+            const actorId = 'apify~instagram-scraper'; 
+            const apifyRunUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${apifyToken}`;
+            const scraperInput = {
+              hashtags: tags,
+              resultsLimit: 10,
+              scrapePosts: true,
+              scrapeComments: false
+            };
+            await fetch(apifyRunUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(scraperInput)
+            });
+            finalReply = `I just triggered a manual sweep of the web for: **${tags.map((t: string)=>'#'+t).join(', ')}**.\n\nIt should take about 60 seconds. Once it's done, those memories will be permanently burned into our Hive Mind.`;
+          } else {
+            finalReply = `I need the \`APIFY_API_TOKEN\` added to your Vercel Environment Variables before I can deploy the scraper, Boss.`;
+          }
         } else if (nextAgent.includes("CLOSER")) {
           agentEmoji = "📧"; agentName = "The Closer"; agentVoice = "I'm drafting the pitch right now. Give me a minute, Boss.";
 
