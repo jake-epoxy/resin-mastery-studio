@@ -71,9 +71,9 @@ export default function EpoxyBrain() {
 
   const getNeonColor = (group: number) => {
     switch(group) {
-      case 1: return '#00ffff'; // Neon Cyan (Core)
-      case 2: return '#ff00ff'; // Neon Magenta (Marketing)
-      case 3: return '#39ff14'; // Neon Green (Leads)
+      case 1: return '#00ffff'; // Cyan (Core)
+      case 2: return '#3a86ff'; // Deep Blue (Marketing)
+      case 3: return '#9d4edd'; // Purple (Leads)
       default: return '#ffffff';
     }
   };
@@ -130,11 +130,9 @@ export default function EpoxyBrain() {
           linkColor={(link: any) => {
             const targetNode = graphData.nodes.find(n => n.id === link.target?.id || n.id === link.target);
             const color = targetNode ? getNeonColor(targetNode.group) : '#00ffff';
-            return color + 'a0'; // Brighter synapse connections (approx 63% opacity)
+            return color + '70'; // Softened the connections
           }}
-          linkDirectionalParticles={3}
-          linkDirectionalParticleWidth={2}
-          linkDirectionalParticleColor={() => '#ffffff'}
+          linkDirectionalParticles={0}
           backgroundColor="#020202"
           onNodeClick={handleNodeClick}
         />
