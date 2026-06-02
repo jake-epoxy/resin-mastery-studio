@@ -227,21 +227,29 @@ Respond in pure JSON format with exactly these fields:
           const draftStr = closerRes.choices[0].message.content || "{}";
           const draftData = JSON.parse(draftStr);
 
+          let currentDraftId = null;
           if (supabaseKey) {
             const { createClient } = await import('@supabase/supabase-js');
             const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-            await supabaseAdmin.from('email_drafts').insert([{
+            const { data: insertedDraft } = await supabaseAdmin.from('email_drafts').insert([{
                lead_name: draftData.lead_name || 'Unknown',
                lead_email: draftData.lead_email || 'unknown@example.com',
                subject: draftData.subject || 'Opportunity',
                body: draftData.body || 'Email body',
                agent_id: 'CLOSER',
                slack_thread_ts: slackEvent.ts
-            }]);
+            }]).select().single();
+
+            if (insertedDraft) {
+               currentDraftId = insertedDraft.id;
+            }
           }
 
-          finalReply = `I just drafted the pitch for **${draftData.lead_name}** (${draftData.lead_email}).\n\n*Subject:* ${draftData.subject}\n\n${draftData.body}\n\n_(Note: I saved this draft to your database. Next up we will build the interactive [Approve & Send] buttons!)_`;
+          finalReply = `I just drafted the pitch for **${draftData.lead_name}** (${draftData.lead_email}).\n\n*Subject:* ${draftData.subject}\n\n${draftData.body}`;
           if (draftData.chain_to) finalReply += `\n\n${draftData.chain_to}`;
+          
+          // Store it so we can attach blocks later if the chain ends here
+          (global as any).lastDraftId = currentDraftId;
         } else if (nextAgent.includes("HUSTLER")) {
           agentEmoji = "💼"; agentName = "The Hustler"; agentVoice = "Crunching the data and structuring the plays. Give me a minute to strategize, Boss.";
 
@@ -281,6 +289,37 @@ The user asked: ${currentInput}`;
           finalReply = finalReply.replace(/\[CHAIN:@[A-Z]+\]/g, "").trim();
         }
 
+        let blocks = undefined;
+        if (agentName === "The Closer" && !newNextAgent && (global as any).lastDraftId) {
+           blocks = [
+              {
+                "type": "section",
+                "text": { "type": "mrkdwn", "text": `${agentEmoji} **${agentName}:**\n\n${finalReply}` }
+              },
+              {
+                "type": "actions",
+                "elements": [
+                  {
+                    "type": "button",
+                    "text": { "type": "plain_text", "text": "✅ Approve & Send", "emoji": true },
+                    "style": "primary",
+                    "value": (global as any).lastDraftId.toString(),
+                    "action_id": "approve_and_send_email"
+                  }
+                ]
+              }
+           ];
+           delete (global as any).lastDraftId;
+        }
+
+        const msgPayload: any = { channel: channelId, thread_ts: slackEvent.ts };
+        if (blocks) {
+           msgPayload.text = `${agentEmoji} **${agentName}** posted a draft.`;
+           msgPayload.blocks = blocks;
+        } else {
+           msgPayload.text = `${agentEmoji} **${agentName}:**\n\n${finalReply}`;
+        }
+
         // Send the final Agent's reply back to the Slack thread
         await fetch('https://slack.com/api/chat.postMessage', {
           method: 'POST',
@@ -288,11 +327,7 @@ The user asked: ${currentInput}`;
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${slackBotToken}`
           },
-          body: JSON.stringify({
-            channel: channelId,
-            text: `${agentEmoji} **${agentName}:**\n\n${finalReply}`,
-            thread_ts: slackEvent.ts
-          })
+          body: JSON.stringify(msgPayload)
         });
 
         // Set up for next loop
