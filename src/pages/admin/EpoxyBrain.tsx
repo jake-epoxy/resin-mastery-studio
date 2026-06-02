@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
-import { useConversation } from '@elevenlabs/react';
+import { useConversation, ConversationProvider } from '@elevenlabs/react';
 import * as THREE from 'three';
 import { Mic, MicOff, BrainCircuit, Activity, Database, Radar } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -29,7 +29,7 @@ const generateMockBrainData = () => {
   return { nodes, links };
 };
 
-export default function EpoxyBrain() {
+function EpoxyBrainContent() {
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
   const [logs, setLogs] = useState([
     "[SYSTEM] Epoxy Brain initializing...",
@@ -245,5 +245,13 @@ export default function EpoxyBrain() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EpoxyBrain() {
+  return (
+    <ConversationProvider>
+      <EpoxyBrainContent />
+    </ConversationProvider>
   );
 }
