@@ -65,13 +65,12 @@ function EpoxyBrainContent() {
       await conversation.endSession();
     } else {
       try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Connect to the specific ElevenLabs Agent ID
+        // The ElevenLabs SDK automatically requests microphone permissions
         await conversation.startSession({
-          agentId: process.env.VITE_ELEVENLABS_AGENT_ID || 'agent_5801kt3fnmp8fr7stsgcpgyr98t0',
+          agentId: 'agent_5801kt3fnmp8fr7stsgcpgyr98t0',
         });
       } catch (err: any) {
-        setLogs(prev => [`[MIC ERROR] ${err.message || 'Microphone access denied.'}`, ...prev]);
+        setLogs(prev => [`[MIC ERROR] ${err.message || 'Connection failed.'}`, ...prev]);
       }
     }
   };
