@@ -119,7 +119,30 @@ The user asked: ${userMessage}`;
       } else if (selectedAgent.includes("CLOSER")) {
         agentEmoji = "📧"; agentName = "The Closer"; finalReply = "I'm drafting the pitch right now. (Email drafting coming soon!)";
       } else if (selectedAgent.includes("HUSTLER")) {
-        agentEmoji = "💼"; agentName = "The Hustler"; finalReply = "Crunching the revenue numbers. Let's make some money. (BD engine coming soon!)";
+        agentEmoji = "💼"; agentName = "The Hustler"; agentVoice = "Crunching the data and structuring the plays. Give me a minute to strategize, Boss.";
+
+        // Let the user know the Hustler is thinking
+        await fetch('https://slack.com/api/chat.postMessage', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${slackBotToken}`
+          },
+          body: JSON.stringify({ channel: channelId, text: `${agentEmoji} **${agentName}:** ${agentVoice}`, thread_ts: slackEvent.ts })
+        });
+
+        // Use o3-mini for advanced strategic BD planning
+        const hustlerPrompt = `You are The Hustler, the ruthless, high-IQ Business Development agent for Resin Academics.
+Your job is to analyze macro revenue opportunities, draft hyper-strategic LinkedIn outreach, suggest high-leverage partnerships, and map out business growth tactics for epoxy and concrete contractors.
+You speak precisely, aggressively, and always focus on scaling revenue.
+The user asked: ${userMessage}`;
+
+        const hustlerRes = await openai.chat.completions.create({
+          model: "o3-mini",
+          messages: [{ role: "user", content: hustlerPrompt }],
+        });
+
+        finalReply = hustlerRes.choices[0].message.content || "Strategy failed to compile. Try again.";
       } else {
         agentEmoji = "⚙️"; agentName = "The Operator"; finalReply = "I've logged your request, Boss.";
       }
