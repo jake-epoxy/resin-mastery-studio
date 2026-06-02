@@ -82,12 +82,16 @@ export default function EpoxyBrain() {
     const color = getNeonColor(node.group);
     const size = node.val || 4;
     
-    // Core sphere (solid neon)
+    // Core sphere (transparent neon)
     const geometry = new THREE.SphereGeometry(size);
-    const material = new THREE.MeshBasicMaterial({ color });
+    const material = new THREE.MeshBasicMaterial({ 
+      color, 
+      transparent: true, 
+      opacity: 0.45 // "see thru" like before
+    });
     const sphere = new THREE.Mesh(geometry, material);
 
-    // Glowing halo (Sprite with additive blending)
+    // Pleasing soft glow (Sprite with additive blending)
     const canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 64;
@@ -104,10 +108,10 @@ export default function EpoxyBrain() {
         map: texture, 
         transparent: true,
         blending: THREE.AdditiveBlending,
-        opacity: 0.8
+        opacity: 0.95 // strong but soft glow
       });
       const sprite = new THREE.Sprite(spriteMaterial);
-      const haloSize = size * 3.5;
+      const haloSize = size * 4.5; // Make the soft glow spread further
       sprite.scale.set(haloSize, haloSize, 1);
       sphere.add(sprite);
     }
@@ -126,9 +130,9 @@ export default function EpoxyBrain() {
           linkColor={(link: any) => {
             const targetNode = graphData.nodes.find(n => n.id === link.target?.id || n.id === link.target);
             const color = targetNode ? getNeonColor(targetNode.group) : '#00ffff';
-            return color + '40'; // 25% opacity neon
+            return color + 'a0'; // Brighter synapse connections (approx 63% opacity)
           }}
-          linkDirectionalParticles={2}
+          linkDirectionalParticles={3}
           linkDirectionalParticleWidth={2}
           linkDirectionalParticleColor={() => '#ffffff'}
           backgroundColor="#020202"
