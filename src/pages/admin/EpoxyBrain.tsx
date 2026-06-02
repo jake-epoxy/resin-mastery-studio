@@ -65,9 +65,21 @@ function EpoxyBrainContent() {
       await conversation.endSession();
     } else {
       try {
+        const greetings = [
+          "What's good bro!",
+          "Yo, Phil here. What are we building today?",
+          "Systems online. Hit me.",
+          "Neural link established. What's the play, boss?",
+          "Hive mind connected. Let's get to work."
+        ];
+        const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+
         // The ElevenLabs SDK automatically requests microphone permissions
         await conversation.startSession({
           agentId: 'agent_5801kt3fnmp8fr7stsgcpgyr98t0',
+          dynamicVariables: {
+            greeting: randomGreeting
+          }
         });
       } catch (err: any) {
         setLogs(prev => [`[MIC ERROR] ${err.message || 'Connection failed.'}`, ...prev]);
