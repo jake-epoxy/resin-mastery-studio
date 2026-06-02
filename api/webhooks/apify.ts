@@ -19,6 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const defaultDatasetId = apifyEvent.resource?.defaultDatasetId;
+    const actorId = apifyEvent.resource?.actId || '';
     if (!defaultDatasetId) {
       return res.status(400).json({ error: 'No dataset ID found' });
     }
@@ -34,23 +35,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!supabaseAdmin) throw new Error('Supabase not configured');
 
-    // 2. Process each post and turn it into a Vector Memory
+    // 2. Detect platform from the data structure or actor ID
+    const isTikTok = actorId.includes('tiktok') || dataset[0]?.diggCount !== undefined || dataset[0]?.videoMeta !== undefined;
+
+    // 3. Process each post and turn it into a Vector Memory
     let embeddedCount = 0;
     
     for (const post of dataset) {
-      const caption = post.caption || '';
-      const likes = post.likesCount || 0;
-      const url = post.url || '';
+      let caption = '';
+      let likes = 0;
+      let url = '';
+      let platform = 'unknown';
 
-      // Only save memories for posts with some decent traction (e.g., > 100 likes) to avoid junk data
-      if (likes < 100 || !caption) continue;
+      if (isTikTok) {
+        // TikTok data format
+        caption = post.text || post.desc || '';
+        likes = post.diggCount || post.stats?.diggCount || 0;
+        url = post.webVideoUrl || post.url || '';
+        platform = 'tiktok';
+      } else {
+        // Instagram data format
+        caption = post.caption || '';
+        likes = post.likesCount || 0;
+        url = post.url || '';
+        platform = 'instagram';
+      }
 
-      // Have the "Mad Scientist" summarize the marketing insight of this post
-      const insightPrompt = `Analyze this viral Instagram post in the epoxy/AI space.
-Caption: "${caption}"
+      // Only save memories for posts with decent traction to avoid junk data
+      const likeThreshold = isTikTok ? 500 : 100;
+      if (likes < likeThreshold || !caption) continue;
+
+      // Have the AI extract the marketing insight
+      const insightPrompt = `Analyze this viral ${platform.toUpperCase()} post in the epoxy/concrete coatings space.
+Caption: "${caption.substring(0, 500)}"
 Likes: ${likes}
+Platform: ${platform}
 
-Extract the core marketing hook, trend, or lesson from this post in 1-2 sentences so we can use it to build our own viral content.`;
+Extract the core marketing hook, trend, or lesson from this post in 2-3 sentences. Focus on:
+1. What specific content format made this go viral (e.g. satisfying pour, before/after, time-lapse)?
+2. What emotional trigger does it use (e.g. transformation, ASMR, humor)?
+3. How can an epoxy contractor replicate this exact style?`;
 
       const insightRes = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -59,7 +83,7 @@ Extract the core marketing hook, trend, or lesson from this post in 1-2 sentence
 
       const coreInsight = insightRes.choices[0].message.content || caption;
 
-      // Generate the Vector Embedding using text-embedding-3-small
+      // Generate the Vector Embedding
       const embeddingRes = await openai.embeddings.create({
         model: "text-embedding-3-small",
         input: coreInsight,
@@ -69,11 +93,9 @@ Extract the core marketing hook, trend, or lesson from this post in 1-2 sentence
 
       // Inject the new memory into the pgvector brain
       await supabaseAdmin.from('brain_synapses').insert([{
-        // We will associate these global learnings with a generic system ID or null, 
-        // so all contractors benefit from the Hive Mind.
-        content: `VIRAL IG TREND: ${coreInsight} (Source: ${url})`,
+        content: `VIRAL ${platform.toUpperCase()} TREND: ${coreInsight} (Source: ${url}, ${likes} likes)`,
         embedding: embeddingVector,
-        metadata: { source: 'instagram', url, likes }
+        metadata: { source: platform, url, likes, scraped_at: new Date().toISOString() }
       }]);
 
       embeddedCount++;
@@ -81,7 +103,8 @@ Extract the core marketing hook, trend, or lesson from this post in 1-2 sentence
 
     return res.status(200).json({ 
       success: true, 
-      message: `Brain Expanded. Injected ${embeddedCount} new neural pathways.`
+      platform: isTikTok ? 'tiktok' : 'instagram',
+      message: `Brain Expanded. Injected ${embeddedCount} new neural pathways from ${isTikTok ? 'TikTok' : 'Instagram'}.`
     });
 
   } catch (error: any) {
