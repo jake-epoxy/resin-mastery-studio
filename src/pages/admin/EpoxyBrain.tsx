@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
+import { useConversation } from '@elevenlabs/react';
 import * as THREE from 'three';
 import { Mic, MicOff, BrainCircuit, Activity, Database, Radar } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -30,13 +31,50 @@ const generateMockBrainData = () => {
 
 export default function EpoxyBrain() {
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
-  const [isListening, setIsListening] = useState(false);
   const [logs, setLogs] = useState([
     "[SYSTEM] Epoxy Brain initializing...",
     "[AGENT] Lead Gen Agent standing by.",
     "[AGENT] Marketing Agent standing by."
   ]);
   const graphRef = useRef<any>();
+
+  // ElevenLabs Conversational AI Hook
+  const conversation = useConversation({
+    onConnect: () => {
+      setLogs(prev => ["[VOICE] Neural link established. AI listening...", ...prev]);
+    },
+    onDisconnect: () => {
+      setLogs(prev => ["[VOICE] Neural link severed.", ...prev]);
+    },
+    onMessage: (message: any) => {
+      if(message.source === 'user') {
+        setLogs(prev => [`[USER]: ${message.message}`, ...prev]);
+      } else if (message.source === 'ai') {
+        setLogs(prev => [`[BRAIN]: ${message.message}`, ...prev]);
+      }
+    },
+    onError: (error: any) => {
+      setLogs(prev => [`[VOICE ERROR] ${typeof error === 'string' ? error : 'Failed to connect.'}`, ...prev]);
+    }
+  });
+
+  const isListening = conversation.status === 'connected';
+
+  const toggleConversation = async () => {
+    if (isListening) {
+      await conversation.endSession();
+    } else {
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        // NOTE: Requires a real Agent ID to connect successfully
+        await conversation.startSession({
+          agentId: process.env.VITE_ELEVENLABS_AGENT_ID || 'dummy_agent_id',
+        });
+      } catch (err: any) {
+        setLogs(prev => [`[MIC ERROR] ${err.message || 'Microphone access denied.'}`, ...prev]);
+      }
+    }
+  };
 
   useEffect(() => {
     // Simulate the brain growing dynamically
@@ -157,7 +195,7 @@ export default function EpoxyBrain() {
 
         {/* The Voice Orb / Controller (Center Bottom) */}
         <div className="mt-auto flex flex-col items-center justify-center pb-12 pointer-events-auto">
-          <div className="relative group cursor-pointer" onClick={() => setIsListening(!isListening)}>
+          <div className="relative group cursor-pointer" onClick={toggleConversation}>
             {/* Pulsing rings */}
             {isListening && (
               <>
