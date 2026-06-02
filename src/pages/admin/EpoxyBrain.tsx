@@ -178,29 +178,32 @@ export default function EpoxyBrain() {
       </div>
 
       {/* Right Side Panel (Logs & Stats) */}
-      <div className="absolute right-0 top-0 h-full w-80 bg-black/60 backdrop-blur-xl border-l border-white/5 p-6 pointer-events-auto flex flex-col">
-        <h3 className="text-white font-mono text-sm mb-6 flex items-center gap-2">
-          <Activity className="w-4 h-4 text-cyan-400" />
-          SWARM ACTIVITY
-        </h3>
+      <div className="absolute right-0 top-0 h-full w-80 bg-black/60 backdrop-blur-xl border-l border-white/5 p-6 pointer-events-auto flex flex-col pb-24">
         
-        <div className="flex-1 overflow-y-auto space-y-3 font-mono text-xs">
-          {logs.map((log, i) => (
-            <div key={i} className="text-gray-400 border-l-2 border-cyan-500/30 pl-3 py-1">
-              {log}
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-6 pt-6 border-t border-white/10">
+        {/* Synapse Count (Moved to top) */}
+        <div>
            <h3 className="text-white font-mono text-sm mb-4 flex items-center gap-2">
             <Database className="w-4 h-4 text-purple-400" />
             SYNAPSE COUNT
           </h3>
-          <div className="bg-white/5 rounded p-4 font-mono text-center">
+          <div className="bg-white/5 rounded p-4 font-mono text-center mb-6 border border-white/10">
             <span className="text-3xl font-bold text-white">{graphData.nodes.length}</span>
-            <p className="text-[10px] text-gray-500 mt-1">ACTIVE MEMORIES</p>
+            <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Active Memories</p>
           </div>
+        </div>
+
+        {/* Swarm Activity Logs */}
+        <h3 className="text-white font-mono text-sm mb-4 flex items-center gap-2 pt-6 border-t border-white/10">
+          <Activity className="w-4 h-4 text-cyan-400" />
+          SWARM ACTIVITY
+        </h3>
+        
+        <div className="flex-1 overflow-y-auto space-y-3 font-mono text-xs pr-2 pb-10">
+          {logs.map((log, i) => (
+            <div key={i} className="text-gray-400 border-l-2 border-cyan-500/30 pl-3 py-1 bg-white/5 rounded-r">
+              {log}
+            </div>
+          ))}
         </div>
       </div>
     </div>
