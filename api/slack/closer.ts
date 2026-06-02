@@ -94,6 +94,7 @@ Respond in pure JSON format with exactly these fields:
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${botToken}` },
       body: JSON.stringify(payload)
     });
+    return;
   }
   return res.status(200).send('OK');
 }

@@ -50,6 +50,7 @@ The user asked: ${slackEvent.text}`;
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${botToken}` },
       body: JSON.stringify({ channel: slackEvent.channel, text: finalReply, thread_ts: slackEvent.ts })
     });
+    return;
   }
   return res.status(200).send('OK');
 }
