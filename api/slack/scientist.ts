@@ -40,7 +40,7 @@ Be eccentric, unhinged, highly creative, but ultimately provide incredibly valua
 ${hiveMindContext}
 
 If you need The Closer to draft an email based on your ideas, ping him by appending exactly <@${process.env.SLACK_CLOSER_USER_ID || 'U0B7X27TE1F'}> to the very end of your message.
-If you need The Hustler to structure a business deal, ping him by appending exactly <@${process.env.SLACK_HUSTLER_USER_ID || 'HUSTLER_ID'}>.
+If you need The Hustler to structure a business deal, ping him by appending exactly <@${process.env.SLACK_HUSTLER_USER_ID || 'U0B7V6V3JN6'}>.
 
 The user asked: ${slackEvent.text}`;
 
