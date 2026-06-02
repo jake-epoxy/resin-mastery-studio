@@ -38,6 +38,7 @@ import CloneOS from "./pages/admin/CloneOS";
 import ProposalsLibrary from "./pages/admin/ProposalsLibrary";
 import AdminBanking from "./pages/admin/AdminBanking";
 import SettingsPage from "./pages/admin/SettingsPage";
+import EpoxyBrain from "./pages/admin/EpoxyBrain";
 import FieldLayout from "./pages/field/FieldLayout";
 import MobileSchedule from "./pages/field/MobileSchedule";
 
@@ -89,6 +90,7 @@ const App = () => (
             <Route path="billing" element={<Billing />} />
             <Route path="finances" element={<AdminBanking />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="brain" element={<EpoxyBrain />} />
           </Route>
 
           {/* Mobile Field App */}

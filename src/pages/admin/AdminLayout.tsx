@@ -117,6 +117,7 @@ export default function AdminLayout() {
     { name: "Settings", mobileLabel: "Settings", path: "/admin/settings", icon: Settings },
     // Developer-only tabs
     { name: "Clone AI", mobileLabel: "Clone", path: "/admin/clone", icon: Wand2, devOnly: true },
+    { name: "Epoxy Brain", mobileLabel: "Brain", path: "/admin/brain", icon: Wand2, devOnly: true },
     { name: "God Mode", mobileLabel: "God", path: "/admin/super", icon: ShieldAlert, devOnly: true },
   ];
 
