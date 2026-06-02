@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
+import * as THREE from 'three';
 import { Mic, MicOff, BrainCircuit, Activity, Database, Radar } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
@@ -68,6 +69,51 @@ export default function EpoxyBrain() {
     }
   };
 
+  const getNeonColor = (group: number) => {
+    switch(group) {
+      case 1: return '#00ffff'; // Neon Cyan (Core)
+      case 2: return '#ff00ff'; // Neon Magenta (Marketing)
+      case 3: return '#39ff14'; // Neon Green (Leads)
+      default: return '#ffffff';
+    }
+  };
+
+  const renderGlowingOrb = (node: any) => {
+    const color = getNeonColor(node.group);
+    const size = node.val || 4;
+    
+    // Core sphere (solid neon)
+    const geometry = new THREE.SphereGeometry(size);
+    const material = new THREE.MeshBasicMaterial({ color });
+    const sphere = new THREE.Mesh(geometry, material);
+
+    // Glowing halo (Sprite with additive blending)
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 64, 64);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMaterial = new THREE.SpriteMaterial({ 
+        map: texture, 
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        opacity: 0.8
+      });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      const haloSize = size * 3.5;
+      sprite.scale.set(haloSize, haloSize, 1);
+      sphere.add(sprite);
+    }
+    return sphere;
+  };
+
   return (
     <div className="relative w-full h-[calc(100vh-64px)] bg-[#050505] overflow-hidden flex">
       {/* 3D Force Graph Background */}
@@ -75,13 +121,18 @@ export default function EpoxyBrain() {
         <ForceGraph3D
           ref={graphRef}
           graphData={graphData}
-          nodeAutoColorBy="group"
-          nodeResolution={16}
-          linkWidth={1}
-          linkOpacity={0.3}
-          backgroundColor="#050505"
+          nodeThreeObject={renderGlowingOrb}
+          linkWidth={1.5}
+          linkColor={(link: any) => {
+            const targetNode = graphData.nodes.find(n => n.id === link.target?.id || n.id === link.target);
+            const color = targetNode ? getNeonColor(targetNode.group) : '#00ffff';
+            return color + '40'; // 25% opacity neon
+          }}
+          linkDirectionalParticles={2}
+          linkDirectionalParticleWidth={2}
+          linkDirectionalParticleColor={() => '#ffffff'}
+          backgroundColor="#020202"
           onNodeClick={handleNodeClick}
-          nodeRelSize={4}
         />
       </div>
 
