@@ -45,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const query_embedding = aiData.data[0].embedding;
 
     // 2. Search pgvector database via RPC
-    const { data: searchResults, error } = await supabaseAdmin.rpc('match_brain_synapses', {
+    const { data: searchResults, error } = await supabaseAdmin.rpc('match_synapses', {
       query_embedding,
       match_threshold: 0.3, // Lower threshold to ensure we find related data
       match_count: 5 // Return top 5 most relevant memories
@@ -58,7 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ result: "I searched my memory banks, but I couldn't find any relevant data on that, Boss." });
     }
 
-    const formattedResults = searchResults.map((r: any) => `[Source: ${r.agent_source}] ${r.content}`).join('\n\n');
+    const formattedResults = searchResults.map((r: any) => `[Source: ${r.metadata?.source || 'Hive Mind'}] ${r.content}`).join('\n\n');
 
     return res.status(200).json({ 
       result: "Here is the relevant data from my memory bank. Read this back to the user naturally:\n\n" + formattedResults 
