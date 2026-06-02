@@ -87,7 +87,40 @@ Based on the user's message, reply with ONLY the exact capitalized name of the a
       let agentEmoji = "⚙️";
       let agentName = "The Operator";
       let agentVoice = "";
-      let agentVoice = "";
+
+      // ==========================================
+      // THE HIVE MIND (Vector Retrieval)
+      // ==========================================
+      let hiveMindContext = "No relevant memories found.";
+      const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://efgveagtdpqownyjspvf.supabase.co';
+      const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+      
+      if (supabaseKey) {
+        try {
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+
+          // Embed the user's message
+          const embedRes = await openai.embeddings.create({
+            model: "text-embedding-3-small",
+            input: userMessage,
+          });
+          const queryEmbedding = embedRes.data[0].embedding;
+
+          // Search the Brain
+          const { data: memories } = await supabaseAdmin.rpc('match_synapses', {
+            query_embedding: queryEmbedding,
+            match_threshold: 0.5, // Return anything moderately relevant
+            match_count: 3
+          });
+
+          if (memories && memories.length > 0) {
+            hiveMindContext = memories.map((m: any) => m.content).join('\n\n');
+          }
+        } catch (err) {
+          console.error("Hive Mind retrieval error:", err);
+        }
+      }
 
       if (selectedAgent.includes("SCIENTIST")) {
         agentEmoji = "🧪"; agentName = "The Mad Scientist"; agentVoice = "AHAHAHA! I'm cooking up something incredibly viral. Stand by!";
@@ -106,6 +139,10 @@ Based on the user's message, reply with ONLY the exact capitalized name of the a
         const scientistPrompt = `You are The Mad Scientist, the in-house viral content creator and schizo-genius marketer for Resin Academics.
 Your job is to dream up wildly viral, out-of-the-box marketing campaigns, TikTok scripts, and social media roadmaps for epoxy and concrete coating contractors.
 Be eccentric, unhinged, highly creative, but ultimately provide incredibly valuable and actionable marketing strategies.
+
+[HIVE MIND CONTEXT - RECENT LEARNED TRENDS]:
+${hiveMindContext}
+
 The user asked: ${userMessage}`;
 
         const scientistRes = await openai.chat.completions.create({
@@ -132,6 +169,10 @@ The user asked: ${userMessage}`;
         // Use gpt-4o for JSON structured output
         const closerPrompt = `You are The Closer, the ruthless Email Marketing agent for Resin Academics.
 Your job is to draft highly personalized, aggressive cold emails pitching AI/Digital Marketing services to contractors.
+
+[HIVE MIND CONTEXT - STRATEGIES & TRENDS TO USE IN THE EMAIL]:
+${hiveMindContext}
+
 The user asked: ${userMessage}
 
 Respond in pure JSON format with exactly these fields:
@@ -187,6 +228,10 @@ Respond in pure JSON format with exactly these fields:
         const hustlerPrompt = `You are The Hustler, the ruthless, high-IQ Business Development agent for Resin Academics.
 Your job is to analyze macro revenue opportunities, draft hyper-strategic LinkedIn outreach, suggest high-leverage partnerships, and map out business growth tactics for epoxy and concrete contractors.
 You speak precisely, aggressively, and always focus on scaling revenue.
+
+[HIVE MIND CONTEXT - LEVERAGE THIS DATA FOR YOUR STRATEGY]:
+${hiveMindContext}
+
 The user asked: ${userMessage}`;
 
         const hustlerRes = await openai.chat.completions.create({
