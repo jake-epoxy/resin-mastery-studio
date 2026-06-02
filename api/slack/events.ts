@@ -83,24 +83,48 @@ Based on the user's message, reply with ONLY the exact capitalized name of the a
 
       const selectedAgent = response.choices[0].message.content?.trim().toUpperCase() || 'OPERATOR';
 
-      // Now that we know who should handle it, we will eventually pass it to their specific persona.
-      // For now, we will just reply as that agent to confirm the routing works!
-      
+      let finalReply = "";
       let agentEmoji = "⚙️";
       let agentName = "The Operator";
-      let agentVoice = "I've logged your request, Boss.";
+      let agentVoice = "";
+      let agentVoice = "";
 
-      if (selectedAgent.includes("SCOUT")) {
-        agentEmoji = "🕷️"; agentName = "The Scout"; agentVoice = "Scanning the web for fresh blood, Boss.";
-      } else if (selectedAgent.includes("CLOSER")) {
-        agentEmoji = "📧"; agentName = "The Closer"; agentVoice = "I'm drafting the pitch right now. Give me a minute.";
-      } else if (selectedAgent.includes("HUSTLER")) {
-        agentEmoji = "💼"; agentName = "The Hustler"; agentVoice = "Crunching the revenue numbers. Let's make some money.";
-      } else if (selectedAgent.includes("SCIENTIST")) {
+      if (selectedAgent.includes("SCIENTIST")) {
         agentEmoji = "🧪"; agentName = "The Mad Scientist"; agentVoice = "AHAHAHA! I'm cooking up something incredibly viral. Stand by!";
+        
+        // Let the user know the Scientist is thinking
+        await fetch('https://slack.com/api/chat.postMessage', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${slackBotToken}`
+          },
+          body: JSON.stringify({ channel: channelId, text: `${agentEmoji} **${agentName}:** ${agentVoice}`, thread_ts: slackEvent.ts })
+        });
+
+        // Use o3-mini for advanced reasoning and creative writing
+        const scientistPrompt = `You are The Mad Scientist, the in-house viral content creator and schizo-genius marketer for Resin Academics.
+Your job is to dream up wildly viral, out-of-the-box marketing campaigns, TikTok scripts, and social media roadmaps for epoxy and concrete coating contractors.
+Be eccentric, unhinged, highly creative, but ultimately provide incredibly valuable and actionable marketing strategies.
+The user asked: ${userMessage}`;
+
+        const scientistRes = await openai.chat.completions.create({
+          model: "o3-mini",
+          messages: [{ role: "user", content: scientistPrompt }],
+        });
+
+        finalReply = scientistRes.choices[0].message.content || "My brain short-circuited. Try again.";
+      } else if (selectedAgent.includes("SCOUT")) {
+        agentEmoji = "🕷️"; agentName = "The Scout"; finalReply = "Scanning the web for fresh blood, Boss. (Scraping engine coming soon!)";
+      } else if (selectedAgent.includes("CLOSER")) {
+        agentEmoji = "📧"; agentName = "The Closer"; finalReply = "I'm drafting the pitch right now. (Email drafting coming soon!)";
+      } else if (selectedAgent.includes("HUSTLER")) {
+        agentEmoji = "💼"; agentName = "The Hustler"; finalReply = "Crunching the revenue numbers. Let's make some money. (BD engine coming soon!)";
+      } else {
+        agentEmoji = "⚙️"; agentName = "The Operator"; finalReply = "I've logged your request, Boss.";
       }
 
-      // Send the specific Agent's reply back to the Slack thread
+      // Send the final Agent's reply back to the Slack thread
       await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',
         headers: {
@@ -109,7 +133,7 @@ Based on the user's message, reply with ONLY the exact capitalized name of the a
         },
         body: JSON.stringify({
           channel: channelId,
-          text: `${agentEmoji} **${agentName}:** ${agentVoice}\n_(Routing engine successfully classified request as: ${selectedAgent})_`,
+          text: `${agentEmoji} **${agentName}:**\n\n${finalReply}`,
           thread_ts: slackEvent.ts
         })
       });
