@@ -192,25 +192,57 @@ function EpoxyBrainContent() {
           </div>
         </div>
 
-        {/* The Voice Orb / Controller (Center Bottom) */}
-        <div className="mt-auto flex flex-col items-center justify-center pb-12 pointer-events-auto">
-          <div className="relative group cursor-pointer" onClick={toggleConversation}>
-            {/* Pulsing rings */}
-            {isListening && (
-              <>
-                <div className="absolute inset-0 bg-cyan-500 rounded-full blur-xl opacity-50 animate-ping"></div>
-                <div className="absolute inset-0 bg-purple-500 rounded-full blur-2xl opacity-30 animate-pulse"></div>
-              </>
-            )}
+        {/* Bottom HUD Area */}
+        <div className="mt-auto flex w-full justify-between items-end pb-8 px-4 pointer-events-auto pr-[340px]">
+          
+          {/* Left: Voice Orb */}
+          <div className="flex flex-col items-center w-64">
+            <div className="relative group cursor-pointer" onClick={toggleConversation}>
+              {/* Pulsing rings */}
+              {isListening && (
+                <>
+                  <div className="absolute inset-0 bg-cyan-500 rounded-full blur-xl opacity-50 animate-ping"></div>
+                  <div className="absolute inset-0 bg-purple-500 rounded-full blur-2xl opacity-30 animate-pulse"></div>
+                </>
+              )}
+              
+              {/* Core Orb */}
+              <div className={`relative w-24 h-24 rounded-full border border-white/20 flex items-center justify-center transition-all duration-500 shadow-[0_0_50px_rgba(0,255,255,0.2)] ${isListening ? 'bg-gradient-to-br from-cyan-900 to-black scale-110' : 'bg-black/80 backdrop-blur-xl'}`}>
+                {isListening ? <Mic className="w-10 h-10 text-cyan-400" /> : <MicOff className="w-8 h-8 text-gray-500" />}
+              </div>
+            </div>
+            <p className="mt-6 font-mono text-sm tracking-widest text-white/50 text-center">
+              {isListening ? 'LISTENING...' : 'WAKE BRAIN'}
+            </p>
+          </div>
+
+          {/* Center: Update Dashboard */}
+          <div className="flex-1 max-w-2xl bg-black/60 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-6 shadow-[0_0_40px_rgba(0,255,255,0.05)] relative overflow-hidden">
+            {/* Ambient background glow in the dashboard */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-cyan-500/10 blur-[50px] rounded-full pointer-events-none"></div>
             
-            {/* Core Orb */}
-            <div className={`relative w-24 h-24 rounded-full border border-white/20 flex items-center justify-center transition-all duration-500 shadow-[0_0_50px_rgba(0,255,255,0.2)] ${isListening ? 'bg-gradient-to-br from-cyan-900 to-black scale-110' : 'bg-black/80 backdrop-blur-xl'}`}>
-              {isListening ? <Mic className="w-10 h-10 text-cyan-400" /> : <MicOff className="w-8 h-8 text-gray-500" />}
+            <div className="flex items-center gap-3 mb-4 border-b border-white/10 pb-4 relative z-10">
+              <Radar className="w-5 h-5 text-cyan-400 animate-[spin_4s_linear_infinite]" />
+              <h2 className="text-white font-mono tracking-widest font-bold">COMMAND DASHBOARD</h2>
+            </div>
+            <div className="grid grid-cols-3 gap-4 relative z-10">
+               <div className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-cyan-500/50 transition-colors">
+                 <p className="text-cyan-400/70 text-[10px] font-mono tracking-wider mb-1">SYSTEM STATUS</p>
+                 <p className="text-white font-bold font-mono">OPTIMAL</p>
+               </div>
+               <div className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-purple-500/50 transition-colors">
+                 <p className="text-purple-400/70 text-[10px] font-mono tracking-wider mb-1">LATEST SYNAPSE</p>
+                 <p className="text-white font-bold font-mono text-sm truncate">Local Contractor</p>
+               </div>
+               <div className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-green-500/50 transition-colors">
+                 <p className="text-green-400/70 text-[10px] font-mono tracking-wider mb-1">AI CONFIDENCE</p>
+                 <p className="text-white font-bold font-mono">98.4%</p>
+               </div>
             </div>
           </div>
-          <p className="mt-6 font-mono text-sm tracking-widest text-white/50">
-            {isListening ? 'LISTENING FOR COMMANDS...' : 'CLICK TO WAKE BRAIN'}
-          </p>
+
+          {/* Right spacer to keep it centered (matches orb width) */}
+          <div className="w-16"></div>
         </div>
       </div>
 
