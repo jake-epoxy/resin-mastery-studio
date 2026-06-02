@@ -427,7 +427,7 @@ CRITICAL RULE 5: VERY IMPORTANT! If you are regenerating or updating a quote dra
 
             const configPayload = {
               theme_color: template.theme_color || "#3b82f6",
-              brand_name: template.name || "Jake's Epoxy",
+              brand_name: template.name || (contractorEmail ? contractorEmail.split('@')[0].toUpperCase() : "Contractor"),
               logo_url: template.logo_url || null,
               contract_pdf_url: (functionArgs.contract_pdf_url && functionArgs.contract_pdf_url.startsWith('http')) ? functionArgs.contract_pdf_url : (template.contract_pdf_url || null),
               visualization_image: (functionArgs.visualization_url && functionArgs.visualization_url.startsWith('http')) ? functionArgs.visualization_url : null,
