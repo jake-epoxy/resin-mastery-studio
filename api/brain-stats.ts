@@ -46,10 +46,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.warn('swarm_events stats unavailable:', eErr.message);
     }
 
+    const { data: commands, error: cErr } = await supabaseAdmin
+      .from('agent_commands')
+      .select('agent_id, command_text, status, result_text, metadata, created_at')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (cErr) {
+      console.warn('agent_commands stats unavailable:', cErr.message);
+    }
+
     return res.status(200).json({
       synapses: synapses || [],
       drafts: dErr ? [] : drafts || [],
-      swarmEvents: eErr ? [] : swarmEvents || []
+      swarmEvents: eErr ? [] : swarmEvents || [],
+      commands: cErr ? [] : commands || []
     });
 
   } catch (error: any) {

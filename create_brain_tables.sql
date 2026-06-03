@@ -17,8 +17,11 @@ CREATE TABLE IF NOT EXISTS brain_synapses (
 -- 3. Create the agent commands table (so the Voice Orb can execute actions)
 CREATE TABLE IF NOT EXISTS agent_commands (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    agent_id TEXT DEFAULT 'operator' NOT NULL,
     command_text TEXT NOT NULL,
     status TEXT DEFAULT 'pending' NOT NULL, -- 'pending', 'processing', 'completed', 'failed'
+    result_text TEXT,
+    metadata JSONB DEFAULT '{}'::jsonb,
     response_audio_url TEXT,
     executed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL

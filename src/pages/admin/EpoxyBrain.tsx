@@ -114,6 +114,12 @@ function EpoxyBrainContent() {
           data.swarmEvents.forEach((event: any) => {
             newLogs.push(`[${(event.agent_id || 'AGENT').toUpperCase()}] ${event.message}`);
           });
+        } else if (data.commands?.length) {
+          const agents = new Set(data.commands.map((command: any) => command.agent_id));
+          setActiveAgents(agents.size);
+          data.commands.forEach((command: any) => {
+            newLogs.push(`[PHIL -> ${(command.agent_id || 'AGENT').toUpperCase()}] ${command.command_text} (${command.status})`);
+          });
         } else if (data.drafts) {
           data.drafts.forEach((d: any) => {
             newLogs.push(`[${d.agent_id || 'AGENT'}] Drafted email to ${d.lead_email} (${d.status})`);
