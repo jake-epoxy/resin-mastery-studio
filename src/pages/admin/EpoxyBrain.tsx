@@ -125,7 +125,14 @@ function EpoxyBrainContent() {
             newLogs.push(`[${d.agent_id || 'AGENT'}] Drafted email to ${d.lead_email} (${d.status})`);
           });
         }
-        setLogs(newLogs);
+        if (newLogs.length > 1) {
+          setLogs(newLogs);
+        } else {
+          setLogs(prev => {
+            const liveLogs = prev.filter(log => !log.startsWith('[SYSTEM] Hive Mind Synced.'));
+            return liveLogs.length ? liveLogs : newLogs;
+          });
+        }
 
       } catch (err) {
         console.error("Failed to fetch brain stats", err);
