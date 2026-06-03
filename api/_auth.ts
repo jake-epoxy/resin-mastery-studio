@@ -1,4 +1,4 @@
-import type { VercelRequest } from "./_types";
+import type { VercelRequest } from "./_types.js";
 
 function getHeader(req: VercelRequest, name: string): string {
   const value = req.headers[name.toLowerCase()];
