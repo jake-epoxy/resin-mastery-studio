@@ -6,6 +6,13 @@ import { Mic, MicOff, BrainCircuit, Activity, Database, Radar, Code2 } from 'luc
 import { Card } from '@/components/ui/card';
 
 // Live data will be fetched from the API
+const hiveAgents = [
+  { id: 'scout', nodeId: 'agent_scout', group: 4, name: 'The Scout (Data Gathering)' },
+  { id: 'scientist', nodeId: 'agent_scientist', group: 5, name: 'The Scientist (Content)' },
+  { id: 'closer', nodeId: 'agent_closer', group: 6, name: 'The Closer (Sales)' },
+  { id: 'hustler', nodeId: 'agent_hustler', group: 7, name: 'The Hustler (Strategy)' },
+  { id: 'engineer', nodeId: 'agent_engineer', group: 8, name: 'The Engineer (Code)' },
+];
 
 function EpoxyBrainContent() {
   const [graphData, setGraphData] = useState<{nodes: any[], links: any[]}>({ nodes: [], links: [] });
@@ -74,20 +81,15 @@ function EpoxyBrainContent() {
         
         const nodes = [
           { id: 'core', group: 1, name: 'The Hive Mind (Core)', val: 30 },
-          { id: 'agent_scout', group: 4, name: 'The Scout (Data Gathering)', val: 12 },
-          { id: 'agent_scientist', group: 5, name: 'The Scientist (Content)', val: 12 },
-          { id: 'agent_closer', group: 6, name: 'The Closer (Sales)', val: 12 },
-          { id: 'agent_hustler', group: 7, name: 'The Hustler (Strategy)', val: 12 },
-          { id: 'agent_engineer', group: 8, name: 'The Engineer (Code)', val: 12 }
+          ...hiveAgents.map(agent => ({
+            id: agent.nodeId,
+            group: agent.group,
+            name: agent.name,
+            val: 12,
+          })),
         ];
 
-        const links: any[] = [
-          { source: 'agent_scout', target: 'core' },
-          { source: 'agent_scientist', target: 'core' },
-          { source: 'agent_closer', target: 'core' },
-          { source: 'agent_hustler', target: 'core' },
-          { source: 'agent_engineer', target: 'core' }
-        ];
+        const links: any[] = hiveAgents.map(agent => ({ source: agent.nodeId, target: 'core' }));
 
         if (data.synapses) {
           setSynapseCount(data.synapses.length);
@@ -106,21 +108,22 @@ function EpoxyBrainContent() {
         }
 
         setGraphData({ nodes, links });
+        setActiveAgents(hiveAgents.length);
 
-        const newLogs = ["[SYSTEM] Hive Mind Synced."];
+        const newLogs = ["[SYSTEM] Hive Mind Synced.", `[SYSTEM] ${hiveAgents.length} hive agents online.`];
         if (data.swarmEvents?.length) {
-          const agents = new Set(data.swarmEvents.map((event: any) => event.agent_id));
-          setActiveAgents(agents.size);
           data.swarmEvents.forEach((event: any) => {
             newLogs.push(`[${(event.agent_id || 'AGENT').toUpperCase()}] ${event.message}`);
           });
-        } else if (data.commands?.length) {
-          const agents = new Set(data.commands.map((command: any) => command.agent_id));
-          setActiveAgents(agents.size);
+        }
+
+        if (data.commands?.length) {
           data.commands.forEach((command: any) => {
             newLogs.push(`[PHIL -> ${(command.agent_id || 'AGENT').toUpperCase()}] ${command.command_text} (${command.status})`);
           });
-        } else if (data.drafts) {
+        }
+
+        if (data.drafts) {
           data.drafts.forEach((d: any) => {
             newLogs.push(`[${d.agent_id || 'AGENT'}] Drafted email to ${d.lead_email} (${d.status})`);
           });
