@@ -17,13 +17,67 @@ const agents = [
   },
   {
     id: 'hustler',
-    role: 'Look for revenue, partnership, and growth opportunities.',
+    role: 'Look for revenue, partnership, AI tool, API, automation, and growth opportunities that keep Resin Academics ahead of competitors.',
   },
   {
     id: 'engineer',
     role: 'Look for system, automation, data, deployment, and product improvements.',
   },
 ];
+
+async function launchRedditAiIntelScrape() {
+  const apifyToken = process.env.APIFY_API_TOKEN;
+  const actorId = process.env.APIFY_REDDIT_ACTOR_ID;
+
+  if (!apifyToken || !actorId) {
+    await logSwarmEvent({
+      agentId: 'hustler',
+      eventType: 'intel',
+      message: 'AI intel scrape skipped. Add APIFY_REDDIT_ACTOR_ID in Vercel to enable Reddit trend gathering.',
+      metadata: { source: 'cron', channel: 'reddit' },
+    });
+    return null;
+  }
+
+  const fallbackInput = {
+    searchQueries: [
+      'new AI tools for agencies',
+      'best AI API tools',
+      'AI automation workflow tools',
+      'new OpenAI API use cases',
+      'AI tools for small business marketing',
+    ],
+    subreddits: ['ArtificialInteligence', 'OpenAI', 'SaaS', 'Entrepreneur', 'marketing'],
+    maxItems: 25,
+    sort: 'new',
+    time: 'week',
+  };
+
+  const actorInput = process.env.APIFY_REDDIT_INPUT_JSON
+    ? JSON.parse(process.env.APIFY_REDDIT_INPUT_JSON)
+    : fallbackInput;
+
+  const actorUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${apifyToken}`;
+  const response = await fetch(actorUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(actorInput),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(`Reddit AI intel scraper failed: ${data.error?.message || response.status}`);
+  }
+
+  await logSwarmEvent({
+    agentId: 'hustler',
+    eventType: 'intel',
+    message: 'Launched Reddit AI-intel scrape for new tools, API trends, and competitive opportunities.',
+    metadata: { source: 'cron', channel: 'reddit', run_id: data.data?.id, actor_id: actorId },
+  });
+
+  return data.data?.id || null;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const authHeader = req.headers.authorization;
@@ -61,6 +115,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     const outputs: Array<{ agent: string; message: string }> = [];
+    let redditRunId: string | null = null;
 
     for (const agent of agents) {
       const prompt = `You are ${agent.id.toUpperCase()} inside the Resin Academics hive mind.
@@ -99,7 +154,18 @@ Keep it under 70 words. Always spell it "epoxy"; never write "Epoxee".`;
       });
     }
 
-    return res.status(200).json({ success: true, outputs });
+    try {
+      redditRunId = await launchRedditAiIntelScrape();
+    } catch (error: any) {
+      await logSwarmEvent({
+        agentId: 'hustler',
+        eventType: 'intel_error',
+        message: `Reddit AI-intel scrape failed: ${error.message}`,
+        metadata: { source: 'cron', channel: 'reddit' },
+      });
+    }
+
+    return res.status(200).json({ success: true, outputs, redditRunId });
   } catch (error: any) {
     console.error('Swarm tick error:', error);
     return res.status(500).json({ error: error.message });

@@ -61,6 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 2. Detect platform from the data structure or actor ID
     const isTikTok = actorId.includes('tiktok') || dataset[0]?.diggCount !== undefined || dataset[0]?.videoMeta !== undefined;
+    const isReddit = actorId.includes('reddit') || dataset[0]?.subreddit || dataset[0]?.numComments !== undefined || dataset[0]?.upVotes !== undefined;
 
     // 3. Process each post and turn it into a Vector Memory
     let embeddedCount = 0;
@@ -71,7 +72,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let url = '';
       let platform = 'unknown';
 
-      if (isTikTok) {
+      if (isReddit) {
+        caption = post.title || post.body || post.text || post.selftext || '';
+        likes = post.upVotes || post.upvotes || post.score || post.ups || 0;
+        url = post.url || post.permalink || post.link || '';
+        platform = 'reddit';
+      } else if (isTikTok) {
         // TikTok data format
         caption = post.text || post.desc || '';
         likes = post.diggCount || post.stats?.diggCount || 0;
@@ -86,11 +92,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // Only save memories for posts with decent traction to avoid junk data
-      const likeThreshold = isTikTok ? 500 : 100;
+      const likeThreshold = isReddit ? 5 : isTikTok ? 500 : 100;
       if (likes < likeThreshold || !caption) continue;
 
       // Have the AI extract the marketing insight
-      const insightPrompt = `Analyze this viral ${platform.toUpperCase()} post in the epoxy/concrete coatings space.
+      const insightPrompt = isReddit
+        ? `Analyze this Reddit post as competitive AI/business intelligence for Resin Academics.
+Post: "${caption.substring(0, 900)}"
+Score/upvotes: ${likes}
+Subreddit/source: ${post.subreddit || post.communityName || 'unknown'}
+URL: ${url}
+
+Extract the useful signal in 2-3 sentences. Focus on:
+1. What new AI tool, API, automation, workflow, or market pain is being discussed?
+2. Why it matters for an epoxy/concrete coatings growth company.
+3. What Hustler or Engineer should test next to stay ahead of competitors.`
+        : `Analyze this viral ${platform.toUpperCase()} post in the epoxy/concrete coatings space.
 Caption: "${caption.substring(0, 500)}"
 Likes: ${likes}
 Platform: ${platform}
@@ -117,10 +134,10 @@ Extract the core marketing hook, trend, or lesson from this post in 2-3 sentence
 
       // Inject the new memory into the pgvector brain
       await supabaseAdmin.from('brain_synapses').insert([{
-        agent_source: 'apify-trend-agent',
-        content: `VIRAL ${platform.toUpperCase()} TREND: ${coreInsight} (Source: ${url}, ${likes} likes)`,
+        agent_source: isReddit ? 'hustler-ai-intel-agent' : 'apify-trend-agent',
+        content: `${isReddit ? 'AI INTEL' : 'VIRAL'} ${platform.toUpperCase()} TREND: ${coreInsight} (Source: ${url}, ${likes} ${isReddit ? 'upvotes' : 'likes'})`,
         embedding: embeddingVector,
-        metadata: { source: platform, url, likes, scraped_at: new Date().toISOString() }
+        metadata: { source: platform, url, likes, subreddit: post.subreddit || post.communityName, scraped_at: new Date().toISOString() }
       }]);
 
       embeddedCount++;
@@ -128,8 +145,8 @@ Extract the core marketing hook, trend, or lesson from this post in 2-3 sentence
 
     return res.status(200).json({ 
       success: true, 
-      platform: isTikTok ? 'tiktok' : 'instagram',
-      message: `Brain Expanded. Injected ${embeddedCount} new neural pathways from ${isTikTok ? 'TikTok' : 'Instagram'}.`
+      platform: isReddit ? 'reddit' : isTikTok ? 'tiktok' : 'instagram',
+      message: `Brain Expanded. Injected ${embeddedCount} new neural pathways from ${isReddit ? 'Reddit AI intel' : isTikTok ? 'TikTok' : 'Instagram'}.`
     });
 
   } catch (error: any) {
