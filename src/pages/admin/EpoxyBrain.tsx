@@ -13,6 +13,8 @@ function EpoxyBrainContent() {
     "[SYSTEM] Hive Mind initializing...",
   ]);
   const [synapseCount, setSynapseCount] = useState(0);
+  const [latestSynapse, setLatestSynapse] = useState('Waiting for memory');
+  const [activeAgents, setActiveAgents] = useState(0);
   const graphRef = useRef<any>();
 
   // ElevenLabs Conversational AI Hook
@@ -89,6 +91,7 @@ function EpoxyBrainContent() {
 
         if (data.synapses) {
           setSynapseCount(data.synapses.length);
+          setLatestSynapse(data.synapses[0]?.metadata?.source || data.synapses[0]?.agent_source || 'Brain memory');
           data.synapses.forEach((syn: any) => {
              const synId = `syn_${syn.id}`;
              nodes.push({ id: synId, group: 3, name: `Memory: ${syn.metadata?.source || 'Unknown'}`, val: 3 });
@@ -105,7 +108,13 @@ function EpoxyBrainContent() {
         setGraphData({ nodes, links });
 
         const newLogs = ["[SYSTEM] Hive Mind Synced."];
-        if (data.drafts) {
+        if (data.swarmEvents?.length) {
+          const agents = new Set(data.swarmEvents.map((event: any) => event.agent_id));
+          setActiveAgents(agents.size);
+          data.swarmEvents.forEach((event: any) => {
+            newLogs.push(`[${(event.agent_id || 'AGENT').toUpperCase()}] ${event.message}`);
+          });
+        } else if (data.drafts) {
           data.drafts.forEach((d: any) => {
             newLogs.push(`[${d.agent_id || 'AGENT'}] Drafted email to ${d.lead_email} (${d.status})`);
           });
@@ -269,11 +278,11 @@ function EpoxyBrainContent() {
                </div>
                <div className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-purple-500/50 transition-colors">
                  <p className="text-purple-400/70 text-[10px] font-mono tracking-wider mb-1">LATEST SYNAPSE</p>
-                 <p className="text-white font-bold font-mono text-sm truncate">Local Contractor</p>
+                 <p className="text-white font-bold font-mono text-sm truncate">{latestSynapse}</p>
                </div>
                <div className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-green-500/50 transition-colors">
-                 <p className="text-green-400/70 text-[10px] font-mono tracking-wider mb-1">AI CONFIDENCE</p>
-                 <p className="text-white font-bold font-mono">98.4%</p>
+                 <p className="text-green-400/70 text-[10px] font-mono tracking-wider mb-1">ACTIVE AGENTS</p>
+                 <p className="text-white font-bold font-mono">{activeAgents}</p>
                </div>
             </div>
           </div>
@@ -301,7 +310,7 @@ function EpoxyBrainContent() {
         {/* Swarm Activity Logs */}
         <h3 className="text-white font-mono text-sm mb-4 flex items-center gap-2 pt-6 border-t border-white/10">
           <Activity className="w-4 h-4 text-cyan-400" />
-          SWARM ACTIVITY
+          SWARM FEED
         </h3>
         
         <div className="flex-1 overflow-y-auto space-y-3 font-mono text-xs pr-2 pb-10">

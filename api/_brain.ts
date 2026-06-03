@@ -54,6 +54,23 @@ export async function searchBrain(query: string, matchCount = 8) {
   return data || [];
 }
 
+export async function logSwarmEvent(input: {
+  agentId: string;
+  eventType?: string;
+  message: string;
+  metadata?: Record<string, unknown>;
+}) {
+  const supabase = getBrainClient();
+  if (!supabase || !input.message.trim()) return;
+
+  await supabase.from('swarm_events').insert([{
+    agent_id: input.agentId,
+    event_type: input.eventType || 'thought',
+    message: input.message,
+    metadata: input.metadata || {},
+  }]);
+}
+
 export function rememberSlackConversation(input: {
   agent: string;
   userMessage: string;
@@ -68,6 +85,19 @@ export function rememberSlackConversation(input: {
     `User: ${input.userMessage}`,
     input.reply ? `Agent: ${input.reply}` : '',
   ].filter(Boolean).join('\n');
+
+  void logSwarmEvent({
+    agentId: input.agent,
+    eventType: 'conversation',
+    message: `${input.agent}: ${input.reply || input.userMessage}`,
+    metadata: {
+      source: 'slack',
+      intent: input.intent || 'unknown',
+      channel: input.channel,
+      thread_ts: input.threadTs,
+      user: input.user,
+    },
+  });
 
   return rememberInBrain({
     agentSource: `${input.agent}-conversation`,

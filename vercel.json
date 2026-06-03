@@ -19,6 +19,9 @@
         },
         "api/cron-booking-reminders.ts": {
             "maxDuration": 60
+        },
+        "api/cron-swarm-tick.ts": {
+            "maxDuration": 300
         }
     },
     "crons": [
@@ -29,6 +32,10 @@
         {
             "path": "/api/cron-booking-reminders",
             "schedule": "*/15 * * * *"
+        },
+        {
+            "path": "/api/cron-swarm-tick",
+            "schedule": "0 * * * *"
         }
     ]
 }

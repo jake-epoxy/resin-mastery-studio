@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 1. Fetch Synapses
     const { data: synapses, error: sErr } = await supabaseAdmin
       .from('brain_synapses')
-      .select('id, metadata, created_at')
+      .select('id, agent_source, metadata, created_at')
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -36,9 +36,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.warn('email_drafts stats unavailable:', dErr.message);
     }
 
+    const { data: swarmEvents, error: eErr } = await supabaseAdmin
+      .from('swarm_events')
+      .select('agent_id, event_type, message, metadata, created_at')
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (eErr) {
+      console.warn('swarm_events stats unavailable:', eErr.message);
+    }
+
     return res.status(200).json({
       synapses: synapses || [],
-      drafts: dErr ? [] : drafts || []
+      drafts: dErr ? [] : drafts || [],
+      swarmEvents: eErr ? [] : swarmEvents || []
     });
 
   } catch (error: any) {

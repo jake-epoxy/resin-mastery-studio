@@ -37,10 +37,20 @@ CREATE TABLE IF NOT EXISTS email_drafts (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS swarm_events (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    event_type TEXT DEFAULT 'thought' NOT NULL,
+    message TEXT NOT NULL,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- 5. Set up Row Level Security (RLS)
 ALTER TABLE brain_synapses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agent_commands ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_drafts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE swarm_events ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow public read brain_synapses" ON brain_synapses;
 DROP POLICY IF EXISTS "Allow public insert brain_synapses" ON brain_synapses;
@@ -56,6 +66,9 @@ CREATE POLICY "Service role manages agent_commands" ON agent_commands
   FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
 CREATE POLICY "Service role manages email_drafts" ON email_drafts
+  FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+
+CREATE POLICY "Service role manages swarm_events" ON swarm_events
   FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
 -- 6. Create a function to search the Brain (Vector Similarity Search)
