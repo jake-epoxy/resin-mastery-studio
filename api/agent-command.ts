@@ -46,24 +46,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Missing Supabase brain credentials' });
+    }
+
     const memories = await searchBrain(command, 8);
     const memoryContext = memories.length
       ? memories.map((m: any) => `[${m.agent_source || m.metadata?.agent || 'brain'}] ${m.content}`).join('\n\n')
       : 'No relevant memories found.';
 
-    let commandId: string | null = null;
-    if (supabase) {
-      const { data } = await supabase.from('agent_commands').insert([{
-        agent_id: agent,
-        command_text: command,
-        status: mode === 'queue' ? 'pending' : 'processing',
-        metadata: {
-          source: 'phil_voice',
-          mode,
-          requested_at: new Date().toISOString(),
-        },
-      }]).select('id').single();
-      commandId = data?.id || null;
+    const { data: commandRow, error: insertError } = await supabase.from('agent_commands').insert([{
+      agent_id: agent,
+      command_text: command,
+      status: mode === 'queue' ? 'pending' : 'processing',
+      metadata: {
+        source: 'phil_voice',
+        mode,
+        requested_at: new Date().toISOString(),
+      },
+    }]).select('id').single();
+
+    if (insertError) throw insertError;
+
+    const commandId = commandRow?.id;
+    if (!commandId) {
+      throw new Error('Phil command was not saved to the brain.');
     }
 
     const prompt = `You are Phil, the voice interface for the Resin Academics Hive Mind.
@@ -89,13 +96,13 @@ Respond as Phil in a clear, natural voice. If this is something ${agent.toUpperC
 
     const result = response.choices[0].message.content || `I assigned that to ${agent}.`;
 
-    if (supabase && commandId) {
-      await supabase.from('agent_commands').update({
-        status: 'completed',
-        result_text: result,
-        executed_at: new Date().toISOString(),
-      }).eq('id', commandId);
-    }
+    const { error: updateError } = await supabase.from('agent_commands').update({
+      status: 'completed',
+      result_text: result,
+      executed_at: new Date().toISOString(),
+    }).eq('id', commandId);
+
+    if (updateError) throw updateError;
 
     await logSwarmEvent({
       agentId: agent,

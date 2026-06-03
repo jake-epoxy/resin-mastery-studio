@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://efgveagtdpqownyjspvf.supabase.co';
 const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export function getBrainClient() {
@@ -25,12 +25,14 @@ export async function rememberInBrain(input: {
     input: input.content.slice(0, 8000),
   });
 
-  await supabase.from('brain_synapses').insert([{
+  const { error } = await supabase.from('brain_synapses').insert([{
     agent_source: input.agentSource,
     content: input.content,
     embedding: embeddingRes.data[0].embedding,
     metadata: input.metadata || {},
   }]);
+
+  if (error) throw error;
 }
 
 export async function searchBrain(query: string, matchCount = 8) {
@@ -63,12 +65,14 @@ export async function logSwarmEvent(input: {
   const supabase = getBrainClient();
   if (!supabase || !input.message.trim()) return;
 
-  await supabase.from('swarm_events').insert([{
+  const { error } = await supabase.from('swarm_events').insert([{
     agent_id: input.agentId,
     event_type: input.eventType || 'thought',
     message: input.message,
     metadata: input.metadata || {},
   }]);
+
+  if (error) throw error;
 }
 
 export function rememberSlackConversation(input: {
