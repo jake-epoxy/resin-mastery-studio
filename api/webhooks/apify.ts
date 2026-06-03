@@ -3,7 +3,6 @@ import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
 import { requireApiSecret } from '../_auth';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://efgveagtdpqownyjspvf.supabase.co';
 const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabaseAdmin = supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
@@ -44,6 +43,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!supabaseAdmin) throw new Error('Supabase not configured');
+    if (!process.env.OPENAI_API_KEY) throw new Error('OpenAI not configured');
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     // 2. Detect platform from the data structure or actor ID
     const isTikTok = actorId.includes('tiktok') || dataset[0]?.diggCount !== undefined || dataset[0]?.videoMeta !== undefined;
