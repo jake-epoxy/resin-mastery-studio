@@ -1,6 +1,6 @@
-import type { VercelRequest, VercelResponse } from './_types';
+import type { VercelRequest, VercelResponse } from './_types.js';
 import { createClient } from '@supabase/supabase-js';
-import { requireApiSecret } from './_auth';
+import { requireApiSecret } from './_auth.js';
 
 // ElevenLabs Webhook Tool - Allows the Voice AI to search the Brain
 export default async function handler(req: VercelRequest, res: VercelResponse) {

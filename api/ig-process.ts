@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from './_types';
+import type { VercelRequest, VercelResponse } from './_types.js';
 import OpenAI from 'openai';
 
 const PAGE_ACCESS_TOKEN = process.env.IG_PAGE_TOKEN;

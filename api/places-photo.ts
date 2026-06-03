@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from './_types';
+import type { VercelRequest, VercelResponse } from './_types.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // We can support GET requests for image proxying

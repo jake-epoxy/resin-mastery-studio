@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from './_types';
+import type { VercelRequest, VercelResponse } from './_types.js';
 import { Resend } from 'resend';
 
 // Initialize Resend

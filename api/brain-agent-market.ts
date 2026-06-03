@@ -1,6 +1,6 @@
-import type { VercelRequest, VercelResponse } from './_types';
+import type { VercelRequest, VercelResponse } from './_types.js';
 import { createClient } from '@supabase/supabase-js';
-import { requireApiSecret } from './_auth';
+import { requireApiSecret } from './_auth.js';
 
 // Marketing Agent - Ingests ad performance, trends, or scripts into the Epoxy Brain
 export default async function handler(req: VercelRequest, res: VercelResponse) {

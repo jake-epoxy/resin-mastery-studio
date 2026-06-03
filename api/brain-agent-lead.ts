@@ -1,6 +1,6 @@
-import type { VercelRequest, VercelResponse } from './_types';
+import type { VercelRequest, VercelResponse } from './_types.js';
 import { createClient } from '@supabase/supabase-js';
-import { requireApiSecret } from './_auth';
+import { requireApiSecret } from './_auth.js';
 
 // Lead Gen Agent - Scrapes/Receives data and embeds it into the Epoxy Brain
 export default async function handler(req: VercelRequest, res: VercelResponse) {

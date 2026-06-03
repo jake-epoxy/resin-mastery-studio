@@ -1,15 +1,23 @@
-import type { VercelRequest, VercelResponse } from '../_types';
+import type { VercelRequest, VercelResponse } from '../_types.js';
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
-import { requireApiSecret } from '../_auth';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://efgveagtdpqownyjspvf.supabase.co';
 const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabaseAdmin = supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
+function hasApifySecret(req: VercelRequest): boolean {
+  const secret = process.env.APIFY_WEBHOOK_SECRET || '';
+  const authorization = Array.isArray(req.headers.authorization)
+    ? req.headers.authorization[0]
+    : req.headers.authorization;
+
+  return Boolean(secret && authorization === `Bearer ${secret}`);
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-  if (!requireApiSecret(req, ['APIFY_WEBHOOK_SECRET'])) {
+  if (!hasApifySecret(req)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

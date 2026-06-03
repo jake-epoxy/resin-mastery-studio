@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '../_types';
+import type { VercelRequest, VercelResponse } from '../_types.js';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

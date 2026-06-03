@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from './_types';
+import type { VercelRequest, VercelResponse } from './_types.js';
 import OpenAI from 'openai';
 
 const VERIFY_TOKEN = process.env.IG_VERIFY_TOKEN || 'JAKE_EPOXY_SECURE_2026';
