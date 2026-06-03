@@ -1,5 +1,6 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_types';
 import { createClient } from '@supabase/supabase-js';
+import { requireApiSecret } from './_auth';
 
 // ElevenLabs Webhook Tool - Allows the Voice AI to search the Brain
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -10,6 +11,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+  if (!requireApiSecret(req, ['BRAIN_API_SECRET', 'ELEVENLABS_WEBHOOK_SECRET'])) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
   // ElevenLabs function calling passes parameters inside the body
   // e.g. { query: "Who is our newest lead?" }
@@ -19,11 +23,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Missing search query.' });
   }
 
-  const supabaseUrl = 'https://efgveagtdpqownyjspvf.supabase.co';
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
   const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const openAiKey = process.env.OPENAI_API_KEY || '';
 
-  if (!supabaseServiceKey || !openAiKey) {
+  if (!supabaseUrl || !supabaseServiceKey || !openAiKey) {
      return res.status(500).json({ error: 'API Keys Missing on Server' });
   }
 
@@ -45,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const query_embedding = aiData.data[0].embedding;
 
     // 2. Search pgvector database via RPC
-    const { data: searchResults, error } = await supabaseAdmin.rpc('match_synapses', {
+    const { data: searchResults, error } = await supabaseAdmin.rpc('match_brain_synapses', {
       query_embedding,
       match_threshold: 0.3, // Lower threshold to ensure we find related data
       match_count: 5 // Return top 5 most relevant memories

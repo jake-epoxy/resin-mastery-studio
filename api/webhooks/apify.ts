@@ -1,6 +1,7 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '../_types';
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
+import { requireApiSecret } from '../_auth';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://efgveagtdpqownyjspvf.supabase.co';
@@ -9,6 +10,9 @@ const supabaseAdmin = supabaseKey ? createClient(supabaseUrl, supabaseKey) : nul
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+  if (!requireApiSecret(req, ['APIFY_WEBHOOK_SECRET'])) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
   try {
     const apifyEvent = req.body;
@@ -25,8 +29,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 1. Fetch the actual scraped data from Apify
+    const apifyToken = process.env.APIFY_API_TOKEN || '';
     const datasetUrl = `https://api.apify.com/v2/datasets/${defaultDatasetId}/items`;
-    const datasetRes = await fetch(datasetUrl);
+    const datasetRes = await fetch(datasetUrl, {
+      headers: apifyToken ? { Authorization: `Bearer ${apifyToken}` } : undefined
+    });
+    if (!datasetRes.ok) {
+      throw new Error(`Apify dataset fetch failed: ${datasetRes.status}`);
+    }
     const dataset = await datasetRes.json();
 
     if (!dataset || !dataset.length) {
@@ -93,6 +103,7 @@ Extract the core marketing hook, trend, or lesson from this post in 2-3 sentence
 
       // Inject the new memory into the pgvector brain
       await supabaseAdmin.from('brain_synapses').insert([{
+        agent_source: 'apify-trend-agent',
         content: `VIRAL ${platform.toUpperCase()} TREND: ${coreInsight} (Source: ${url}, ${likes} likes)`,
         embedding: embeddingVector,
         metadata: { source: platform, url, likes, scraped_at: new Date().toISOString() }

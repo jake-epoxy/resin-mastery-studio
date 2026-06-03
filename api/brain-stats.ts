@@ -1,4 +1,4 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_types';
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -32,11 +32,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .order('created_at', { ascending: false })
       .limit(10);
 
-    if (dErr) throw dErr;
+    if (dErr) {
+      console.warn('email_drafts stats unavailable:', dErr.message);
+    }
 
     return res.status(200).json({
       synapses: synapses || [],
-      drafts: drafts || []
+      drafts: dErr ? [] : drafts || []
     });
 
   } catch (error: any) {

@@ -24,21 +24,41 @@ CREATE TABLE IF NOT EXISTS agent_commands (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 4. Set up Row Level Security (RLS)
+-- 4. Create email drafts table used by the Closer/Slack workflow
+CREATE TABLE IF NOT EXISTS email_drafts (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    agent_id TEXT DEFAULT 'closer-agent' NOT NULL,
+    lead_name TEXT,
+    lead_email TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    status TEXT DEFAULT 'Drafted' NOT NULL,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 5. Set up Row Level Security (RLS)
 ALTER TABLE brain_synapses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agent_commands ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_drafts ENABLE ROW LEVEL SECURITY;
 
--- For local development and testing, we allow open access. 
--- In production, restrict this to authenticated users or service role.
-CREATE POLICY "Allow public read brain_synapses" ON brain_synapses FOR SELECT USING (true);
-CREATE POLICY "Allow public insert brain_synapses" ON brain_synapses FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update brain_synapses" ON brain_synapses FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Allow public read brain_synapses" ON brain_synapses;
+DROP POLICY IF EXISTS "Allow public insert brain_synapses" ON brain_synapses;
+DROP POLICY IF EXISTS "Allow public update brain_synapses" ON brain_synapses;
+DROP POLICY IF EXISTS "Allow public read agent_commands" ON agent_commands;
+DROP POLICY IF EXISTS "Allow public insert agent_commands" ON agent_commands;
+DROP POLICY IF EXISTS "Allow public update agent_commands" ON agent_commands;
 
-CREATE POLICY "Allow public read agent_commands" ON agent_commands FOR SELECT USING (true);
-CREATE POLICY "Allow public insert agent_commands" ON agent_commands FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update agent_commands" ON agent_commands FOR UPDATE USING (true);
+CREATE POLICY "Service role manages brain_synapses" ON brain_synapses
+  FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
--- 5. Create a function to search the Brain (Vector Similarity Search)
+CREATE POLICY "Service role manages agent_commands" ON agent_commands
+  FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+
+CREATE POLICY "Service role manages email_drafts" ON email_drafts
+  FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+
+-- 6. Create a function to search the Brain (Vector Similarity Search)
 CREATE OR REPLACE FUNCTION match_brain_synapses (
   query_embedding vector(1536),
   match_threshold float,
@@ -63,4 +83,21 @@ AS $$
   WHERE 1 - (brain_synapses.embedding <=> query_embedding) > match_threshold
   ORDER BY similarity DESC
   LIMIT match_count;
+$$;
+
+CREATE OR REPLACE FUNCTION match_synapses (
+  query_embedding vector(1536),
+  match_threshold float,
+  match_count int
+)
+RETURNS TABLE (
+  id uuid,
+  agent_source text,
+  content text,
+  metadata jsonb,
+  similarity float
+)
+LANGUAGE sql STABLE
+AS $$
+  SELECT * FROM match_brain_synapses(query_embedding, match_threshold, match_count);
 $$;

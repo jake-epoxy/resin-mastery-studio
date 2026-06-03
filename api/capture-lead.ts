@@ -1,9 +1,9 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_types';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const resend = new Resend(process.env.RESEND_API_KEY || 're_e8o2gVr2_7SH99nVyU8b3dzW6GTx73afk');
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   // Hardcode the public URL to bypass Vercel missing env vars
   const supabaseUrl = 'https://efgveagtdpqownyjspvf.supabase.co';

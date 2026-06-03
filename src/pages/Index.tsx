@@ -14,7 +14,6 @@ import MarketingSection from "@/components/MarketingSection";
 import SoftwareMarketingSection from "@/components/SoftwareMarketingSection";
 import CloneAISection from "@/components/CloneAISection";
 import { Link } from "react-router-dom";
-import InstallerMapSection from "@/components/InstallerMapSection";
 import QuoteGeneratorDemo from "@/components/QuoteGeneratorDemo";
 import CTASection from "@/components/CTASection";
 import StarterKitSection from "@/components/StarterKitSection";

@@ -1,16 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { Lock, CreditCard, ShieldCheck, Calendar, ExternalLink, FileText, Loader2, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import SignaturePad from "react-signature-canvas";
-import { useRef } from "react";
 import jsPDF from "jspdf";
 import { PDFDocument, rgb } from "pdf-lib";
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
-import { useWindowSize } from 'react-use';
 import { motion, AnimatePresence } from "framer-motion";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -19,6 +17,20 @@ const DEFAULT_TERMS = `A 50% non-refundable material deposit is required before 
 Floor must be completely cleared of all items prior to the installation team's arrival.
 Custom flake and metallic variations are artistic processes; exact uniform matching cannot be guaranteed.
 Balance is strictly due upon project completion.`;
+
+function useWindowWidth() {
+  const [windowWidth, setWindowWidth] = useState(() => (typeof window === "undefined" ? 1024 : window.innerWidth));
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return windowWidth;
+}
 
 export default function QuoteViewLive() {
   const { id } = useParams();
@@ -35,7 +47,7 @@ export default function QuoteViewLive() {
   const [depositStatus, setDepositStatus] = useState<'pending' | 'processing' | 'paid' | 'final_processing' | 'final_paid'>('pending');
   const [digitalFootprint, setDigitalFootprint] = useState<any>(null);
   const [numPages, setNumPages] = useState<number>();
-  const { width: windowWidth } = useWindowSize();
+  const windowWidth = useWindowWidth();
   const [milestonesPaid, setMilestonesPaid] = useState(0);
   const [isRevealed, setIsRevealed] = useState(false);
 

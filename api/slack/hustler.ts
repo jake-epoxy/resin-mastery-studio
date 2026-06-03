@@ -1,4 +1,4 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '../_types';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -47,7 +47,7 @@ Classify the intent into ONE category. Reply with ONLY the category name:
           const { createClient } = await import('@supabase/supabase-js');
           const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
           const embedRes = await openai.embeddings.create({ model: "text-embedding-3-small", input: slackEvent.text });
-          const { data: memories } = await supabaseAdmin.rpc('match_synapses', { query_embedding: embedRes.data[0].embedding, match_threshold: 0.1, match_count: 5 });
+          const { data: memories } = await supabaseAdmin.rpc('match_brain_synapses', { query_embedding: embedRes.data[0].embedding, match_threshold: 0.1, match_count: 5 });
           if (memories?.length) hiveMindContext = memories.map((m: any) => m.content).join('\n\n');
         } catch (err) {}
       }

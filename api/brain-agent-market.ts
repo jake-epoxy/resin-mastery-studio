@@ -1,5 +1,6 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_types';
 import { createClient } from '@supabase/supabase-js';
+import { requireApiSecret } from './_auth';
 
 // Marketing Agent - Ingests ad performance, trends, or scripts into the Epoxy Brain
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -10,18 +11,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+  if (!requireApiSecret(req, ['BRAIN_API_SECRET'])) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
-  const { content, metadata } = req.body;
+  const { content, metadata } = (req.body || {}) as { content?: string; metadata?: Record<string, unknown> };
 
   if (!content) {
     return res.status(400).json({ error: 'Missing content payload.' });
   }
 
-  const supabaseUrl = 'https://efgveagtdpqownyjspvf.supabase.co';
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
   const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const openAiKey = process.env.OPENAI_API_KEY || '';
 
-  if (!supabaseServiceKey || !openAiKey) {
+  if (!supabaseUrl || !supabaseServiceKey || !openAiKey) {
      return res.status(500).json({ error: 'API Keys Missing on Server' });
   }
 

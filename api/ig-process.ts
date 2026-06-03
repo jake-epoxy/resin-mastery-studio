@@ -1,7 +1,7 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_types';
 import OpenAI from 'openai';
 
-const PAGE_ACCESS_TOKEN = process.env.IG_PAGE_TOKEN || 'EAAcrMBG0j2wBRH4ZACylF8bab9TNbWeYZBa3DG2r2Vazwr8iGgxGy2yd3ZBZB4ZB5Q49YxfK3Fwsm9qQeb7T5e3ZA5ZBZCCkM8SQ5t8jgh1UhbDs7bKYM0B6af5hVOnbXHBZAcPbSuPPnNjk7pSJ38MbpGML0vfkGLUihleV1s1rZC0WG3NsGSWfvyCiZAlUyqVYg7IaLZCkV5XNN0j8jQtkZCSAwCiEtpLZCmKlAIISHskyyDT9kVzcVXrQvzZALh5pLoZD';
+const PAGE_ACCESS_TOKEN = process.env.IG_PAGE_TOKEN;
 const MY_IG_ID = '17841435073494638';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

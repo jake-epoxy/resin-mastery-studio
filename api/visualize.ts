@@ -1,4 +1,4 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_types';
 import OpenAI from 'openai';
 import { Jimp } from 'jimp';
 

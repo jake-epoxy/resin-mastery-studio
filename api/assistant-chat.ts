@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_types';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import OpenAI from 'openai';
@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
   
-  const resendApiKey = process.env.RESEND_API_KEY || 're_e8o2gVr2_7SH99nVyU8b3dzW6GTx73afk';
+  const resendApiKey = process.env.RESEND_API_KEY;
   const resend = new Resend(resendApiKey);
 
   let contextString = "";

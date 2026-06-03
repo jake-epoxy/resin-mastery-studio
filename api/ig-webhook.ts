@@ -1,8 +1,8 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_types';
 import OpenAI from 'openai';
 
 const VERIFY_TOKEN = process.env.IG_VERIFY_TOKEN || 'JAKE_EPOXY_SECURE_2026';
-const PAGE_ACCESS_TOKEN = process.env.IG_PAGE_TOKEN || 'EAAcrMBG0j2wBRBxGa5gFDY80WezMY1nzZAbbUQOfmkgqiblbCrc38PPXr5TBqLFVMiKhQmejpeAls9maoocMY748xJeuxdyW0lYyI5vCjSDNeINmfreOY7OB3QY0aEIEQKblvuZC69ZCzSGB8l96KTqhDhEX9qkJqS9p9t7ZANCPOBWwtzwzeQwspZA9HuLPFjsKBx1kS0imPzhLuJNdA';
+const PAGE_ACCESS_TOKEN = process.env.IG_PAGE_TOKEN;
 const MY_IG_ID = '17841435073494638';
 
 import { createClient } from '@supabase/supabase-js';
