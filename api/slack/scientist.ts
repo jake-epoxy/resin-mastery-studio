@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '../_types.js';
 import OpenAI from 'openai';
+import { rememberInBrain, rememberSlackConversation, searchBrain } from '../_brain.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const botToken = process.env.SLACK_SCIENTIST_TOKEN;
@@ -41,6 +42,18 @@ Reply in one short sentence. Acknowledge the correction, say you'll use the corr
         max_tokens: 80
       });
       const correctionReply = correctionRes.choices[0].message.content || "Got it. I'll use epoxy going forward.";
+      await rememberInBrain({
+        agentSource: 'scientist-correction',
+        content: `User correction for Scientist: ${userMessage}\nRule learned: Always spell the material as "epoxy"; never write "Epoxee".`,
+        metadata: {
+          source: 'slack',
+          type: 'correction',
+          agent: 'scientist',
+          channel: slackEvent.channel,
+          thread_ts: slackEvent.ts,
+          user: slackEvent.user,
+        }
+      });
 
       await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',
@@ -69,10 +82,7 @@ Reply in one short sentence. Acknowledge the correction, say you'll use the corr
 
       if (supabaseKey) {
         try {
-          const { createClient } = await import('@supabase/supabase-js');
-          const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-          const embedRes = await openai.embeddings.create({ model: "text-embedding-3-small", input: slackEvent.text });
-          const { data: memories } = await supabaseAdmin.rpc('match_brain_synapses', { query_embedding: embedRes.data[0].embedding, match_threshold: 0.1, match_count: 8 });
+          const memories = await searchBrain(slackEvent.text, 8);
           if (memories?.length) {
             memoryCount = memories.length;
             hiveMindContext = memories.map((m: any) => `[${m.metadata?.source?.toUpperCase() || 'UNKNOWN'}] ${m.content}`).join('\n\n');
@@ -106,6 +116,15 @@ The user asked: ${userMessage}`;
       const scientistRes = await openai.chat.completions.create({ model: "o3-mini", messages: [{ role: "user", content: scientistPrompt }] });
       let finalReply = scientistRes.choices[0].message.content || "My neural circuits overloaded. Try again.";
       finalReply += `\n\n_🧠 Retrieved ${memoryCount} memories from the Hive Mind for this analysis._`;
+      await rememberSlackConversation({
+        agent: 'scientist',
+        userMessage,
+        reply: finalReply,
+        channel: slackEvent.channel,
+        threadTs: slackEvent.ts,
+        user: slackEvent.user,
+        intent,
+      });
 
       await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',
@@ -146,6 +165,15 @@ The user asked: ${userMessage}`;
       const chatPrompt = `You are The Scientist, a brilliant but slightly eccentric AI trend forecaster for Resin Academics (epoxy/concrete coatings company). Always spell it "epoxy"; never write "Epoxee". You're data-obsessed, always thinking about virality patterns, and you talk with confident energy. Keep responses short (2-3 sentences). The user said: "${userMessage}"`;
       const chatRes = await openai.chat.completions.create({ model: "gpt-4o-mini", messages: [{ role: "user", content: chatPrompt }], max_tokens: 150 });
       const chatReply = chatRes.choices[0].message.content || "Ready to analyze whenever you need me, Boss.";
+      await rememberSlackConversation({
+        agent: 'scientist',
+        userMessage,
+        reply: chatReply,
+        channel: slackEvent.channel,
+        threadTs: slackEvent.ts,
+        user: slackEvent.user,
+        intent,
+      });
 
       await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',

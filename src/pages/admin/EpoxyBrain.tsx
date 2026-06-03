@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import { useConversation, ConversationProvider } from '@elevenlabs/react';
 import * as THREE from 'three';
-import { Mic, MicOff, BrainCircuit, Activity, Database, Radar } from 'lucide-react';
+import { Mic, MicOff, BrainCircuit, Activity, Database, Radar, Code2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
 // Live data will be fetched from the API
@@ -75,14 +75,16 @@ function EpoxyBrainContent() {
           { id: 'agent_scout', group: 4, name: 'The Scout (Data Gathering)', val: 12 },
           { id: 'agent_scientist', group: 5, name: 'The Scientist (Content)', val: 12 },
           { id: 'agent_closer', group: 6, name: 'The Closer (Sales)', val: 12 },
-          { id: 'agent_hustler', group: 7, name: 'The Hustler (Strategy)', val: 12 }
+          { id: 'agent_hustler', group: 7, name: 'The Hustler (Strategy)', val: 12 },
+          { id: 'agent_engineer', group: 8, name: 'The Engineer (Code)', val: 12 }
         ];
 
         const links: any[] = [
           { source: 'agent_scout', target: 'core' },
           { source: 'agent_scientist', target: 'core' },
           { source: 'agent_closer', target: 'core' },
-          { source: 'agent_hustler', target: 'core' }
+          { source: 'agent_hustler', target: 'core' },
+          { source: 'agent_engineer', target: 'core' }
         ];
 
         if (data.synapses) {
@@ -96,6 +98,7 @@ function EpoxyBrainContent() {
              // Randomly connect some synapses to agents to show them using it
              if (Math.random() > 0.7) links.push({ source: synId, target: 'agent_scientist' });
              if (Math.random() > 0.7) links.push({ source: synId, target: 'agent_closer' });
+             if (syn.agent_source?.includes('engineer')) links.push({ source: synId, target: 'agent_engineer' });
           });
         }
 
@@ -141,6 +144,7 @@ function EpoxyBrainContent() {
       case 5: return '#f59e0b'; // Orange (Scientist)
       case 6: return '#ef4444'; // Red (Closer)
       case 7: return '#3b82f6'; // Blue (Hustler)
+      case 8: return '#22d3ee'; // Cyan (Engineer)
       default: return '#ffffff';
     }
   };
@@ -256,6 +260,7 @@ function EpoxyBrainContent() {
             <div className="flex items-center gap-3 mb-4 border-b border-white/10 pb-4 relative z-10">
               <Radar className="w-5 h-5 text-cyan-400 animate-[spin_4s_linear_infinite]" />
               <h2 className="text-white font-mono tracking-widest font-bold">COMMAND DASHBOARD</h2>
+              <Code2 className="w-4 h-4 text-cyan-300" />
             </div>
             <div className="grid grid-cols-3 gap-4 relative z-10">
                <div className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-cyan-500/50 transition-colors">

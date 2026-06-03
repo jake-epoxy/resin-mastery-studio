@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '../_types.js';
 import OpenAI from 'openai';
+import { rememberSlackConversation } from '../_brain.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const botToken = process.env.SLACK_CLOSER_TOKEN;
@@ -141,6 +142,15 @@ Respond in pure JSON format:
       const chatPrompt = `You are The Closer, a ruthless, smooth-talking sales AI for Resin Academics (epoxy/concrete coatings). You talk like a confident closer who lives for the deal. Short, punchy responses (2-3 sentences). The user said: "${userMessage}"`;
       const chatRes = await openai.chat.completions.create({ model: "gpt-4o-mini", messages: [{ role: "user", content: chatPrompt }], max_tokens: 150 });
       const chatReply = chatRes.choices[0].message.content || "Point me at a lead and watch me work.";
+      await rememberSlackConversation({
+        agent: 'closer',
+        userMessage,
+        reply: chatReply,
+        channel: slackEvent.channel,
+        threadTs: slackEvent.ts,
+        user: slackEvent.user,
+        intent,
+      });
 
       await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',

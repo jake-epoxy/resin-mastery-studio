@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '../_types.js';
 import OpenAI from 'openai';
+import { rememberSlackConversation } from '../_brain.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const botToken = process.env.SLACK_HUSTLER_TOKEN;
@@ -104,6 +105,15 @@ The user asked: ${userMessage}`;
       const chatPrompt = `You are The Hustler, a ruthless, high-IQ business development AI for Resin Academics (epoxy/concrete coatings). You talk like a sharp dealmaker who's always three moves ahead. Short, punchy responses (2-3 sentences). The user said: "${userMessage}"`;
       const chatRes = await openai.chat.completions.create({ model: "gpt-4o-mini", messages: [{ role: "user", content: chatPrompt }], max_tokens: 150 });
       const chatReply = chatRes.choices[0].message.content || "Always looking for the next angle. What do you need?";
+      await rememberSlackConversation({
+        agent: 'hustler',
+        userMessage,
+        reply: chatReply,
+        channel: slackEvent.channel,
+        threadTs: slackEvent.ts,
+        user: slackEvent.user,
+        intent,
+      });
 
       await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',

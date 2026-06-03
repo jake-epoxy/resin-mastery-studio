@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '../_types.js';
 import OpenAI from 'openai';
+import { rememberSlackConversation } from '../_brain.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const botToken = process.env.SLACK_SCOUT_TOKEN;
@@ -125,6 +126,15 @@ Classify the user's intent into ONE of these categories. Reply with ONLY the cat
       const chatPrompt = `You are The Scout, a data-gathering AI agent for Resin Academics (an epoxy/concrete coatings company). You are tough, efficient, and talk like a military intelligence operative. Keep responses short and punchy (2-3 sentences max). The user said: "${userMessage}"`;
       const chatRes = await openai.chat.completions.create({ model: "gpt-4o-mini", messages: [{ role: "user", content: chatPrompt }], max_tokens: 150 });
       const chatReply = chatRes.choices[0].message.content || "Standing by for orders, Boss.";
+      await rememberSlackConversation({
+        agent: 'scout',
+        userMessage,
+        reply: chatReply,
+        channel: slackEvent.channel,
+        threadTs: slackEvent.ts,
+        user: slackEvent.user,
+        intent,
+      });
 
       await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',

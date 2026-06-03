@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '../_types.js';
 import OpenAI from 'openai';
+import { rememberSlackConversation } from '../_brain.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const botToken = process.env.SLACK_BOT_TOKEN;
@@ -27,13 +28,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } catch (err) {}
     }
 
-    const operatorPrompt = `You are The Operator, the administrative command center AI for Resin Academics. You manage the overall system, provide status reports, and help coordinate between the other agents (Scout, Scientist, Closer, Hustler).
+    const operatorPrompt = `You are The Operator, the administrative command center AI for Resin Academics. You manage the overall system, provide status reports, and help coordinate between the other agents (Scout, Scientist, Closer, Hustler, Engineer).
 
 You know the following about the team:
 - @Scout handles data scraping from Instagram and TikTok
 - @Scientist handles trend analysis and marketing strategy
 - @Closer handles email drafting and sales outreach
 - @Hustler handles business development and partnerships
+- @Engineer handles coding, architecture, deployments, debugging, and technical implementation
 ${systemStatus}
 
 Be professional, helpful, and concise. If the user needs a specific agent, tell them exactly which one to tag.
@@ -42,6 +44,15 @@ The user said: "${userMessage}"`;
 
     const opRes = await openai.chat.completions.create({ model: "gpt-4o-mini", messages: [{ role: "user", content: operatorPrompt }], max_tokens: 300 });
     const finalReply = opRes.choices[0].message.content || "Operator standing by.";
+    await rememberSlackConversation({
+      agent: 'operator',
+      userMessage,
+      reply: finalReply,
+      channel: slackEvent.channel,
+      threadTs: slackEvent.ts,
+      user: slackEvent.user,
+      intent: 'OPERATOR',
+    });
 
     await fetch('https://slack.com/api/chat.postMessage', {
       method: 'POST',
