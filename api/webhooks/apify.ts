@@ -15,6 +15,10 @@ function hasApifySecret(req: VercelRequest): boolean {
   return Boolean(secret && authorization === `Bearer ${secret}`);
 }
 
+function getResourceValue(apifyEvent: any, key: string): string {
+  return apifyEvent?.resource?.[key] || apifyEvent?.eventData?.[key] || '';
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
   if (!hasApifySecret(req)) {
@@ -29,8 +33,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).send('Ignored event type');
     }
 
-    const defaultDatasetId = apifyEvent.resource?.defaultDatasetId;
-    const actorId = apifyEvent.resource?.actId || '';
+    const defaultDatasetId = getResourceValue(apifyEvent, 'defaultDatasetId');
+    const actorId = getResourceValue(apifyEvent, 'actId');
     if (!defaultDatasetId) {
       return res.status(400).json({ error: 'No dataset ID found' });
     }
