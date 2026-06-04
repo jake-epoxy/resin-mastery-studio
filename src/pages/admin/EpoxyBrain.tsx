@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import { useConversation, ConversationProvider } from '@elevenlabs/react';
 import * as THREE from 'three';
-import { Mic, MicOff, BrainCircuit, Activity, Database, Radar, Code2 } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { Mic, MicOff, BrainCircuit, Activity, Database, Radar, Code2, Lightbulb, Target, Wrench, AlertTriangle } from 'lucide-react';
 
 // Live data will be fetched from the API
 const hiveAgents = [
@@ -14,6 +13,36 @@ const hiveAgents = [
   { id: 'engineer', nodeId: 'agent_engineer', group: 8, name: 'The Engineer (Code)' },
 ];
 
+const feedTabs = ['all', 'scout', 'scientist', 'closer', 'hustler', 'engineer', 'operator'] as const;
+
+type FeedItem = {
+  id: string;
+  agent: string;
+  label: string;
+  time: string;
+  source: string;
+  message: string;
+  companyMove?: string;
+  isError?: boolean;
+  local?: boolean;
+};
+
+type Briefing = {
+  opportunity: string;
+  lead: string;
+  content: string;
+  system: string;
+  issue: string;
+};
+
+const emptyBriefing: Briefing = {
+  opportunity: 'Waiting for Hustler signal',
+  lead: 'Waiting for Closer signal',
+  content: 'Waiting for Scientist signal',
+  system: 'Waiting for Engineer signal',
+  issue: 'No active errors',
+};
+
 function formatFeedTime(value?: string) {
   if (!value) return 'now';
   return new Intl.DateTimeFormat('en-US', {
@@ -22,11 +51,57 @@ function formatFeedTime(value?: string) {
   }).format(new Date(value));
 }
 
+function normalizeAgentId(value?: string) {
+  const agent = (value || 'system').toLowerCase().replace(/[^a-z]/g, '');
+  if (agent.includes('scout')) return 'scout';
+  if (agent.includes('scientist')) return 'scientist';
+  if (agent.includes('closer')) return 'closer';
+  if (agent.includes('hustler')) return 'hustler';
+  if (agent.includes('engineer')) return 'engineer';
+  if (agent.includes('operator')) return 'operator';
+  if (agent.includes('phil')) return 'phil';
+  if (agent.includes('brain')) return 'brain';
+  if (agent.includes('voice')) return 'voice';
+  return agent || 'system';
+}
+
+function extractCompanyMove(message: string) {
+  const match = message.match(/Company Move:\s*([^|]+)/i);
+  return match?.[1]?.trim().replace(/\s+/g, ' ');
+}
+
+function getAgentAccent(agent: string) {
+  switch (normalizeAgentId(agent)) {
+    case 'scout': return 'border-l-emerald-400 text-emerald-300';
+    case 'scientist': return 'border-l-amber-400 text-amber-300';
+    case 'closer': return 'border-l-red-400 text-red-300';
+    case 'hustler': return 'border-l-blue-400 text-blue-300';
+    case 'engineer': return 'border-l-cyan-400 text-cyan-300';
+    case 'operator': return 'border-l-purple-400 text-purple-300';
+    default: return 'border-l-white/30 text-white/70';
+  }
+}
+
+function shorten(value: string, fallback: string) {
+  const clean = (value || fallback).replace(/\s+/g, ' ').trim();
+  return clean.length > 150 ? `${clean.slice(0, 147)}...` : clean;
+}
+
 function EpoxyBrainContent() {
   const [graphData, setGraphData] = useState<{nodes: any[], links: any[]}>({ nodes: [], links: [] });
-  const [logs, setLogs] = useState([
-    "[SYSTEM] Hive Mind initializing...",
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([
+    {
+      id: 'system-init',
+      agent: 'system',
+      label: 'SYSTEM',
+      time: 'now',
+      source: 'startup',
+      message: 'Hive Mind initializing...',
+      local: true,
+    },
   ]);
+  const [activeFeedAgent, setActiveFeedAgent] = useState<(typeof feedTabs)[number]>('all');
+  const [briefing, setBriefing] = useState<Briefing>(emptyBriefing);
   const [synapseCount, setSynapseCount] = useState(0);
   const [latestSynapse, setLatestSynapse] = useState('Waiting for memory');
   const [activeAgents, setActiveAgents] = useState(0);
@@ -35,20 +110,61 @@ function EpoxyBrainContent() {
   // ElevenLabs Conversational AI Hook
   const conversation = useConversation({
     onConnect: () => {
-      setLogs(prev => ["[VOICE] Neural link established. AI listening...", ...prev]);
+      setFeedItems(prev => [{
+        id: `voice-connect-${Date.now()}`,
+        agent: 'voice',
+        label: 'VOICE',
+        time: formatFeedTime(),
+        source: 'phil',
+        message: 'Neural link established. AI listening...',
+        local: true,
+      }, ...prev]);
     },
     onDisconnect: () => {
-      setLogs(prev => ["[VOICE] Neural link severed.", ...prev]);
+      setFeedItems(prev => [{
+        id: `voice-disconnect-${Date.now()}`,
+        agent: 'voice',
+        label: 'VOICE',
+        time: formatFeedTime(),
+        source: 'phil',
+        message: 'Neural link severed.',
+        local: true,
+      }, ...prev]);
     },
     onMessage: (message: any) => {
       if(message.source === 'user') {
-        setLogs(prev => [`[USER]: ${message.message}`, ...prev]);
+        setFeedItems(prev => [{
+          id: `user-${Date.now()}`,
+          agent: 'user',
+          label: 'USER',
+          time: formatFeedTime(),
+          source: 'voice',
+          message: message.message,
+          local: true,
+        }, ...prev]);
       } else if (message.source === 'ai') {
-        setLogs(prev => [`[BRAIN]: ${message.message}`, ...prev]);
+        setFeedItems(prev => [{
+          id: `brain-${Date.now()}`,
+          agent: 'brain',
+          label: 'BRAIN',
+          time: formatFeedTime(),
+          source: 'voice',
+          message: message.message,
+          local: true,
+        }, ...prev]);
       }
     },
     onError: (error: any) => {
-      setLogs(prev => [`[VOICE ERROR] ${typeof error === 'string' ? error : 'Failed to connect.'}`, ...prev]);
+      setFeedItems(prev => [{
+        id: `voice-error-${Date.now()}`,
+        agent: 'voice',
+        label: 'VOICE',
+        time: formatFeedTime(),
+        source: 'error',
+        message: typeof error === 'string' ? error : 'Failed to connect.',
+        isError: true,
+        local: true,
+      }, ...prev]);
     }
   });
 
@@ -76,7 +192,16 @@ function EpoxyBrainContent() {
           }
         });
       } catch (err: any) {
-        setLogs(prev => [`[MIC ERROR] ${err.message || 'Connection failed.'}`, ...prev]);
+        setFeedItems(prev => [{
+          id: `mic-error-${Date.now()}`,
+          agent: 'voice',
+          label: 'VOICE',
+          time: formatFeedTime(),
+          source: 'mic',
+          message: err.message || 'Connection failed.',
+          isError: true,
+          local: true,
+        }, ...prev]);
       }
     }
   };
@@ -118,32 +243,84 @@ function EpoxyBrainContent() {
         setGraphData({ nodes, links });
         setActiveAgents(hiveAgents.length);
 
-        const newLogs = ["[SYSTEM] Hive Mind Synced.", `[SYSTEM] ${hiveAgents.length} hive agents online.`];
+        const apiFeed: FeedItem[] = [
+          {
+            id: 'system-sync',
+            agent: 'system',
+            label: 'SYSTEM',
+            time: formatFeedTime(),
+            source: 'sync',
+            message: 'Hive Mind synced.',
+          },
+          {
+            id: 'system-agents',
+            agent: 'system',
+            label: 'SYSTEM',
+            time: formatFeedTime(),
+            source: 'status',
+            message: `${hiveAgents.length} hive agents online.`,
+          },
+        ];
+
         if (data.swarmEvents?.length) {
-          data.swarmEvents.forEach((event: any) => {
-            newLogs.push(`[${formatFeedTime(event.created_at)}] [${(event.agent_id || 'AGENT').toUpperCase()}] ${event.message}`);
+          data.swarmEvents.forEach((event: any, index: number) => {
+            const agent = normalizeAgentId(event.agent_id);
+            apiFeed.push({
+              id: `event-${event.created_at}-${event.agent_id}-${index}`,
+              agent,
+              label: agent.toUpperCase(),
+              time: formatFeedTime(event.created_at),
+              source: event.metadata?.channel || event.event_type || event.metadata?.source || 'swarm',
+              message: event.message,
+              companyMove: extractCompanyMove(event.message),
+              isError: String(event.event_type || '').includes('error') || event.message?.toLowerCase?.().includes('failed'),
+            });
           });
         }
 
         if (data.commands?.length) {
-          data.commands.forEach((command: any) => {
-            newLogs.push(`[${formatFeedTime(command.created_at)}] [PHIL -> ${(command.agent_id || 'AGENT').toUpperCase()}] ${command.command_text} (${command.status})`);
+          data.commands.forEach((command: any, index: number) => {
+            const agent = normalizeAgentId(command.agent_id);
+            apiFeed.push({
+              id: `command-${command.created_at}-${command.agent_id}-${index}`,
+              agent,
+              label: `PHIL -> ${agent.toUpperCase()}`,
+              time: formatFeedTime(command.created_at),
+              source: command.status || 'command',
+              message: command.command_text,
+              companyMove: command.result_text,
+            });
           });
         }
 
         if (data.drafts) {
-          data.drafts.forEach((d: any) => {
-            newLogs.push(`[${formatFeedTime(d.created_at)}] [${d.agent_id || 'AGENT'}] Drafted email to ${d.lead_email} (${d.status})`);
+          data.drafts.forEach((d: any, index: number) => {
+            const agent = normalizeAgentId(d.agent_id);
+            apiFeed.push({
+              id: `draft-${d.created_at}-${d.agent_id}-${index}`,
+              agent,
+              label: agent.toUpperCase(),
+              time: formatFeedTime(d.created_at),
+              source: d.status || 'draft',
+              message: `Drafted email to ${d.lead_email}.`,
+            });
           });
         }
-        if (newLogs.length > 1) {
-          setLogs(newLogs);
-        } else {
-          setLogs(prev => {
-            const liveLogs = prev.filter(log => !log.startsWith('[SYSTEM] Hive Mind Synced.'));
-            return liveLogs.length ? liveLogs : newLogs;
-          });
-        }
+
+        const findSignal = (agent: string) => apiFeed.find(item => item.agent === agent && !item.isError && item.message);
+        const latestIssue = apiFeed.find(item => item.isError);
+        setBriefing({
+          opportunity: shorten(findSignal('hustler')?.companyMove || findSignal('hustler')?.message || '', emptyBriefing.opportunity),
+          lead: shorten(findSignal('closer')?.companyMove || findSignal('closer')?.message || '', emptyBriefing.lead),
+          content: shorten(findSignal('scientist')?.companyMove || findSignal('scientist')?.message || findSignal('scout')?.companyMove || findSignal('scout')?.message || '', emptyBriefing.content),
+          system: shorten(findSignal('engineer')?.companyMove || findSignal('engineer')?.message || '', emptyBriefing.system),
+          issue: shorten(latestIssue?.message || '', emptyBriefing.issue),
+        });
+
+        setFeedItems(prev => {
+          const localItems = prev.filter(item => item.local);
+          return [...apiFeed, ...localItems].slice(0, 90);
+        });
 
       } catch (err) {
         console.error("Failed to fetch brain stats", err);
@@ -222,6 +399,18 @@ function EpoxyBrainContent() {
     return sphere;
   };
 
+  const filteredFeedItems = activeFeedAgent === 'all'
+    ? feedItems
+    : feedItems.filter(item => item.agent === activeFeedAgent);
+
+  const briefingCards = [
+    { label: 'OPPORTUNITY', value: briefing.opportunity, icon: Lightbulb, color: 'text-blue-300', border: 'hover:border-blue-400/50' },
+    { label: 'LEAD TARGET', value: briefing.lead, icon: Target, color: 'text-red-300', border: 'hover:border-red-400/50' },
+    { label: 'CONTENT TEST', value: briefing.content, icon: Activity, color: 'text-amber-300', border: 'hover:border-amber-400/50' },
+    { label: 'SYSTEM MOVE', value: briefing.system, icon: Wrench, color: 'text-cyan-300', border: 'hover:border-cyan-400/50' },
+    { label: 'WATCH ITEM', value: briefing.issue, icon: AlertTriangle, color: briefing.issue === emptyBriefing.issue ? 'text-emerald-300' : 'text-orange-300', border: 'hover:border-orange-400/50' },
+  ];
+
   return (
     <div className="relative w-full h-[calc(100vh-64px)] bg-[#050505] overflow-hidden flex">
       {/* 3D Force Graph Background */}
@@ -262,7 +451,7 @@ function EpoxyBrainContent() {
         </div>
 
         {/* Bottom HUD Area */}
-        <div className="mt-auto flex w-full justify-between items-end pb-8 px-4 pointer-events-auto pr-[340px]">
+        <div className="mt-auto flex w-full justify-between items-end pb-8 px-4 pointer-events-auto pr-[400px] xl:pr-[440px]">
           
           {/* Left: Voice Orb */}
           <div className="flex flex-col items-center w-64">
@@ -286,7 +475,7 @@ function EpoxyBrainContent() {
           </div>
 
           {/* Center: Update Dashboard */}
-          <div className="flex-1 max-w-2xl bg-black/60 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-6 shadow-[0_0_40px_rgba(0,255,255,0.05)] relative overflow-hidden">
+          <div className="flex-1 max-w-4xl bg-black/60 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-6 shadow-[0_0_40px_rgba(0,255,255,0.05)] relative overflow-hidden">
             {/* Ambient background glow in the dashboard */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-cyan-500/10 blur-[50px] rounded-full pointer-events-none"></div>
             
@@ -309,6 +498,27 @@ function EpoxyBrainContent() {
                  <p className="text-white font-bold font-mono">{activeAgents}</p>
                </div>
             </div>
+
+            <div className="relative z-10 mt-5 border-t border-white/10 pt-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <h3 className="text-white font-mono text-sm tracking-widest font-bold">TODAY'S BRIEFING</h3>
+                <span className="text-[10px] text-cyan-300/70 font-mono uppercase tracking-wider">{feedItems[2]?.time || 'now'}</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                {briefingCards.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className={`bg-white/5 rounded-lg p-3 border border-white/10 transition-colors min-h-[112px] ${item.border}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon className={`w-3.5 h-3.5 ${item.color}`} />
+                        <p className="text-[9px] text-white/45 font-mono tracking-wider">{item.label}</p>
+                      </div>
+                      <p className="text-white/80 text-[11px] leading-snug">{item.value}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Right spacer to keep it centered (matches orb width) */}
@@ -317,7 +527,7 @@ function EpoxyBrainContent() {
       </div>
 
       {/* Right Side Panel (Logs & Stats) */}
-      <div className="absolute right-0 top-0 h-full w-80 bg-black/60 backdrop-blur-xl border-l border-white/5 p-6 pointer-events-auto flex flex-col pb-24">
+      <div className="absolute right-0 top-0 h-full w-[380px] xl:w-[420px] bg-black/60 backdrop-blur-xl border-l border-white/5 p-6 pointer-events-auto flex flex-col pb-24">
         
         {/* Synapse Count (Moved to top) */}
         <div>
@@ -336,11 +546,44 @@ function EpoxyBrainContent() {
           <Activity className="w-4 h-4 text-cyan-400" />
           SWARM FEED
         </h3>
+
+        <div className="grid grid-cols-4 gap-1.5 mb-4">
+          {feedTabs.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveFeedAgent(tab)}
+              className={`h-8 rounded-md border px-2 text-[10px] font-mono uppercase tracking-wide transition-colors ${
+                activeFeedAgent === tab
+                  ? 'border-cyan-400/60 bg-cyan-400/15 text-cyan-200'
+                  : 'border-white/10 bg-white/5 text-white/45 hover:border-white/20 hover:text-white/70'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
         
-        <div className="flex-1 overflow-y-auto space-y-3 font-mono text-xs pr-2 pb-10">
-          {logs.map((log, i) => (
-            <div key={i} className="text-gray-400 border-l-2 border-cyan-500/30 pl-3 py-1 bg-white/5 rounded-r">
-              {log}
+        <div className="flex-1 overflow-y-auto space-y-3 pr-2 pb-10">
+          {filteredFeedItems.map((item) => (
+            <div key={item.id} className={`bg-white/[0.045] border border-white/10 border-l-2 rounded-r-lg p-3 ${getAgentAccent(item.agent)}`}>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-mono tracking-wider uppercase truncate">{item.label}</p>
+                  <p className="text-[10px] text-white/35 font-mono">{item.time}</p>
+                </div>
+                <span className={`shrink-0 rounded border px-2 py-1 text-[9px] font-mono uppercase ${
+                  item.isError ? 'border-orange-400/40 text-orange-300 bg-orange-400/10' : 'border-white/10 text-white/45 bg-black/30'
+                }`}>
+                  {item.source}
+                </span>
+              </div>
+              <p className="text-white/68 text-xs leading-relaxed">{item.message}</p>
+              {item.companyMove && (
+                <div className="mt-3 border-t border-white/10 pt-2">
+                  <p className="text-[9px] text-cyan-300/70 font-mono uppercase tracking-wider mb-1">Company Move</p>
+                  <p className="text-white/80 text-xs leading-relaxed">{item.companyMove}</p>
+                </div>
+              )}
             </div>
           ))}
         </div>
