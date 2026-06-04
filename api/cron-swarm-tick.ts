@@ -25,6 +25,20 @@ const agents = [
   },
 ];
 
+function getHeader(req: VercelRequest, name: string) {
+  const value = req.headers[name.toLowerCase()];
+  return Array.isArray(value) ? value[0] || '' : value || '';
+}
+
+function isAuthorizedCron(req: VercelRequest) {
+  const authHeader = getHeader(req, 'authorization');
+  const userAgent = getHeader(req, 'user-agent');
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) return true;
+  return userAgent.includes('vercel-cron/1.0');
+}
+
 async function launchRedditAiIntelScrape() {
   const apifyToken = process.env.APIFY_API_TOKEN;
   const actorId = process.env.APIFY_REDDIT_ACTOR_ID;
@@ -80,8 +94,7 @@ async function launchRedditAiIntelScrape() {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const authHeader = req.headers.authorization;
-  if (process.env.NODE_ENV === 'production' && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (process.env.NODE_ENV === 'production' && !isAuthorizedCron(req)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -97,6 +110,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   try {
+    const fortyFiveMinutesAgo = new Date(Date.now() - 45 * 60 * 1000).toISOString();
+    const { data: recentTick } = await supabase
+      .from('swarm_events')
+      .select('id, created_at')
+      .eq('agent_id', 'operator')
+      .eq('event_type', 'tick')
+      .gte('created_at', fortyFiveMinutesAgo)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (recentTick?.length) {
+      return res.status(200).json({
+        success: true,
+        skipped: true,
+        reason: 'Swarm already woke up in the last 45 minutes.',
+        lastTick: recentTick[0].created_at,
+      });
+    }
+
     const { data: recentMemories } = await supabase
       .from('brain_synapses')
       .select('agent_source, content, metadata, created_at')
