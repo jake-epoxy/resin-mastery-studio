@@ -115,13 +115,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   try {
-    const fortyFiveMinutesAgo = new Date(Date.now() - 45 * 60 * 1000).toISOString();
+    const cooldownMinutes = 10;
+    const cooldownStartedAt = new Date(Date.now() - cooldownMinutes * 60 * 1000).toISOString();
     const { data: recentTick } = await supabase
       .from('swarm_events')
       .select('id, created_at')
       .eq('agent_id', 'operator')
       .eq('event_type', 'tick_completed')
-      .gte('created_at', fortyFiveMinutesAgo)
+      .gte('created_at', cooldownStartedAt)
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -129,7 +130,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         success: true,
         skipped: true,
-        reason: 'Swarm already completed a wakeup in the last 45 minutes.',
+        reason: `Swarm already completed a wakeup in the last ${cooldownMinutes} minutes.`,
         lastTick: recentTick[0].created_at,
       });
     }
