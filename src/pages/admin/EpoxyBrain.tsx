@@ -14,6 +14,14 @@ const hiveAgents = [
   { id: 'engineer', nodeId: 'agent_engineer', group: 8, name: 'The Engineer (Code)' },
 ];
 
+function formatFeedTime(value?: string) {
+  if (!value) return 'now';
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(value));
+}
+
 function EpoxyBrainContent() {
   const [graphData, setGraphData] = useState<{nodes: any[], links: any[]}>({ nodes: [], links: [] });
   const [logs, setLogs] = useState([
@@ -23,6 +31,7 @@ function EpoxyBrainContent() {
   const [latestSynapse, setLatestSynapse] = useState('Waiting for memory');
   const [activeAgents, setActiveAgents] = useState(0);
   const graphRef = useRef<any>();
+  const feedRef = useRef<HTMLDivElement>(null);
 
   // ElevenLabs Conversational AI Hook
   const conversation = useConversation({
@@ -45,6 +54,12 @@ function EpoxyBrainContent() {
   });
 
   const isListening = conversation.status === 'connected';
+
+  useEffect(() => {
+    if (feedRef.current) {
+      feedRef.current.scrollTop = 0;
+    }
+  }, [logs]);
 
   const toggleConversation = async () => {
     if (isListening) {
@@ -113,19 +128,19 @@ function EpoxyBrainContent() {
         const newLogs = ["[SYSTEM] Hive Mind Synced.", `[SYSTEM] ${hiveAgents.length} hive agents online.`];
         if (data.swarmEvents?.length) {
           data.swarmEvents.forEach((event: any) => {
-            newLogs.push(`[${(event.agent_id || 'AGENT').toUpperCase()}] ${event.message}`);
+            newLogs.push(`[${formatFeedTime(event.created_at)}] [${(event.agent_id || 'AGENT').toUpperCase()}] ${event.message}`);
           });
         }
 
         if (data.commands?.length) {
           data.commands.forEach((command: any) => {
-            newLogs.push(`[PHIL -> ${(command.agent_id || 'AGENT').toUpperCase()}] ${command.command_text} (${command.status})`);
+            newLogs.push(`[${formatFeedTime(command.created_at)}] [PHIL -> ${(command.agent_id || 'AGENT').toUpperCase()}] ${command.command_text} (${command.status})`);
           });
         }
 
         if (data.drafts) {
           data.drafts.forEach((d: any) => {
-            newLogs.push(`[${d.agent_id || 'AGENT'}] Drafted email to ${d.lead_email} (${d.status})`);
+            newLogs.push(`[${formatFeedTime(d.created_at)}] [${d.agent_id || 'AGENT'}] Drafted email to ${d.lead_email} (${d.status})`);
           });
         }
         if (newLogs.length > 1) {
@@ -329,7 +344,7 @@ function EpoxyBrainContent() {
           SWARM FEED
         </h3>
         
-        <div className="flex-1 overflow-y-auto space-y-3 font-mono text-xs pr-2 pb-10">
+        <div ref={feedRef} className="flex-1 overflow-y-auto space-y-3 font-mono text-xs pr-2 pb-10">
           {logs.map((log, i) => (
             <div key={i} className="text-gray-400 border-l-2 border-cyan-500/30 pl-3 py-1 bg-white/5 rounded-r">
               {log}
