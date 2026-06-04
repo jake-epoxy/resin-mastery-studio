@@ -430,7 +430,7 @@ function EpoxyBrainContent() {
   return (
     <div className="relative w-full h-[calc(100vh-64px)] bg-[#050505] overflow-hidden flex">
       {/* 3D Force Graph Background */}
-      <div className="absolute left-0 right-0 lg:right-[380px] xl:right-[420px] top-0 bottom-[310px] z-0">
+      <div className="absolute left-0 right-0 lg:right-[380px] xl:right-[420px] top-0 bottom-0 z-0">
         <ForceGraph3D
           ref={graphRef}
           graphData={graphData}
@@ -450,10 +450,10 @@ function EpoxyBrainContent() {
       </div>
 
       {/* Futuristic Overlay UI */}
-      <div className="relative z-10 w-full h-full flex flex-col pointer-events-none p-6">
+      <div className="relative z-10 w-full h-full pointer-events-none p-6 pr-[400px] xl:pr-[440px]">
         
-        {/* Header */}
-        <div className="flex justify-between items-start">
+        {/* Upper-left command stack */}
+        <div className="flex flex-col items-start gap-4 w-[430px] max-w-full pointer-events-auto">
           <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md border border-white/10 p-4 rounded-xl pointer-events-auto">
             <BrainCircuit className="w-8 h-8 text-cyan-400" />
             <div>
@@ -464,34 +464,9 @@ function EpoxyBrainContent() {
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Bottom HUD Area */}
-        <div className="mt-auto flex w-full justify-between items-end pb-5 px-4 pointer-events-auto pr-[400px] xl:pr-[440px]">
-          
-          {/* Left: Voice Orb */}
-          <div className="flex flex-col items-center w-64">
-            <div className="relative group cursor-pointer" onClick={toggleConversation}>
-              {/* Pulsing rings */}
-              {isListening && (
-                <>
-                  <div className="absolute inset-0 bg-cyan-500 rounded-full blur-xl opacity-50 animate-ping"></div>
-                  <div className="absolute inset-0 bg-purple-500 rounded-full blur-2xl opacity-30 animate-pulse"></div>
-                </>
-              )}
-              
-              {/* Core Orb */}
-              <div className={`relative w-24 h-24 rounded-full border border-white/20 flex items-center justify-center transition-all duration-500 shadow-[0_0_50px_rgba(0,255,255,0.2)] ${isListening ? 'bg-gradient-to-br from-cyan-900 to-black scale-110' : 'bg-black/80 backdrop-blur-xl'}`}>
-                {isListening ? <Mic className="w-10 h-10 text-cyan-400" /> : <MicOff className="w-8 h-8 text-gray-500" />}
-              </div>
-            </div>
-            <p className="mt-6 font-mono text-sm tracking-widest text-white/50 text-center">
-              {isListening ? 'LISTENING...' : 'WAKE BRAIN'}
-            </p>
-          </div>
-
-          {/* Center: Update Dashboard */}
-          <div className="flex-1 max-w-4xl bg-black/55 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-4 shadow-[0_0_40px_rgba(0,255,255,0.05)] relative overflow-hidden">
+          {/* Command Dashboard */}
+          <div className="w-full bg-black/55 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-4 shadow-[0_0_40px_rgba(0,255,255,0.05)] relative overflow-hidden">
             {/* Ambient background glow in the dashboard */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-cyan-500/10 blur-[50px] rounded-full pointer-events-none"></div>
             
@@ -517,28 +492,46 @@ function EpoxyBrainContent() {
 
             <div className="relative z-10 mt-4 border-t border-white/10 pt-3">
               <div className="flex items-center justify-between gap-3 mb-2">
-                <h3 className="text-white font-mono text-sm tracking-widest font-bold">TODAY'S BRIEFING</h3>
+                <h3 className="text-white font-mono text-xs tracking-widest font-bold">TODAY'S BRIEFING</h3>
                 <span className="text-[10px] text-cyan-300/70 font-mono uppercase tracking-wider">{feedItems[2]?.time || 'now'}</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <div className="space-y-2">
                 {briefingCards.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <div key={item.label} className={`bg-white/5 rounded-lg p-2.5 border border-white/10 transition-colors min-h-[96px] ${item.border}`}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Icon className={`w-3.5 h-3.5 ${item.color}`} />
+                    <div key={item.label} className={`flex items-start gap-2 bg-white/5 rounded-lg p-2 border border-white/10 transition-colors ${item.border}`}>
+                      <Icon className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${item.color}`} />
+                      <div className="min-w-0">
                         <p className="text-[9px] text-white/45 font-mono tracking-wider">{item.label}</p>
+                        <p className="text-white/80 text-[11px] leading-snug line-clamp-2">{item.value}</p>
                       </div>
-                      <p className="text-white/80 text-[11px] leading-snug line-clamp-4">{item.value}</p>
                     </div>
                   );
                 })}
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Right spacer to keep it centered (matches orb width) */}
-          <div className="w-16"></div>
+        {/* Voice Orb */}
+        <div className="absolute left-10 bottom-10 flex flex-col items-center w-48 pointer-events-auto">
+          <div className="relative group cursor-pointer" onClick={toggleConversation}>
+            {/* Pulsing rings */}
+            {isListening && (
+              <>
+                <div className="absolute inset-0 bg-cyan-500 rounded-full blur-xl opacity-50 animate-ping"></div>
+                <div className="absolute inset-0 bg-purple-500 rounded-full blur-2xl opacity-30 animate-pulse"></div>
+              </>
+            )}
+            
+            {/* Core Orb */}
+            <div className={`relative w-24 h-24 rounded-full border border-white/20 flex items-center justify-center transition-all duration-500 shadow-[0_0_50px_rgba(0,255,255,0.2)] ${isListening ? 'bg-gradient-to-br from-cyan-900 to-black scale-110' : 'bg-black/80 backdrop-blur-xl'}`}>
+              {isListening ? <Mic className="w-10 h-10 text-cyan-400" /> : <MicOff className="w-8 h-8 text-gray-500" />}
+            </div>
+          </div>
+          <p className="mt-6 font-mono text-sm tracking-widest text-white/50 text-center">
+            {isListening ? 'LISTENING...' : 'WAKE BRAIN'}
+          </p>
         </div>
       </div>
 
