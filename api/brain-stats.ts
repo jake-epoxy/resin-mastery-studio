@@ -16,7 +16,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
   try {
-    // 1. Fetch Synapses
+    // 1. Count every memory, then fetch only the latest nodes for the 3D graph.
+    const { count: synapseCount, error: countErr } = await supabaseAdmin
+      .from('brain_synapses')
+      .select('*', { count: 'exact', head: true });
+
+    if (countErr) throw countErr;
+
     const { data: synapses, error: sErr } = await supabaseAdmin
       .from('brain_synapses')
       .select('id, agent_source, metadata, created_at')
@@ -58,6 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       synapses: synapses || [],
+      synapseCount: synapseCount || 0,
       drafts: dErr ? [] : drafts || [],
       swarmEvents: eErr ? [] : swarmEvents || [],
       commands: cErr ? [] : commands || []

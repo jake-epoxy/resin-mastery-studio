@@ -103,6 +103,7 @@ function EpoxyBrainContent() {
   const [activeFeedAgent, setActiveFeedAgent] = useState<(typeof feedTabs)[number]>('all');
   const [briefing, setBriefing] = useState<Briefing>(emptyBriefing);
   const [synapseCount, setSynapseCount] = useState(0);
+  const [visibleSynapseCount, setVisibleSynapseCount] = useState(0);
   const [latestSynapse, setLatestSynapse] = useState('Waiting for memory');
   const [activeAgents, setActiveAgents] = useState(0);
   const graphRef = useRef<any>();
@@ -225,7 +226,8 @@ function EpoxyBrainContent() {
         const links: any[] = hiveAgents.map(agent => ({ source: agent.nodeId, target: 'core' }));
 
         if (data.synapses) {
-          setSynapseCount(data.synapses.length);
+          setVisibleSynapseCount(data.synapses.length);
+          setSynapseCount(data.synapseCount ?? data.synapses.length);
           setLatestSynapse(data.synapses[0]?.metadata?.source || data.synapses[0]?.agent_source || 'Brain memory');
           data.synapses.forEach((syn: any) => {
              const synId = `syn_${syn.id}`;
@@ -332,6 +334,20 @@ function EpoxyBrainContent() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (!graphData.nodes.length || !graphRef.current) return;
+
+    const timer = window.setTimeout(() => {
+      graphRef.current?.cameraPosition(
+        { x: 0, y: 40, z: 170 },
+        { x: 0, y: 0, z: 0 },
+        900
+      );
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [graphData.nodes.length]);
+
   const handleNodeClick = (node: any) => {
     if (graphRef.current) {
       // Aim at node from outside it
@@ -414,7 +430,7 @@ function EpoxyBrainContent() {
   return (
     <div className="relative w-full h-[calc(100vh-64px)] bg-[#050505] overflow-hidden flex">
       {/* 3D Force Graph Background */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute left-0 right-0 lg:right-[380px] xl:right-[420px] top-0 bottom-[310px] z-0">
         <ForceGraph3D
           ref={graphRef}
           graphData={graphData}
@@ -451,7 +467,7 @@ function EpoxyBrainContent() {
         </div>
 
         {/* Bottom HUD Area */}
-        <div className="mt-auto flex w-full justify-between items-end pb-8 px-4 pointer-events-auto pr-[400px] xl:pr-[440px]">
+        <div className="mt-auto flex w-full justify-between items-end pb-5 px-4 pointer-events-auto pr-[400px] xl:pr-[440px]">
           
           {/* Left: Voice Orb */}
           <div className="flex flex-col items-center w-64">
@@ -475,32 +491,32 @@ function EpoxyBrainContent() {
           </div>
 
           {/* Center: Update Dashboard */}
-          <div className="flex-1 max-w-4xl bg-black/60 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-6 shadow-[0_0_40px_rgba(0,255,255,0.05)] relative overflow-hidden">
+          <div className="flex-1 max-w-4xl bg-black/55 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-4 shadow-[0_0_40px_rgba(0,255,255,0.05)] relative overflow-hidden">
             {/* Ambient background glow in the dashboard */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-cyan-500/10 blur-[50px] rounded-full pointer-events-none"></div>
             
-            <div className="flex items-center gap-3 mb-4 border-b border-white/10 pb-4 relative z-10">
+            <div className="flex items-center gap-3 mb-3 border-b border-white/10 pb-3 relative z-10">
               <Radar className="w-5 h-5 text-cyan-400 animate-[spin_4s_linear_infinite]" />
               <h2 className="text-white font-mono tracking-widest font-bold">COMMAND DASHBOARD</h2>
               <Code2 className="w-4 h-4 text-cyan-300" />
             </div>
-            <div className="grid grid-cols-3 gap-4 relative z-10">
-               <div className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-cyan-500/50 transition-colors">
+            <div className="grid grid-cols-3 gap-3 relative z-10">
+               <div className="bg-white/5 rounded-xl p-3 border border-white/10 hover:border-cyan-500/50 transition-colors">
                  <p className="text-cyan-400/70 text-[10px] font-mono tracking-wider mb-1">SYSTEM STATUS</p>
                  <p className="text-white font-bold font-mono">OPTIMAL</p>
                </div>
-               <div className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-purple-500/50 transition-colors">
+               <div className="bg-white/5 rounded-xl p-3 border border-white/10 hover:border-purple-500/50 transition-colors">
                  <p className="text-purple-400/70 text-[10px] font-mono tracking-wider mb-1">LATEST SYNAPSE</p>
                  <p className="text-white font-bold font-mono text-sm truncate">{latestSynapse}</p>
                </div>
-               <div className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-green-500/50 transition-colors">
+               <div className="bg-white/5 rounded-xl p-3 border border-white/10 hover:border-green-500/50 transition-colors">
                  <p className="text-green-400/70 text-[10px] font-mono tracking-wider mb-1">ACTIVE AGENTS</p>
                  <p className="text-white font-bold font-mono">{activeAgents}</p>
                </div>
             </div>
 
-            <div className="relative z-10 mt-5 border-t border-white/10 pt-4">
-              <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="relative z-10 mt-4 border-t border-white/10 pt-3">
+              <div className="flex items-center justify-between gap-3 mb-2">
                 <h3 className="text-white font-mono text-sm tracking-widest font-bold">TODAY'S BRIEFING</h3>
                 <span className="text-[10px] text-cyan-300/70 font-mono uppercase tracking-wider">{feedItems[2]?.time || 'now'}</span>
               </div>
@@ -508,12 +524,12 @@ function EpoxyBrainContent() {
                 {briefingCards.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <div key={item.label} className={`bg-white/5 rounded-lg p-3 border border-white/10 transition-colors min-h-[112px] ${item.border}`}>
+                    <div key={item.label} className={`bg-white/5 rounded-lg p-2.5 border border-white/10 transition-colors min-h-[96px] ${item.border}`}>
                       <div className="flex items-center gap-2 mb-2">
                         <Icon className={`w-3.5 h-3.5 ${item.color}`} />
                         <p className="text-[9px] text-white/45 font-mono tracking-wider">{item.label}</p>
                       </div>
-                      <p className="text-white/80 text-[11px] leading-snug">{item.value}</p>
+                      <p className="text-white/80 text-[11px] leading-snug line-clamp-4">{item.value}</p>
                     </div>
                   );
                 })}
@@ -537,7 +553,12 @@ function EpoxyBrainContent() {
           </h3>
           <div className="bg-white/5 rounded p-4 font-mono text-center mb-6 border border-white/10">
             <span className="text-3xl font-bold text-white">{synapseCount}</span>
-            <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Active Memories</p>
+            <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Total Memories</p>
+            {visibleSynapseCount > 0 && visibleSynapseCount < synapseCount && (
+              <p className="text-[10px] text-cyan-300/60 mt-2 uppercase tracking-wider">
+                Showing latest {visibleSynapseCount} nodes
+              </p>
+            )}
           </div>
         </div>
 
