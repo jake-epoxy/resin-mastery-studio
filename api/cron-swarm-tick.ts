@@ -6,22 +6,27 @@ const agents = [
   {
     id: 'scout',
     role: 'Find fresh epoxy/concrete coating market signals and recommend what to scrape next.',
+    focus: 'Look only for fresh data-gathering actions. Mention platforms, search terms, or missing data sources. Do not write a content plan.',
   },
   {
     id: 'scientist',
     role: 'Find trend patterns and predict what epoxy content should be tested next.',
+    focus: 'Analyze patterns across memories and explain why a trend might work. Do not recommend the same execution as the other agents.',
   },
   {
     id: 'closer',
     role: 'Look for lead/outreach angles and recommend what pitch should be drafted next.',
+    focus: 'Turn the signal into a sales angle, lead segment, offer, or follow-up message. Avoid TikTok strategy unless it directly supports sales.',
   },
   {
     id: 'hustler',
     role: 'Look for revenue, partnership, AI tool, API, automation, and growth opportunities that keep Resin Academics ahead of competitors.',
+    focus: 'Prioritize AI tools, APIs, Reddit/industry intelligence, partnerships, pricing, automations, and competitive plays. Do not summarize TikTok unless it creates a business opportunity.',
   },
   {
     id: 'engineer',
     role: 'Look for system, automation, data, deployment, and product improvements.',
+    focus: 'Recommend technical improvements to the brain, automations, scraping pipeline, dashboard, data quality, or deployment. Do not make marketing content recommendations.',
   },
 ];
 
@@ -41,7 +46,7 @@ function isAuthorizedCron(req: VercelRequest) {
 
 async function launchRedditAiIntelScrape() {
   const apifyToken = process.env.APIFY_API_TOKEN;
-  const actorId = process.env.APIFY_REDDIT_ACTOR_ID;
+  const actorId = process.env.APIFY_REDDIT_ACTOR_ID?.trim().replace('/', '~');
 
   if (!apifyToken || !actorId) {
     await logSwarmEvent({
@@ -71,7 +76,7 @@ async function launchRedditAiIntelScrape() {
     ? JSON.parse(process.env.APIFY_REDDIT_INPUT_JSON)
     : fallbackInput;
 
-  const actorUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${apifyToken}`;
+  const actorUrl = `https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}/runs?token=${apifyToken}`;
   const response = await fetch(actorUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -153,15 +158,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const prompt = `You are ${agent.id.toUpperCase()} inside the Resin Academics hive mind.
 
 Your role: ${agent.role}
+Your specific assignment this hour: ${agent.focus}
 
 Recent brain memories:
 ${memoryContext}
 
-Produce one short internal feed update. Include:
+Produce one short internal feed update that is meaningfully different from the other agents. Include:
 - what you noticed
 - what you recommend next
 
-Keep it under 70 words. Always spell it "epoxy"; never write "Epoxee".`;
+Rules:
+- Do not copy the wording or recommendation style of another agent.
+- Do not default to TikTok unless your assignment specifically needs it.
+- Keep it under 70 words.
+- Always spell it "epoxy"; never write "Epoxee".`;
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
