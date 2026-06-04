@@ -7,38 +7,40 @@ const agents = [
     id: 'scout',
     role: 'Find fresh epoxy/concrete coating market signals and recommend what to scrape next.',
     mission: 'Pick one fresh data source or search lane the hive should collect next.',
-    format: 'SCOUT SCAN | Source: <platform/source> | Query: <exact search term> | Why: <one concrete reason>',
+    format: 'SCOUT SCAN | Source: <platform/source> | Query: <exact search term> | Company Move: <how Resin Academics should use it>',
     forbidden: 'No campaigns, workshops, offers, product lines, customer preferences, or system improvements.',
   },
   {
     id: 'scientist',
     role: 'Find trend patterns and predict what epoxy content should be tested next.',
     mission: 'Turn one pattern into a testable hypothesis.',
-    format: 'SCIENCE TEST | Hypothesis: <cause/effect claim> | Test: <small experiment> | Metric: <what to measure>',
+    format: 'SCIENCE TEST | Signal: <pattern source> | Test: <small experiment> | Company Move: <how Resin Academics should use it>',
     forbidden: 'No sales copy, pricing, partnerships, dashboards, scraping instructions, or AI tool talk.',
   },
   {
     id: 'closer',
     role: 'Look for lead/outreach angles and recommend what pitch should be drafted next.',
     mission: 'Create one direct sales move from the available intelligence.',
-    format: 'CLOSER PLAY | Target: <lead type> | Hook: <one-line pitch> | Ask: <next action>',
+    format: 'CLOSER PLAY | Target: <lead type> | Hook: <one-line pitch> | Company Move: <next sales action>',
     forbidden: 'No trend summaries, content plans, dashboards, Reddit, or engineering ideas.',
   },
   {
     id: 'hustler',
     role: 'Look for revenue, partnership, AI tool, API, automation, and growth opportunities that keep Resin Academics ahead of competitors.',
     mission: 'Find one money-making or competitive advantage play outside generic social content.',
-    format: 'HUSTLER EDGE | Play: <business move> | Tool/Partner: <AI tool/API/company/source> | Upside: <money or speed advantage>',
+    format: 'HUSTLER EDGE | Source: <intel lane> | Play: <business move> | Company Move: <money or speed advantage for Resin Academics>',
     forbidden: 'No TikTok summaries, before/after content, DIY trend summaries, or generic marketing campaigns.',
   },
   {
     id: 'engineer',
     role: 'Look for system, automation, data, deployment, and product improvements.',
     mission: 'Create one technical ticket that would make the hive smarter or easier to use.',
-    format: 'ENGINEER TICKET | Build: <specific feature/fix> | File/API/Data: <where it belongs> | Result: <what improves>',
+    format: 'ENGINEER TICKET | Build: <specific feature/fix> | File/API/Data: <where it belongs> | Company Move: <what improves for Resin Academics>',
     forbidden: 'No marketing recommendations, sales ideas, product positioning, customer preference analysis, or content ideas.',
   },
 ];
+
+type Agent = typeof agents[number];
 
 function getHeader(req: VercelRequest, name: string) {
   const value = req.headers[name.toLowerCase()];
@@ -54,58 +56,205 @@ function isAuthorizedCron(req: VercelRequest) {
   return userAgent.includes('vercel-cron/1.0');
 }
 
-async function launchRedditAiIntelScrape() {
+function normalizeActorId(actorId?: string) {
+  return actorId?.trim().replace('/', '~') || '';
+}
+
+async function launchApifyResearch(input: {
+  agentId: string;
+  actorId: string;
+  actorInput: Record<string, unknown>;
+  channel: string;
+  label: string;
+  companyUse: string;
+}) {
   const apifyToken = process.env.APIFY_API_TOKEN;
-  const actorId = process.env.APIFY_REDDIT_ACTOR_ID?.trim().replace('/', '~');
+  const actorId = normalizeActorId(input.actorId);
 
   if (!apifyToken || !actorId) {
     await logSwarmEvent({
-      agentId: 'hustler',
+      agentId: input.agentId,
       eventType: 'intel',
-      message: 'AI intel scrape skipped. Add APIFY_REDDIT_ACTOR_ID in Vercel to enable Reddit trend gathering.',
-      metadata: { source: 'cron', channel: 'reddit' },
+      message: `${input.label} skipped. Missing Apify token or actor ID.`,
+      metadata: { source: 'cron', channel: input.channel },
     });
     return null;
   }
-
-  const fallbackInput = {
-    searchQueries: [
-      'new AI tools for agencies',
-      'best AI API tools',
-      'AI automation workflow tools',
-      'new OpenAI API use cases',
-      'AI tools for small business marketing',
-    ],
-    subreddits: ['ArtificialInteligence', 'OpenAI', 'SaaS', 'Entrepreneur', 'marketing'],
-    maxItems: 25,
-    sort: 'new',
-    time: 'week',
-  };
-
-  const actorInput = process.env.APIFY_REDDIT_INPUT_JSON
-    ? JSON.parse(process.env.APIFY_REDDIT_INPUT_JSON)
-    : fallbackInput;
 
   const actorUrl = `https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}/runs?token=${apifyToken}`;
   const response = await fetch(actorUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(actorInput),
+    body: JSON.stringify(input.actorInput),
   });
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(`Reddit AI intel scraper failed: ${data.error?.message || response.status}`);
+    throw new Error(`${input.label} failed: ${data.error?.message || response.status}`);
   }
 
+  const runId = data.data?.id || null;
   await logSwarmEvent({
-    agentId: 'hustler',
+    agentId: input.agentId,
     eventType: 'intel',
-    message: 'Launched Reddit AI-intel scrape for new tools, API trends, and competitive opportunities.',
-    metadata: { source: 'cron', channel: 'reddit', run_id: data.data?.id, actor_id: actorId },
+    message: `${input.label} launched. Company move: ${input.companyUse}`,
+    metadata: { source: 'cron', channel: input.channel, run_id: runId, actor_id: actorId },
   });
 
-  return data.data?.id || null;
+  return runId;
+}
+
+async function runCloserLeadScan() {
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  const location = process.env.RESIN_MARKET_LOCATION || 'El Paso, TX';
+
+  if (!apiKey) {
+    await logSwarmEvent({
+      agentId: 'closer',
+      eventType: 'intel',
+      message: 'Lead scan skipped. Add GOOGLE_PLACES_API_KEY in Vercel to enable Closer lead research.',
+      metadata: { source: 'cron', channel: 'google_places' },
+    });
+    return 'Lead scan skipped: missing Google Places key.';
+  }
+
+  const leadQueries = [
+    `auto detail shops in ${location}`,
+    `gyms in ${location}`,
+    `warehouses in ${location}`,
+  ];
+
+  const pickedQuery = leadQueries[Math.floor(Date.now() / 600000) % leadQueries.length];
+  const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+      'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.websiteUri',
+    },
+    body: JSON.stringify({
+      textQuery: pickedQuery,
+      maxResultCount: 5,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Closer lead scan failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const places = data.places || [];
+  const leadSummary = places
+    .map((place: any) => place.displayName?.text)
+    .filter(Boolean)
+    .slice(0, 3)
+    .join(', ') || 'No leads found';
+
+  const message = `Lead lane scanned: ${pickedQuery}. Company move: pitch high-traffic spaces that need durable, visual floors. Leads: ${leadSummary}.`;
+  await logSwarmEvent({
+    agentId: 'closer',
+    eventType: 'intel',
+    message,
+    metadata: { source: 'cron', channel: 'google_places', query: pickedQuery, leads: places },
+  });
+
+  await rememberInBrain({
+    agentSource: 'closer-lead-scan',
+    content: `[CLOSER LEAD SCAN] ${message}`,
+    metadata: { source: 'google_places', agent: 'closer', query: pickedQuery },
+  });
+
+  return message;
+}
+
+async function launchAgentResearch(agent: Agent) {
+  if (agent.id === 'scout') {
+    const runId = await launchApifyResearch({
+      agentId: 'scout',
+      actorId: 'apify~instagram-scraper',
+      actorInput: {
+        hashtags: ['epoxyfloors', 'garagefloorcoating', 'concretecoatings'],
+        resultsLimit: 8,
+        scrapePosts: true,
+        scrapeComments: false,
+      },
+      channel: 'instagram',
+      label: 'Scout market-signal Instagram scrape',
+      companyUse: 'find which epoxy visuals and keywords should feed the next scrape queue.',
+    });
+    return `Scout launched Instagram market scan${runId ? ` (${runId})` : ''}.`;
+  }
+
+  if (agent.id === 'scientist') {
+    const runId = await launchApifyResearch({
+      agentId: 'scientist',
+      actorId: 'clockworks~tiktok-scraper',
+      actorInput: {
+        hashtags: ['resinart', 'metallicepoxy', 'epoxytable'],
+        resultsPerPage: 8,
+        shouldDownloadVideos: false,
+      },
+      channel: 'tiktok',
+      label: 'Scientist experiment-signal TikTok scrape',
+      companyUse: 'turn viral formats into testable content experiments for Resin Academics.',
+    });
+    return `Scientist launched TikTok experiment scan${runId ? ` (${runId})` : ''}.`;
+  }
+
+  if (agent.id === 'closer') {
+    return runCloserLeadScan();
+  }
+
+  if (agent.id === 'hustler') {
+    const actorInput = process.env.APIFY_REDDIT_INPUT_JSON
+      ? JSON.parse(process.env.APIFY_REDDIT_INPUT_JSON)
+      : {
+          searchQueries: [
+            'new AI tools for agencies',
+            'AI automation workflow tools',
+            'best AI API tools small business',
+            'AI tools for contractors marketing',
+          ],
+          subreddits: ['ArtificialInteligence', 'OpenAI', 'SaaS', 'Entrepreneur', 'marketing'],
+          maxItems: 15,
+          sort: 'new',
+          time: 'week',
+        };
+    const runId = await launchApifyResearch({
+      agentId: 'hustler',
+      actorId: process.env.APIFY_REDDIT_ACTOR_ID || '',
+      actorInput,
+      channel: 'reddit',
+      label: 'Hustler AI/business Reddit scrape',
+      companyUse: 'find AI tools, APIs, pricing plays, and partnerships to bring into Resin Academics.',
+    });
+    return `Hustler launched AI/business Reddit scan${runId ? ` (${runId})` : ''}.`;
+  }
+
+  if (agent.id === 'engineer') {
+    const runId = await launchApifyResearch({
+      agentId: 'engineer',
+      actorId: process.env.APIFY_REDDIT_ACTOR_ID || '',
+      actorInput: {
+        searchQueries: [
+          'Supabase pgvector RAG production',
+          'Vercel cron monitoring serverless',
+          'Apify webhook automation Node',
+          'OpenAI API cost controls embeddings',
+        ],
+        subreddits: ['webdev', 'OpenAI', 'supabase', 'node', 'SaaS'],
+        maxItems: 12,
+        sort: 'new',
+        time: 'week',
+      },
+      channel: 'reddit',
+      label: 'Engineer system-intel Reddit scrape',
+      companyUse: 'find implementation ideas that make the brain cheaper, safer, and more reliable.',
+    });
+    return `Engineer launched system-intel Reddit scan${runId ? ` (${runId})` : ''}.`;
+  }
+
+  return 'No research lane configured.';
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -163,17 +312,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     const outputs: Array<{ agent: string; message: string }> = [];
-    let redditRunId: string | null = null;
+    const researchRuns: Array<{ agent: string; summary: string }> = [];
 
     for (const agent of agents) {
       const previousOutputs = outputs.length
         ? outputs.map((output) => `[${output.agent.toUpperCase()}] ${output.message}`).join('\n')
         : 'None yet.';
 
+      let researchSummary = 'Research lane not launched.';
+      try {
+        researchSummary = await launchAgentResearch(agent);
+      } catch (error: any) {
+        researchSummary = `${agent.id} research lane failed: ${error.message}`;
+        await logSwarmEvent({
+          agentId: agent.id,
+          eventType: 'intel_error',
+          message: researchSummary,
+          metadata: { source: 'cron' },
+        });
+      }
+      researchRuns.push({ agent: agent.id, summary: researchSummary });
+
       const prompt = `You are ${agent.id.toUpperCase()} inside the Resin Academics hive mind.
 
 Your role: ${agent.role}
 Your only mission this hour: ${agent.mission}
+Your agent-specific research lane this hour:
+${researchSummary}
 
 Recent brain memories:
 ${memoryContext}
@@ -189,6 +354,7 @@ Rules:
 - Do not use markdown.
 - Do not start with "I noticed", "I've noticed", "I've observed", "Internal Feed Update", or "To capitalize on this".
 - Forbidden for this agent: ${agent.forbidden}
+- Base your answer on your own research lane and your own role. Do not use another agent's research lane.
 - Do not default to TikTok unless your assignment specifically needs it.
 - Keep it under 70 words.
 - Always spell it "epoxy"; never write "Epoxee".`;
@@ -219,25 +385,14 @@ Rules:
       });
     }
 
-    try {
-      redditRunId = await launchRedditAiIntelScrape();
-    } catch (error: any) {
-      await logSwarmEvent({
-        agentId: 'hustler',
-        eventType: 'intel_error',
-        message: `Reddit AI-intel scrape failed: ${error.message}`,
-        metadata: { source: 'cron', channel: 'reddit' },
-      });
-    }
-
     await logSwarmEvent({
       agentId: 'operator',
       eventType: 'tick_completed',
       message: 'Hourly swarm tick completed. Agent thoughts were saved into the brain.',
-      metadata: { source: 'cron', output_count: outputs.length, reddit_run_id: redditRunId },
+      metadata: { source: 'cron', output_count: outputs.length, research_runs: researchRuns },
     });
 
-    return res.status(200).json({ success: true, outputs, redditRunId });
+    return res.status(200).json({ success: true, outputs, researchRuns });
   } catch (error: any) {
     console.error('Swarm tick error:', error);
     try {

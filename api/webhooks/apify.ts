@@ -19,6 +19,88 @@ function getResourceValue(apifyEvent: any, key: string): string {
   return apifyEvent?.resource?.[key] || apifyEvent?.eventData?.[key] || '';
 }
 
+async function getAgentForApifyRun(runId: string) {
+  if (!runId || !supabaseAdmin) return null;
+
+  const { data } = await supabaseAdmin
+    .from('swarm_events')
+    .select('agent_id, metadata')
+    .contains('metadata', { run_id: runId })
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  return data?.[0]?.agent_id || null;
+}
+
+function buildAgentInsightPrompt(input: {
+  agentId: string;
+  platform: string;
+  caption: string;
+  likes: number;
+  url: string;
+  subreddit?: string;
+}) {
+  const sourceLine = `Source: ${input.platform}${input.subreddit ? ` / ${input.subreddit}` : ''}`;
+
+  if (input.agentId === 'scout') {
+    return `You are Scout for Resin Academics.
+${sourceLine}
+Post: "${input.caption.substring(0, 900)}"
+Engagement: ${input.likes}
+URL: ${input.url}
+
+Extract one data-gathering signal in 2 sentences:
+1. What search lane, keyword, creator type, or platform should the hive collect next?
+2. How should Resin Academics use that to improve its market intelligence?`;
+  }
+
+  if (input.agentId === 'scientist') {
+    return `You are Scientist for Resin Academics.
+${sourceLine}
+Post: "${input.caption.substring(0, 900)}"
+Engagement: ${input.likes}
+URL: ${input.url}
+
+Extract one testable experiment in 2 sentences:
+1. What trend or behavior pattern is visible?
+2. What small test should Resin Academics run, and what metric should be measured?`;
+  }
+
+  if (input.agentId === 'closer') {
+    return `You are Closer for Resin Academics.
+${sourceLine}
+Post: "${input.caption.substring(0, 900)}"
+Engagement: ${input.likes}
+URL: ${input.url}
+
+Extract one sales angle in 2 sentences:
+1. What lead type or pain point does this reveal?
+2. How should Resin Academics turn it into an offer, pitch, or follow-up?`;
+  }
+
+  if (input.agentId === 'engineer') {
+    return `You are Engineer for Resin Academics.
+${sourceLine}
+Post: "${input.caption.substring(0, 900)}"
+Engagement: ${input.likes}
+URL: ${input.url}
+
+Extract one technical implementation idea in 2 sentences:
+1. What system, API, automation, data, or reliability idea matters here?
+2. How should Resin Academics build it into the brain or product?`;
+  }
+
+  return `You are Hustler for Resin Academics.
+${sourceLine}
+Post: "${input.caption.substring(0, 900)}"
+Engagement: ${input.likes}
+URL: ${input.url}
+
+Extract one business advantage in 2 sentences:
+1. What AI tool, API, automation, workflow, market pain, partner, or pricing play is being discussed?
+2. How should Resin Academics use it to grow revenue or beat competitors?`;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
   if (!hasApifySecret(req)) {
@@ -35,6 +117,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const defaultDatasetId = getResourceValue(apifyEvent, 'defaultDatasetId');
     const actorId = getResourceValue(apifyEvent, 'actId');
+    const actorRunId = getResourceValue(apifyEvent, 'id') || getResourceValue(apifyEvent, 'actorRunId');
     if (!defaultDatasetId) {
       return res.status(400).json({ error: 'No dataset ID found' });
     }
@@ -62,6 +145,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 2. Detect platform from the data structure or actor ID
     const isTikTok = actorId.includes('tiktok') || dataset[0]?.diggCount !== undefined || dataset[0]?.videoMeta !== undefined;
     const isReddit = actorId.includes('reddit') || dataset[0]?.subreddit || dataset[0]?.numComments !== undefined || dataset[0]?.upVotes !== undefined;
+    const mappedAgentId = await getAgentForApifyRun(actorRunId);
+    const fallbackAgentId = isReddit ? 'hustler' : isTikTok ? 'scientist' : 'scout';
+    const agentId = mappedAgentId || fallbackAgentId;
 
     // 3. Process each post and turn it into a Vector Memory
     let embeddedCount = 0;
@@ -95,27 +181,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const likeThreshold = isReddit ? 5 : isTikTok ? 500 : 100;
       if (likes < likeThreshold || !caption) continue;
 
-      // Have the AI extract the marketing insight
-      const insightPrompt = isReddit
-        ? `Analyze this Reddit post as competitive AI/business intelligence for Resin Academics.
-Post: "${caption.substring(0, 900)}"
-Score/upvotes: ${likes}
-Subreddit/source: ${post.subreddit || post.communityName || 'unknown'}
-URL: ${url}
-
-Extract the useful signal in 2-3 sentences. Focus on:
-1. What new AI tool, API, automation, workflow, or market pain is being discussed?
-2. Why it matters for an epoxy/concrete coatings growth company.
-3. What Hustler or Engineer should test next to stay ahead of competitors.`
-        : `Analyze this viral ${platform.toUpperCase()} post in the epoxy/concrete coatings space.
-Caption: "${caption.substring(0, 500)}"
-Likes: ${likes}
-Platform: ${platform}
-
-Extract the core marketing hook, trend, or lesson from this post in 2-3 sentences. Focus on:
-1. What specific content format made this go viral (e.g. satisfying pour, before/after, time-lapse)?
-2. What emotional trigger does it use (e.g. transformation, ASMR, humor)?
-3. How can an epoxy contractor replicate this exact style?`;
+      // Have the AI extract the agent-specific insight
+      const insightPrompt = buildAgentInsightPrompt({
+        agentId,
+        platform,
+        caption,
+        likes,
+        url,
+        subreddit: post.subreddit || post.communityName,
+      });
 
       const insightRes = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -134,10 +208,18 @@ Extract the core marketing hook, trend, or lesson from this post in 2-3 sentence
 
       // Inject the new memory into the pgvector brain
       await supabaseAdmin.from('brain_synapses').insert([{
-        agent_source: isReddit ? 'hustler-ai-intel-agent' : 'apify-trend-agent',
-        content: `${isReddit ? 'AI INTEL' : 'VIRAL'} ${platform.toUpperCase()} TREND: ${coreInsight} (Source: ${url}, ${likes} ${isReddit ? 'upvotes' : 'likes'})`,
+        agent_source: `${agentId}-scrape-agent`,
+        content: `[${agentId.toUpperCase()} ${platform.toUpperCase()} INTEL] ${coreInsight} (Source: ${url}, ${likes} ${isReddit ? 'upvotes' : 'likes'})`,
         embedding: embeddingVector,
-        metadata: { source: platform, url, likes, subreddit: post.subreddit || post.communityName, scraped_at: new Date().toISOString() }
+        metadata: {
+          source: platform,
+          agent: agentId,
+          url,
+          likes,
+          subreddit: post.subreddit || post.communityName,
+          actor_run_id: actorRunId,
+          scraped_at: new Date().toISOString(),
+        }
       }]);
 
       embeddedCount++;
@@ -146,7 +228,8 @@ Extract the core marketing hook, trend, or lesson from this post in 2-3 sentence
     return res.status(200).json({ 
       success: true, 
       platform: isReddit ? 'reddit' : isTikTok ? 'tiktok' : 'instagram',
-      message: `Brain Expanded. Injected ${embeddedCount} new neural pathways from ${isReddit ? 'Reddit AI intel' : isTikTok ? 'TikTok' : 'Instagram'}.`
+      agent: agentId,
+      message: `Brain Expanded. Injected ${embeddedCount} ${agentId} neural pathways from ${isReddit ? 'Reddit intel' : isTikTok ? 'TikTok' : 'Instagram'}.`
     });
 
   } catch (error: any) {
