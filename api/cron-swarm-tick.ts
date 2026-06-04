@@ -115,7 +115,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('swarm_events')
       .select('id, created_at')
       .eq('agent_id', 'operator')
-      .eq('event_type', 'tick')
+      .eq('event_type', 'tick_completed')
       .gte('created_at', fortyFiveMinutesAgo)
       .order('created_at', { ascending: false })
       .limit(1);
@@ -124,7 +124,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         success: true,
         skipped: true,
-        reason: 'Swarm already woke up in the last 45 minutes.',
+        reason: 'Swarm already completed a wakeup in the last 45 minutes.',
         lastTick: recentTick[0].created_at,
       });
     }
@@ -197,9 +197,26 @@ Keep it under 70 words. Always spell it "epoxy"; never write "Epoxee".`;
       });
     }
 
+    await logSwarmEvent({
+      agentId: 'operator',
+      eventType: 'tick_completed',
+      message: 'Hourly swarm tick completed. Agent thoughts were saved into the brain.',
+      metadata: { source: 'cron', output_count: outputs.length, reddit_run_id: redditRunId },
+    });
+
     return res.status(200).json({ success: true, outputs, redditRunId });
   } catch (error: any) {
     console.error('Swarm tick error:', error);
+    try {
+      await logSwarmEvent({
+        agentId: 'operator',
+        eventType: 'tick_error',
+        message: `Hourly swarm tick failed: ${error.message}`,
+        metadata: { source: 'cron' },
+      });
+    } catch (logError) {
+      console.error('Failed to log swarm tick error:', logError);
+    }
     return res.status(500).json({ error: error.message });
   }
 }
