@@ -31,7 +31,6 @@ function EpoxyBrainContent() {
   const [latestSynapse, setLatestSynapse] = useState('Waiting for memory');
   const [activeAgents, setActiveAgents] = useState(0);
   const graphRef = useRef<any>();
-  const feedRef = useRef<HTMLDivElement>(null);
 
   // ElevenLabs Conversational AI Hook
   const conversation = useConversation({
@@ -54,12 +53,6 @@ function EpoxyBrainContent() {
   });
 
   const isListening = conversation.status === 'connected';
-
-  useEffect(() => {
-    if (feedRef.current) {
-      feedRef.current.scrollTop = 0;
-    }
-  }, [logs]);
 
   const toggleConversation = async () => {
     if (isListening) {
@@ -344,7 +337,7 @@ function EpoxyBrainContent() {
           SWARM FEED
         </h3>
         
-        <div ref={feedRef} className="flex-1 overflow-y-auto space-y-3 font-mono text-xs pr-2 pb-10">
+        <div className="flex-1 overflow-y-auto space-y-3 font-mono text-xs pr-2 pb-10">
           {logs.map((log, i) => (
             <div key={i} className="text-gray-400 border-l-2 border-cyan-500/30 pl-3 py-1 bg-white/5 rounded-r">
               {log}
