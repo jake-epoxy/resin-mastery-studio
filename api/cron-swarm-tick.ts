@@ -6,27 +6,37 @@ const agents = [
   {
     id: 'scout',
     role: 'Find fresh epoxy/concrete coating market signals and recommend what to scrape next.',
-    focus: 'Look only for fresh data-gathering actions. Mention platforms, search terms, or missing data sources. Do not write a content plan.',
+    mission: 'Pick one fresh data source or search lane the hive should collect next.',
+    format: 'SCOUT SCAN | Source: <platform/source> | Query: <exact search term> | Why: <one concrete reason>',
+    forbidden: 'No campaigns, workshops, offers, product lines, customer preferences, or system improvements.',
   },
   {
     id: 'scientist',
     role: 'Find trend patterns and predict what epoxy content should be tested next.',
-    focus: 'Analyze patterns across memories and explain why a trend might work. Do not recommend the same execution as the other agents.',
+    mission: 'Turn one pattern into a testable hypothesis.',
+    format: 'SCIENCE TEST | Hypothesis: <cause/effect claim> | Test: <small experiment> | Metric: <what to measure>',
+    forbidden: 'No sales copy, pricing, partnerships, dashboards, scraping instructions, or AI tool talk.',
   },
   {
     id: 'closer',
     role: 'Look for lead/outreach angles and recommend what pitch should be drafted next.',
-    focus: 'Turn the signal into a sales angle, lead segment, offer, or follow-up message. Avoid TikTok strategy unless it directly supports sales.',
+    mission: 'Create one direct sales move from the available intelligence.',
+    format: 'CLOSER PLAY | Target: <lead type> | Hook: <one-line pitch> | Ask: <next action>',
+    forbidden: 'No trend summaries, content plans, dashboards, Reddit, or engineering ideas.',
   },
   {
     id: 'hustler',
     role: 'Look for revenue, partnership, AI tool, API, automation, and growth opportunities that keep Resin Academics ahead of competitors.',
-    focus: 'Prioritize AI tools, APIs, Reddit/industry intelligence, partnerships, pricing, automations, and competitive plays. Do not summarize TikTok unless it creates a business opportunity.',
+    mission: 'Find one money-making or competitive advantage play outside generic social content.',
+    format: 'HUSTLER EDGE | Play: <business move> | Tool/Partner: <AI tool/API/company/source> | Upside: <money or speed advantage>',
+    forbidden: 'No TikTok summaries, before/after content, DIY trend summaries, or generic marketing campaigns.',
   },
   {
     id: 'engineer',
     role: 'Look for system, automation, data, deployment, and product improvements.',
-    focus: 'Recommend technical improvements to the brain, automations, scraping pipeline, dashboard, data quality, or deployment. Do not make marketing content recommendations.',
+    mission: 'Create one technical ticket that would make the hive smarter or easier to use.',
+    format: 'ENGINEER TICKET | Build: <specific feature/fix> | File/API/Data: <where it belongs> | Result: <what improves>',
+    forbidden: 'No marketing recommendations, sales ideas, product positioning, customer preference analysis, or content ideas.',
   },
 ];
 
@@ -156,20 +166,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let redditRunId: string | null = null;
 
     for (const agent of agents) {
+      const previousOutputs = outputs.length
+        ? outputs.map((output) => `[${output.agent.toUpperCase()}] ${output.message}`).join('\n')
+        : 'None yet.';
+
       const prompt = `You are ${agent.id.toUpperCase()} inside the Resin Academics hive mind.
 
 Your role: ${agent.role}
-Your specific assignment this hour: ${agent.focus}
+Your only mission this hour: ${agent.mission}
 
 Recent brain memories:
 ${memoryContext}
 
-Produce one short internal feed update that is meaningfully different from the other agents. Include:
-- what you noticed
-- what you recommend next
+Previous agent outputs from this same wakeup:
+${previousOutputs}
+
+Return exactly one line using this format:
+${agent.format}
 
 Rules:
-- Do not copy the wording or recommendation style of another agent.
+- Do not overlap with previous agent outputs from this wakeup.
+- Do not use markdown.
+- Do not start with "I noticed", "I've noticed", "I've observed", "Internal Feed Update", or "To capitalize on this".
+- Forbidden for this agent: ${agent.forbidden}
 - Do not default to TikTok unless your assignment specifically needs it.
 - Keep it under 70 words.
 - Always spell it "epoxy"; never write "Epoxee".`;
@@ -178,6 +197,9 @@ Rules:
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 120,
+        temperature: 0.9,
+        presence_penalty: 0.7,
+        frequency_penalty: 0.4,
       });
 
       const message = response.choices[0].message.content || `${agent.id} standing by.`;
