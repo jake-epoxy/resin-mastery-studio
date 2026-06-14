@@ -214,6 +214,17 @@ export default function QuoteViewLive() {
       
       doc.setFontSize(10);
       let yPos = 70;
+      const projectDescription = quote.config?.project_description?.trim();
+      if (projectDescription) {
+        doc.setFontSize(13);
+        doc.text("Scope of Work", 10, yPos);
+        yPos += 8;
+        doc.setFontSize(10);
+        const descriptionLines = doc.splitTextToSize(projectDescription, 180);
+        doc.text(descriptionLines, 10, yPos);
+        yPos += (descriptionLines.length * 5) + 8;
+      }
+
       const legalTermsArray = (quote.config?.legal_terms || DEFAULT_TERMS).split('\n').filter((l: string) => l.trim() !== '');
       
       legalTermsArray.forEach((term: string) => {
@@ -298,6 +309,7 @@ export default function QuoteViewLive() {
   const legalTermsRaw = visualConfig.legal_terms || DEFAULT_TERMS;
   const brandName = visualConfig.brand_name || installerInfo?.company_name || quote.installer_email?.split('@')[0].toUpperCase() || 'Epoxy Contractor';
   const serviceType = visualConfig.service_type || client?.project_type || 'Custom Integration';
+  const projectDescription = visualConfig.project_description?.trim();
 
   const legalTermsArray = legalTermsRaw.split('\n').filter((l: string) => l.trim() !== '');
 
@@ -637,6 +649,13 @@ export default function QuoteViewLive() {
               <span className="w-2 h-2 rounded-full" style={{backgroundColor: themeColor}}></span> Project Mockup
             </h3>
             <img src={visualConfig.visualization_image} alt="Project Visual" className="w-full max-h-[500px] object-cover group-hover:scale-[1.02] transition-transform duration-700" />
+          </div>
+        )}
+
+        {projectDescription && (
+          <div className="bg-[#111] border border-white/10 rounded-2xl p-6 md:p-8 mb-8 shadow-xl">
+            <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-3">Scope of Work</p>
+            <p className="text-white/75 leading-relaxed whitespace-pre-line">{projectDescription}</p>
           </div>
         )}
 

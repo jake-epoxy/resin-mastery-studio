@@ -58,11 +58,16 @@ export default function QuoteGenerator() {
   const [isSendingToClient, setIsSendingToClient] = useState(false);
   const [clientEmailed, setClientEmailed] = useState(false);
   const [visualizationImage, setVisualizationImage] = useState<string | null>(() => localStorage.getItem('resinos_viz') || null);
+  const [projectDescription, setProjectDescription] = useState(() => localStorage.getItem('resinos_project_description') || "");
 
   useEffect(() => { 
     if (visualizationImage) localStorage.setItem('resinos_viz', visualizationImage); 
     else localStorage.removeItem('resinos_viz');
   }, [visualizationImage]);
+  useEffect(() => {
+    if (projectDescription.trim()) localStorage.setItem('resinos_project_description', projectDescription);
+    else localStorage.removeItem('resinos_project_description');
+  }, [projectDescription]);
 
   // Payment Schedule State
   type Milestone = { label: string; pct: number };
@@ -486,6 +491,7 @@ export default function QuoteGenerator() {
       legal_terms: legalTerms,
       service_type: serviceType,
       visualization_image: visualizationImage,
+      project_description: projectDescription.trim(),
       deposit_pct: firstPct,
       payment_schedule: {
         type: scheduleType,
@@ -557,6 +563,7 @@ export default function QuoteGenerator() {
     localStorage.removeItem('resinos_logo');
     localStorage.removeItem('resinos_pdf');
     localStorage.removeItem('resinos_viz');
+    localStorage.removeItem('resinos_project_description');
     
     setThemeColor("#78c8ff");
     setLegalTerms(DEFAULT_TERMS);
@@ -568,6 +575,7 @@ export default function QuoteGenerator() {
     setSqft(500);
     setOfferFinancing(false);
     setFinancingLink("");
+    setProjectDescription("");
     setGeneratedLink("");
     setGeneratedQuoteId("");
     toast({ title: "Form Reset!" });
@@ -868,6 +876,16 @@ export default function QuoteGenerator() {
                       </>
                     )}
                 </div>
+
+                <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2 mt-4">Project Description / Scope of Work</label>
+                <textarea
+                  value={projectDescription}
+                  onChange={(e) => setProjectDescription(e.target.value)}
+                  rows={5}
+                  placeholder="Example: Grind and prep existing concrete, repair cracks as needed, install moisture barrier, broadcast flake system, scrape, vacuum, and seal with polyaspartic topcoat."
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm leading-relaxed focus:outline-none focus:border-[#a78bfa] resize-none"
+                />
+                <p className="text-[10px] text-white/30 mt-2">Shows under the AI visual and above the contract/PDF on the client preview.</p>
               </div>
             </div>
 
@@ -1199,6 +1217,13 @@ export default function QuoteGenerator() {
                           </button>
                         </div>
                         <img src={visualizationImage} alt="Floor visualization" className="w-full h-40 object-cover" />
+                      </div>
+                    )}
+
+                    {projectDescription.trim() && (
+                      <div className="bg-[#111] border border-white/10 rounded-xl p-4 text-xs">
+                        <p className="text-white/40 uppercase tracking-widest font-bold mb-2">Scope of Work</p>
+                        <p className="text-white/70 leading-relaxed whitespace-pre-line">{projectDescription}</p>
                       </div>
                     )}
 
