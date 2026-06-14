@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { X, Send, Save, Loader2, Eye, RefreshCw } from "lucide-react";
+import { useState, useEffect, type ChangeEvent } from "react";
+import { X, Send, Save, Loader2, Eye, RefreshCw, UploadCloud, FileText, Image as ImageIcon } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 const SCHEDULE_PRESETS: Record<string, { name: string; emoji: string; desc: string; milestones: { label: string; pct: number }[] }> = {
@@ -13,6 +13,9 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
   const { toast } = useToast();
   const [serviceType, setServiceType] = useState(quote?.config?.service_type || "");
   const [amount, setAmount] = useState(quote?.total_amount?.toString() || "");
+  const [projectDescription, setProjectDescription] = useState(quote?.config?.project_description || "");
+  const [visualizationImage, setVisualizationImage] = useState(quote?.config?.visualization_image || "");
+  const [contractPdfUrl, setContractPdfUrl] = useState(quote?.config?.contract_pdf_url || "");
   
   // Payment Schedule State
   const initialScheduleType = SCHEDULE_PRESETS[quote?.config?.payment_schedule?.type] ? quote.config.payment_schedule.type : '50_50';
@@ -25,11 +28,58 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
   const [legalTerms, setLegalTerms] = useState(quote?.config?.legal_terms || "");
   const [isSaving, setIsSaving] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [isUploadingMockup, setIsUploadingMockup] = useState(false);
+  const [isUploadingContract, setIsUploadingContract] = useState(false);
   
   // For forcing iframe refresh
   const [refreshKey, setRefreshKey] = useState(0);
 
   if (!quote) return null;
+
+  async function uploadFileToSupabase(file: File, folder: 'contracts' | 'mockups') {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${folder}_${user.id}_${Date.now()}.${fileExt}`;
+    const filePath = `${user.id}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('business-assets')
+      .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+    if (uploadError) {
+      toast({ title: "Upload Failed", description: uploadError.message, variant: "destructive" });
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('business-assets').getPublicUrl(filePath);
+    return publicUrl;
+  }
+
+  async function handleMockupUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingMockup(true);
+    const url = await uploadFileToSupabase(file, 'mockups');
+    if (url) {
+      setVisualizationImage(url);
+      toast({ title: "Mockup Updated" });
+    }
+    setIsUploadingMockup(false);
+  }
+
+  async function handleContractUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingContract(true);
+    const url = await uploadFileToSupabase(file, 'contracts');
+    if (url) {
+      setContractPdfUrl(url);
+      toast({ title: "PDF Contract Updated" });
+    }
+    setIsUploadingContract(false);
+  }
 
   async function handleSave(resendMode: boolean) {
     if (resendMode) setIsResending(true);
@@ -40,12 +90,15 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
       const updatedConfig = {
         ...quote.config,
         service_type: serviceType,
+        project_description: projectDescription.trim(),
+        visualization_image: visualizationImage || null,
+        contract_pdf_url: contractPdfUrl || "",
         deposit_pct: selectedMilestones[0]?.pct || 50,
         payment_schedule: {
           type: scheduleType,
           milestones: selectedMilestones
         },
-        legal_terms: legalTerms
+        legal_terms: contractPdfUrl ? (quote.config?.legal_terms || legalTerms) : legalTerms
       };
 
       const { error } = await supabase
@@ -58,7 +111,7 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
       // Force iframe to reload to show changes
       setRefreshKey(prev => prev + 1);
 
-      if (resendMode && quote.client_email) {
+      if (resendMode && quote.client?.email) {
         const brandName = quote.config?.brand_name || 'Your Contractor';
         const logoUrl = quote.config?.logo_url || '';
         const bodyText = `Hello${quote.client?.first_name ? ' ' + quote.client.first_name : ''},<br><br>Your proposal has been updated with revised terms at your request. Please review the changes and sign at your convenience.`;
@@ -67,7 +120,7 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
           method: "POST",
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            to: quote.client_email,
+            to: quote.client.email,
             cc: quote.installer_email,
             subject: `Updated Proposal from ${brandName}`,
             html: `<!DOCTYPE html>
@@ -140,7 +193,7 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
       <div className="bg-[#0f0f0f] w-full max-w-6xl h-full max-h-[90vh] rounded-2xl border border-white/10 shadow-2xl flex flex-col md:flex-row overflow-hidden">
         
         {/* Left Side: Editor */}
-        <div className="w-full md:w-[400px] bg-[#111] border-r border-white/10 flex flex-col h-full shrink-0">
+        <div className="w-full md:w-[480px] bg-[#111] border-r border-white/10 flex flex-col h-full shrink-0">
           <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/40">
             <div>
               <h2 className="text-xl font-space font-bold text-white">Edit Proposal</h2>
@@ -160,6 +213,75 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
                 className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#78c8ff] outline-none transition"
                 placeholder="e.g. Premium Flake System"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Scope of Work</label>
+              <textarea
+                value={projectDescription}
+                onChange={(e) => setProjectDescription(e.target.value)}
+                rows={5}
+                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#78c8ff] outline-none transition resize-none"
+                placeholder="Describe exactly what work will be performed..."
+              />
+            </div>
+
+            <div className="bg-black/40 border border-white/10 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-white/50">Project Mockup / AI Visual</p>
+                  <p className="text-[10px] text-white/30">This appears above the scope and contract.</p>
+                </div>
+                <ImageIcon size={18} className="text-white/40" />
+              </div>
+              {visualizationImage ? (
+                <div className="flex items-center gap-3">
+                  <img src={visualizationImage} alt="Project mockup" className="w-16 h-16 rounded-lg object-cover border border-white/10" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-white font-bold">Mockup attached</p>
+                    <p className="text-[10px] text-white/30 truncate">{visualizationImage}</p>
+                  </div>
+                  <button onClick={() => setVisualizationImage("")} className="text-[10px] text-red-400 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg font-bold">
+                    Remove
+                  </button>
+                </div>
+              ) : null}
+              <label className="relative flex items-center justify-center gap-2 border border-dashed border-white/15 hover:border-[#78c8ff]/40 rounded-xl px-4 py-3 text-xs font-bold text-white/60 hover:text-white cursor-pointer transition">
+                {isUploadingMockup ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />}
+                {isUploadingMockup ? "Uploading..." : visualizationImage ? "Replace Mockup" : "Upload Mockup Image"}
+                <input type="file" accept="image/*" onChange={handleMockupUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+              </label>
+            </div>
+
+            <div className="bg-black/40 border border-white/10 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-white/50">PDF Contract</p>
+                  <p className="text-[10px] text-white/30">When attached, this is the contract clients review.</p>
+                </div>
+                <FileText size={18} className="text-white/40" />
+              </div>
+              {contractPdfUrl ? (
+                <div className="flex items-center gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3">
+                  <FileText size={18} className="text-emerald-400 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-emerald-300 font-bold">Custom PDF active</p>
+                    <p className="text-[10px] text-white/30 truncate">{contractPdfUrl}</p>
+                  </div>
+                  <button onClick={() => setContractPdfUrl("")} className="text-[10px] text-red-400 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg font-bold">
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-amber-300/80 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                  No PDF attached. The editable fallback terms below will be shown instead.
+                </p>
+              )}
+              <label className="relative flex items-center justify-center gap-2 border border-dashed border-white/15 hover:border-[#78c8ff]/40 rounded-xl px-4 py-3 text-xs font-bold text-white/60 hover:text-white cursor-pointer transition">
+                {isUploadingContract ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />}
+                {isUploadingContract ? "Uploading..." : contractPdfUrl ? "Replace PDF Contract" : "Upload PDF Contract"}
+                <input type="file" accept="application/pdf" onChange={handleContractUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+              </label>
             </div>
             
             <div className="flex gap-4">
@@ -271,17 +393,22 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Contract Terms</label>
+            <div className={contractPdfUrl ? "opacity-50" : ""}>
+              <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">
+                {contractPdfUrl ? "Fallback Terms Hidden Because PDF Is Attached" : "Fallback Contract Terms"}
+              </label>
               <textarea
                 value={legalTerms}
                 onChange={(e) => setLegalTerms(e.target.value)}
                 rows={8}
+                disabled={!!contractPdfUrl}
                 className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#78c8ff] outline-none transition resize-none"
                 placeholder="One term per line..."
               />
               <p className="text-[10px] text-white/30 mt-2 leading-relaxed">
-                Enter each legal term on a new line. These will be added to the digital footprint contract and affect the client's signature.
+                {contractPdfUrl
+                  ? "Your attached PDF remains active. These fallback terms are kept in the quote config but will not replace the PDF."
+                  : "Enter each legal term on a new line. These will be shown when no PDF contract is attached."}
               </p>
             </div>
           </div>
