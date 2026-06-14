@@ -447,7 +447,7 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
           
           <iframe 
             key={refreshKey}
-            src={`https://www.resinacademics.com/quote-live/${quote.id}`} 
+            src={`https://www.resinacademics.com/quote-live/${quote.id}?preview_scope=${encodeURIComponent(projectDescription.trim())}`} 
             className="w-full h-full bg-white rounded-r-2xl"
             title="Quote Preview"
           />

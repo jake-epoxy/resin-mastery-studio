@@ -309,7 +309,8 @@ export default function QuoteViewLive() {
   const legalTermsRaw = visualConfig.legal_terms || DEFAULT_TERMS;
   const brandName = visualConfig.brand_name || installerInfo?.company_name || quote.installer_email?.split('@')[0].toUpperCase() || 'Epoxy Contractor';
   const serviceType = visualConfig.service_type || client?.project_type || 'Custom Integration';
-  const projectDescription = visualConfig.project_description?.trim();
+  const previewScope = new URLSearchParams(window.location.search).get('preview_scope')?.trim();
+  const projectDescription = previewScope || visualConfig.project_description?.trim();
 
   const legalTermsArray = legalTermsRaw.split('\n').filter((l: string) => l.trim() !== '');
 
