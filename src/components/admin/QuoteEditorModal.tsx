@@ -6,6 +6,7 @@ const SCHEDULE_PRESETS: Record<string, { name: string; emoji: string; desc: stri
   '50_50': { name: '50 / 50', emoji: '⚖️', desc: '50% deposit, balance on completion', milestones: [{ label: 'Material Deposit', pct: 50 }, { label: 'Balance Due on Completion', pct: 50 }] },
   '100_upfront': { name: '100% Upfront', emoji: '💰', desc: 'Full payment before work begins', milestones: [{ label: 'Full Payment Before Start', pct: 100 }] },
   'staggered': { name: '20 / 40 / 40', emoji: '📊', desc: '20% deposit, 40% at start, 40% on completion', milestones: [{ label: 'Booking Deposit', pct: 20 }, { label: 'Due When Work Begins', pct: 40 }, { label: 'Balance Due on Completion', pct: 40 }] },
+  'custom': { name: 'Custom', emoji: '✏️', desc: 'Build your own payment milestones', milestones: [{ label: 'Deposit', pct: 30 }, { label: 'Mid-Project', pct: 30 }, { label: 'Final Balance', pct: 40 }] },
 };
 
 export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
@@ -14,7 +15,7 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
   const [amount, setAmount] = useState(quote?.total_amount?.toString() || "");
   
   // Payment Schedule State
-  const initialScheduleType = quote?.config?.payment_schedule?.type || '50_50';
+  const initialScheduleType = SCHEDULE_PRESETS[quote?.config?.payment_schedule?.type] ? quote.config.payment_schedule.type : '50_50';
   const [scheduleType, setScheduleType] = useState(initialScheduleType);
   const activeMilestones = quote?.config?.payment_schedule?.milestones || SCHEDULE_PRESETS[initialScheduleType]?.milestones || SCHEDULE_PRESETS['50_50'].milestones;
   const [customMilestones, setCustomMilestones] = useState<{label: string, pct: number}[]>(
@@ -35,7 +36,7 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
     else setIsSaving(true);
 
     try {
-      const selectedMilestones = SCHEDULE_PRESETS[scheduleType]?.milestones || activeMilestones;
+      const selectedMilestones = scheduleType === 'custom' ? customMilestones : (SCHEDULE_PRESETS[scheduleType]?.milestones || SCHEDULE_PRESETS['50_50'].milestones);
       const updatedConfig = {
         ...quote.config,
         service_type: serviceType,
@@ -196,13 +197,13 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
                 <p className="text-[10px] uppercase font-bold tracking-widest text-white/40">Payment Breakdown</p>
               </div>
               <div className="flex gap-1 h-3 rounded-full overflow-hidden mb-3">
-                {(scheduleType === 'custom' ? customMilestones : SCHEDULE_PRESETS[scheduleType].milestones).map((m, i) => {
+                {(scheduleType === 'custom' ? customMilestones : (SCHEDULE_PRESETS[scheduleType]?.milestones || SCHEDULE_PRESETS['50_50'].milestones)).map((m, i) => {
                   const colors = ['#78c8ff', '#a78bfa', '#34d399', '#fbbf24'];
                   return <div key={i} style={{ width: `${m.pct}%`, backgroundColor: colors[i % colors.length] }} className="rounded-full transition-all" />;
                 })}
               </div>
               <div className="space-y-2">
-                {(scheduleType === 'custom' ? customMilestones : SCHEDULE_PRESETS[scheduleType].milestones).map((m, i) => {
+                {(scheduleType === 'custom' ? customMilestones : (SCHEDULE_PRESETS[scheduleType]?.milestones || SCHEDULE_PRESETS['50_50'].milestones)).map((m, i) => {
                   const colors = ['#78c8ff', '#a78bfa', '#34d399', '#fbbf24'];
                   const val = Number(amount) * (m.pct / 100);
                   return (
