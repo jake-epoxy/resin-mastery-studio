@@ -40,6 +40,16 @@ export default function ProposalsLibrary() {
   };
 
   const handleResend = async (quote: any) => {
+    const clientEmail = quote.client?.email?.trim();
+    if (!clientEmail) {
+      toast({
+        title: "Client email missing",
+        description: "Add an email to this client before sending a reminder.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setResendingId(quote.id);
     try {
       const isFinal = quote.status === 'Won';
@@ -61,7 +71,7 @@ export default function ProposalsLibrary() {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            to: quote.client?.email,
+            to: clientEmail,
             cc: quote.installer_email,
             subject: subject,
             html: `<!DOCTYPE html>
@@ -110,12 +120,17 @@ export default function ProposalsLibrary() {
       });
       
       if (res.ok) {
-        toast({ title: isFinal ? "Invoice Sent" : "Reminder Sent", description: `Emailed to ${quote.client?.email}` });
+        toast({ title: isFinal ? "Invoice Sent" : "Reminder Sent", description: `Emailed to ${clientEmail}` });
       } else {
-        toast({ title: "Error sending email", variant: "destructive" });
+        const errorData = await res.json().catch(() => null);
+        toast({
+          title: "Error sending email",
+          description: errorData?.error || "The email service rejected this request.",
+          variant: "destructive"
+        });
       }
-    } catch (e) {
-      toast({ title: "Network Error", variant: "destructive" });
+    } catch (e: any) {
+      toast({ title: "Network Error", description: e.message || "Could not reach the email service.", variant: "destructive" });
     }
     setResendingId(null);
   };
@@ -162,6 +177,11 @@ export default function ProposalsLibrary() {
           <div className="grid gap-4">
             {quotes.map((quote) => (
               <div key={quote.id} className="bg-[#111] border border-white/10 rounded-2xl p-6 hover:border-blue-500/30 transition-colors flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-center">
+                {(() => {
+                  const clientEmail = quote.client?.email?.trim();
+                  const canSendEmail = Boolean(clientEmail);
+                  return (
+                    <>
                 
                 {/* Client & Date */}
                 <div className="flex-1 space-y-1">
@@ -171,7 +191,9 @@ export default function ProposalsLibrary() {
                       {quote.status || 'Draft'}
                     </span>
                   </div>
-                  <p className="text-white/50 text-sm font-mono truncate">{quote.client?.email}</p>
+                  <p className={`text-sm font-mono truncate ${clientEmail ? 'text-white/50' : 'text-amber-300'}`}>
+                    {clientEmail || 'No client email on file'}
+                  </p>
                   <p className="text-white/30 text-xs">Created: {new Date(quote.created_at).toLocaleDateString()}</p>
                 </div>
 
@@ -207,7 +229,7 @@ export default function ProposalsLibrary() {
 
                   {quote.status === 'Won' || quote.status === 'Paid' ? (
                     <>
-                      <button onClick={() => handleResend(quote)} disabled={resendingId === quote.id} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50">
+                      <button onClick={() => handleResend(quote)} disabled={resendingId === quote.id || !canSendEmail} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title={canSendEmail ? "Send invoice balance" : "Add a client email first"}>
                         {resendingId === quote.id ? <Loader2 size={16} className="animate-spin" /> : <><Send size={16} /> Invoice Balance</>}
                       </button>
                       <button onClick={() => handleSendReceipt(quote)} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-5 py-3 bg-[#78c8ff]/10 hover:bg-[#78c8ff]/20 text-[#78c8ff] font-bold rounded-xl border border-[#78c8ff]/20 transition-colors">
@@ -235,13 +257,16 @@ export default function ProposalsLibrary() {
                       <button onClick={() => setEditingQuote(quote)} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-4 py-3 bg-[#78c8ff]/10 hover:bg-[#78c8ff]/20 text-[#78c8ff] font-bold rounded-xl border border-[#78c8ff]/20 transition-colors">
                         <Pencil size={16} /> Edit & Re-send
                       </button>
-                      <button onClick={() => handleResend(quote)} disabled={resendingId === quote.id} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-5 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50">
+                      <button onClick={() => handleResend(quote)} disabled={resendingId === quote.id || !canSendEmail} className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-5 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title={canSendEmail ? "Send reminder" : "Add a client email first"}>
                         {resendingId === quote.id ? <Loader2 size={16} className="animate-spin" /> : <><Send size={16} /> Remind</>}
                       </button>
                     </>
                   )}
                 </div>
 
+                    </>
+                  );
+                })()}
               </div>
             ))}
           </div>
