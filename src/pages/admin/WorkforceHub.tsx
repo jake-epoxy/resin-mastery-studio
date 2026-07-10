@@ -25,6 +25,7 @@ export default function WorkforceHub() {
   const [newPhone, setNewPhone] = useState("");
   const [isMinting, setIsMinting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadCrew() {
@@ -57,9 +58,13 @@ export default function WorkforceHub() {
 
     // 1. Attempt to create the actual secure Supabase Auth account via Serverless API
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/create-worker', {
          method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
+         headers: {
+           'Content-Type': 'application/json',
+           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+         },
          body: JSON.stringify({
             email: newEmail,
             password: newPassword,
@@ -96,8 +101,32 @@ export default function WorkforceHub() {
     setIsMinting(false);
   };
 
-  const removeCrew = (id: string) => {
-    saveCrew(crew.filter(c => c.id !== id));
+  const removeCrew = async (member: CrewMember) => {
+    const confirmed = window.confirm(`Revoke Resin OS access for ${member.name}? This will delete their login if it exists.`);
+    if (!confirmed) return;
+
+    setRevokingId(member.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/revoke-worker', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+        },
+        body: JSON.stringify({ email: member.email })
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok && res.status !== 404) {
+        alert(data?.error || "Could not revoke this worker's login.");
+        return;
+      }
+
+      saveCrew(crew.filter(c => c.id !== member.id));
+    } finally {
+      setRevokingId(null);
+    }
   };
 
   if (loading) return null;
@@ -144,10 +173,12 @@ export default function WorkforceHub() {
                 className="bg-[#0a0a0a] border border-white/10 rounded-2xl p-5 relative group shadow-lg"
               >
                 <button 
-                  onClick={() => removeCrew(member.id)}
+                  onClick={() => removeCrew(member)}
+                  disabled={revokingId === member.id}
                   className="absolute top-4 right-4 text-white/20 hover:text-emerald-500 transition-colors opacity-0 group-hover:opacity-100"
+                  title="Revoke access"
                 >
-                  <Trash2 size={16} />
+                  {revokingId === member.id ? <span className="text-[10px] text-white/40">Revoking...</span> : <Trash2 size={16} />}
                 </button>
                 
                 <div className="flex items-center gap-4 mb-4">

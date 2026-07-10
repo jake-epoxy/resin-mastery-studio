@@ -1,5 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
+const DEV_EMAIL = "jakeflowers222@gmail.com";
+
+function getBearerToken(req: any) {
+  const header = req.headers.authorization || req.headers.Authorization || "";
+  return header.startsWith("Bearer ") ? header.slice(7) : "";
+}
+
 export default async function handler(req: any, res: any) {
   // CORS check
   if (req.method === "OPTIONS") return res.status(200).end();
@@ -21,6 +28,22 @@ export default async function handler(req: any, res: any) {
   const sbAdmin = createClient(URL, SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  const token = getBearerToken(req);
+  if (!token) {
+    return res.status(401).json({ error: "Missing authorization token." });
+  }
+
+  const { data: requesterData, error: requesterError } = await sbAdmin.auth.getUser(token);
+  const requester = requesterData?.user;
+  if (requesterError || !requester) {
+    return res.status(401).json({ error: "Unauthorized." });
+  }
+
+  const requesterIsDev = requester.email?.toLowerCase() === DEV_EMAIL;
+  if (!requesterIsDev && requester.id !== contractorId) {
+    return res.status(403).json({ error: "You can only create workers for your own account." });
+  }
 
   const { data, error } = await sbAdmin.auth.admin.createUser({
     email,
