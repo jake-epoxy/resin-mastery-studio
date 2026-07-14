@@ -4,12 +4,14 @@ import { useToast } from "@/components/ui/use-toast";
 import { FileText, Download, Send, CheckCircle2, Copy, ExternalLink, Loader2, RefreshCw, Pencil } from "lucide-react";
 import QuoteEditorModal from "../../components/admin/QuoteEditorModal";
 import ReceiptPreviewModal from "../../components/admin/ReceiptPreviewModal";
+import jsPDF from "jspdf";
 
 export default function ProposalsLibrary() {
   const { toast } = useToast();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [sendingPdfId, setSendingPdfId] = useState<string | null>(null);
   const [editingQuote, setEditingQuote] = useState<any>(null);
   const [previewReceiptQuote, setPreviewReceiptQuote] = useState<any>(null);
 
@@ -37,6 +39,193 @@ export default function ProposalsLibrary() {
   const handleCopyLink = (id: string) => {
     navigator.clipboard.writeText(`https://www.resinacademics.com/quote-live/${id}`);
     toast({ title: "Link Copied", description: "Quote link copied to clipboard!" });
+  };
+
+  const getQuotePdfFileName = (quote: any) => {
+    const first = quote.client?.first_name || "Client";
+    const last = quote.client?.last_name || "Quote";
+    return `Quote_${first}_${last}_${quote.id.slice(0, 8)}.pdf`.replace(/[^a-z0-9_.-]/gi, "_");
+  };
+
+  const buildQuotePdf = (quote: any) => {
+    const doc = new jsPDF();
+    const brandName = quote.config?.brand_name || quote.installer_email?.split('@')[0]?.toUpperCase() || "Resin OS";
+    const clientName = `${quote.client?.first_name || ""} ${quote.client?.last_name || ""}`.trim() || "Client";
+    const serviceType = quote.config?.service_type || "Custom Project";
+    const scope = quote.config?.project_description?.trim();
+    const terms = quote.config?.legal_terms?.trim();
+    const milestones = quote.config?.payment_schedule?.milestones || [
+      { label: "Deposit", pct: quote.config?.deposit_pct || 50 },
+      { label: "Balance Due on Completion", pct: 100 - (quote.config?.deposit_pct || 50) }
+    ];
+    const smartLink = `https://www.resinacademics.com/quote-live/${quote.id}`;
+
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 14;
+    let y = 18;
+
+    const addWrappedText = (text: string, x: number, startY: number, maxWidth = 180, lineHeight = 6) => {
+      const lines = doc.splitTextToSize(text, maxWidth);
+      lines.forEach((line: string) => {
+        if (y > pageHeight - 20) {
+          doc.addPage();
+          y = 18;
+        }
+        doc.text(line, x, y);
+        y += lineHeight;
+      });
+      return startY + lines.length * lineHeight;
+    };
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text(brandName, margin, y);
+    y += 10;
+
+    doc.setFontSize(14);
+    doc.text("Project Quote", margin, y);
+    y += 9;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Prepared for: ${clientName}`, margin, y);
+    y += 6;
+    if (quote.client?.email) {
+      doc.text(`Client email: ${quote.client.email}`, margin, y);
+      y += 6;
+    }
+    doc.text(`Service: ${serviceType}`, margin, y);
+    y += 6;
+    doc.text(`Created: ${new Date(quote.created_at).toLocaleDateString()}`, margin, y);
+    y += 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text(`Total Investment: $${quote.total_amount?.toLocaleString() || "0"}`, margin, y);
+    y += 12;
+
+    doc.setFontSize(12);
+    doc.text("Payment Schedule", margin, y);
+    y += 8;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    milestones.forEach((milestone: any) => {
+      const amount = (quote.total_amount || 0) * ((milestone.pct || 0) / 100);
+      doc.text(`${milestone.label}: ${milestone.pct}% - $${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, margin, y);
+      y += 6;
+    });
+    y += 4;
+
+    if (scope) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text("Scope of Work", margin, y);
+      y += 8;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      addWrappedText(scope, margin, y);
+      y += 4;
+    }
+
+    if (quote.config?.contract_pdf_url) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text("Attached Contract", margin, y);
+      y += 8;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      addWrappedText("A custom contract PDF is attached to the smart proposal. If your firewall blocks the smart link, reply to this email and request the original contract PDF directly.", margin, y);
+      y += 4;
+    } else if (terms) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text("Contract Terms", margin, y);
+      y += 8;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      terms.split("\n").filter(Boolean).forEach((term: string) => {
+        addWrappedText(`- ${term}`, margin, y);
+      });
+      y += 4;
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Smart Proposal Link", margin, y);
+    y += 8;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    addWrappedText(smartLink, margin, y);
+
+    doc.setFontSize(8);
+    doc.setTextColor(130);
+    doc.text(`Generated by Resin OS. Quote ID: ${quote.id}`, margin, pageHeight - 10);
+
+    return doc;
+  };
+
+  const handleDownloadQuotePdf = (quote: any) => {
+    const doc = buildQuotePdf(quote);
+    doc.save(getQuotePdfFileName(quote));
+  };
+
+  const handleSendQuotePdf = async (quote: any) => {
+    const clientEmail = quote.client?.email?.trim();
+    if (!clientEmail) {
+      toast({
+        title: "Client email missing",
+        description: "Add an email to this client before sending a PDF.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSendingPdfId(quote.id);
+    try {
+      const brandName = quote.config?.brand_name || quote.installer_email?.split('@')[0]?.toUpperCase() || "Resin OS";
+      const smartLink = `https://www.resinacademics.com/quote-live/${quote.id}`;
+      const doc = buildQuotePdf(quote);
+      const pdfBase64 = doc.output("datauristring").split(",")[1];
+
+      const res = await fetch('/api/send-email', {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: clientEmail,
+          cc: quote.installer_email,
+          subject: `PDF Copy: Your Quote from ${brandName}`,
+          html: `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background:#ffffff;padding:32px;border-radius:12px;">
+    <h1 style="margin:0 0 12px;color:#111827;font-size:24px;">PDF Quote Attached</h1>
+    <p style="color:#334155;font-size:16px;line-height:1.6;">Hi ${quote.client?.first_name || "there"},</p>
+    <p style="color:#334155;font-size:16px;line-height:1.6;">I attached a PDF copy of your quote in case your company firewall blocks the interactive smart proposal.</p>
+    <p style="color:#334155;font-size:16px;line-height:1.6;">If your network allows it later, the interactive version is still available here:</p>
+    <p><a href="${smartLink}" style="color:#2563eb;font-weight:700;">View Interactive Smart Quote</a></p>
+    <p style="color:#64748b;font-size:13px;margin-top:28px;">Sent via Resin OS.</p>
+  </div>
+</body>
+</html>`,
+          attachments: [
+            {
+              filename: getQuotePdfFileName(quote),
+              content: pdfBase64
+            }
+          ]
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.error || "The email service rejected this PDF email.");
+      }
+
+      toast({ title: "PDF Quote Sent", description: `Emailed PDF copy to ${clientEmail}` });
+    } catch (e: any) {
+      toast({ title: "Error sending PDF", description: e.message || "Could not send the PDF quote.", variant: "destructive" });
+    }
+    setSendingPdfId(null);
   };
 
   const handleResend = async (quote: any) => {
@@ -226,6 +415,21 @@ export default function ProposalsLibrary() {
                   <a href={`/quote-live/${quote.id}`} target="_blank" rel="noreferrer" className="flex-1 lg:flex-none p-3 lg:px-4 bg-white/5 hover:bg-blue-500/10 rounded-xl flex items-center justify-center gap-2 border border-white/10 transition-colors" title="View Secure Document">
                     <ExternalLink size={16} className="text-[#ffffff]" />
                   </a>
+
+                  <button onClick={() => handleDownloadQuotePdf(quote)} className="flex-1 lg:flex-none p-3 lg:px-4 bg-white/5 hover:bg-blue-500/10 rounded-xl flex items-center justify-center gap-2 border border-white/10 transition-colors" title="Download PDF Copy">
+                    <Download size={16} className="text-white/70" />
+                    <span className="sr-only">Download PDF</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleSendQuotePdf(quote)}
+                    disabled={sendingPdfId === quote.id || !canSendEmail}
+                    className="flex-1 lg:flex-none p-3 lg:px-4 bg-white/5 hover:bg-blue-500/10 rounded-xl flex items-center justify-center gap-2 border border-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={canSendEmail ? "Email PDF Copy" : "Add a client email first"}
+                  >
+                    {sendingPdfId === quote.id ? <Loader2 size={16} className="animate-spin text-white/70" /> : <FileText size={16} className="text-white/70" />}
+                    <span className="sr-only">Email PDF</span>
+                  </button>
 
                   {quote.status === 'Won' || quote.status === 'Paid' ? (
                     <>
