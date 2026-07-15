@@ -91,11 +91,18 @@ export default function ProposalsLibrary() {
       doc.setTextColor(r, g, b);
     };
 
+    const setBodyTextStyle = () => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      setText("#1f2937");
+    };
+
     const ensureSpace = (needed = 24) => {
       if (y + needed > pageHeight - 18) {
         doc.addPage();
         y = 18;
         drawPageFooter();
+        setBodyTextStyle();
       }
     };
 
@@ -268,18 +275,6 @@ export default function ProposalsLibrary() {
       });
       y += 4;
     }
-
-    sectionTitle("Interactive Smart Proposal");
-    setFill(dark);
-    doc.roundedRect(margin, y - 4, contentWidth, 27, 4, 4, "F");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setTextColor(255, 255, 255);
-    doc.text("View, sign, and pay securely online when your network allows it:", margin + 6, y + 4);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    setText(accent);
-    doc.text(smartLink, margin + 6, y + 13);
 
     drawPageFooter();
 
