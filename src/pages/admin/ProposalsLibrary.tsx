@@ -52,6 +52,9 @@ export default function ProposalsLibrary() {
     const brandName = quote.config?.brand_name || quote.installer_email?.split('@')[0]?.toUpperCase() || "Resin OS";
     const clientName = `${quote.client?.first_name || ""} ${quote.client?.last_name || ""}`.trim() || "Client";
     const serviceType = quote.config?.service_type || "Custom Project";
+    const projectArea = quote.config?.project_area?.trim();
+    const clientTitle = quote.config?.client_title?.trim();
+    const squareFeet = quote.sqft ? Number(quote.sqft).toLocaleString() : "";
     const scope = quote.config?.project_description?.trim();
     const terms = quote.config?.legal_terms?.trim();
     const milestones = quote.config?.payment_schedule?.milestones || [
@@ -194,7 +197,12 @@ export default function ProposalsLibrary() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     setText("#475569");
-    if (quote.client?.email) doc.text(quote.client.email, margin + 6, y + 28);
+    if (clientTitle) {
+      doc.text(clientTitle, margin + 6, y + 28);
+      if (quote.client?.email) doc.text(quote.client.email, margin + 6, y + 35);
+    } else if (quote.client?.email) {
+      doc.text(quote.client.email, margin + 6, y + 28);
+    }
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
@@ -205,6 +213,21 @@ export default function ProposalsLibrary() {
     const serviceLines = doc.splitTextToSize(serviceType, 78);
     doc.text(serviceLines.slice(0, 2), margin + 98, y + 20);
     y += 54;
+
+    if (projectArea || squareFeet) {
+      setFill("#f8fafc");
+      doc.roundedRect(margin, y - 4, contentWidth, 20, 4, 4, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      setText("#64748b");
+      doc.text("PROJECT AREA", margin + 6, y + 4);
+      doc.text("SQUARE FOOTAGE", margin + 98, y + 4);
+      doc.setFontSize(11);
+      setText("#0f172a");
+      doc.text(projectArea || "Not specified", margin + 6, y + 13);
+      doc.text(squareFeet ? `${squareFeet} sq ft` : "Not specified", margin + 98, y + 13);
+      y += 26;
+    }
 
     sectionTitle("Payment Schedule");
     setFill("#0f172a");

@@ -311,6 +311,9 @@ export default function QuoteViewLive() {
   const serviceType = visualConfig.service_type || client?.project_type || 'Custom Integration';
   const previewScope = new URLSearchParams(window.location.search).get('preview_scope')?.trim();
   const projectDescription = previewScope || visualConfig.project_description?.trim();
+  const projectArea = visualConfig.project_area?.trim();
+  const clientTitle = visualConfig.client_title?.trim();
+  const squareFeet = quote.sqft ? Number(quote.sqft).toLocaleString() : "";
 
   const legalTermsArray = legalTermsRaw.split('\n').filter((l: string) => l.trim() !== '');
 
@@ -631,6 +634,7 @@ export default function QuoteViewLive() {
            <div>
              <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-1">Prepared For</p>
              <p className="text-xl font-bold">{client?.first_name} {client?.last_name}</p>
+             {clientTitle && <p className="text-white/50 text-sm mt-1">{clientTitle}</p>}
              <p className="text-[#ffffff] font-mono text-sm mt-1">{serviceType}</p>
            </div>
            {!isPitchMode && (
@@ -642,6 +646,23 @@ export default function QuoteViewLive() {
              </div>
            )}
         </div>
+
+        {(projectArea || squareFeet) && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            {projectArea && (
+              <div className="bg-[#111] border border-white/10 rounded-2xl p-5">
+                <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-1">Project Area</p>
+                <p className="text-white font-bold">{projectArea}</p>
+              </div>
+            )}
+            {squareFeet && (
+              <div className="bg-[#111] border border-white/10 rounded-2xl p-5">
+                <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-1">Square Footage</p>
+                <p className="text-white font-bold">{squareFeet} sq ft</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Dynamic Project/Mockup Visual */}
         {visualConfig.visualization_image && (

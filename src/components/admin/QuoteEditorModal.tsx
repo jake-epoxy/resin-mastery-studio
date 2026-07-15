@@ -13,6 +13,9 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
   const { toast } = useToast();
   const [serviceType, setServiceType] = useState(quote?.config?.service_type || "");
   const [amount, setAmount] = useState(quote?.total_amount?.toString() || "");
+  const [sqft, setSqft] = useState(quote?.sqft?.toString() || "");
+  const [projectArea, setProjectArea] = useState(quote?.config?.project_area || "");
+  const [clientTitle, setClientTitle] = useState(quote?.config?.client_title || "");
   const [projectDescription, setProjectDescription] = useState(quote?.config?.project_description || "");
   const [visualizationImage, setVisualizationImage] = useState(quote?.config?.visualization_image || "");
   const [contractPdfUrl, setContractPdfUrl] = useState(quote?.config?.contract_pdf_url || "");
@@ -90,6 +93,8 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
       const updatedConfig = {
         ...quote.config,
         service_type: serviceType,
+        project_area: projectArea.trim(),
+        client_title: clientTitle.trim(),
         project_description: projectDescription.trim(),
         visualization_image: visualizationImage || null,
         contract_pdf_url: contractPdfUrl || "",
@@ -103,7 +108,7 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
 
       const { error } = await supabase
         .from('quotes')
-        .update({ total_amount: Number(amount), config: updatedConfig })
+        .update({ total_amount: Number(amount), sqft: sqft ? Number(sqft) : null, config: updatedConfig })
         .eq('id', quote.id);
 
       if (error) throw error;
@@ -213,6 +218,37 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
                 className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#78c8ff] outline-none transition"
                 placeholder="e.g. Premium Flake System"
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Square Feet</label>
+                <input
+                  type="number"
+                  value={sqft}
+                  onChange={(e) => setSqft(e.target.value)}
+                  className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#78c8ff] outline-none transition"
+                  placeholder="1364"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Room / Area</label>
+                <input
+                  value={projectArea}
+                  onChange={(e) => setProjectArea(e.target.value)}
+                  className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#78c8ff] outline-none transition"
+                  placeholder="Recreational Room"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Client Title</label>
+                <input
+                  value={clientTitle}
+                  onChange={(e) => setClientTitle(e.target.value)}
+                  className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#78c8ff] outline-none transition"
+                  placeholder="EOC Director"
+                />
+              </div>
             </div>
 
             <div>
