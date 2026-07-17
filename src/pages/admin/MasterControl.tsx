@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { ShieldAlert, Users, TrendingUp, Building, Download, Share2, FileSignature } from "lucide-react";
+import { ShieldAlert, TrendingUp, Building, Download, Share2, FileSignature, Send, Copy, Loader2 } from "lucide-react";
 
 export default function MasterControl() {
   const [installers, setInstallers] = useState<any[]>([]);
@@ -10,6 +10,13 @@ export default function MasterControl() {
   const [loading, setLoading] = useState(true);
 
   const [newSignups, setNewSignups] = useState(0);
+  const [studentForm, setStudentForm] = useState({
+    name: "",
+    email: "",
+    program: "Private Epoxy / Resin Training",
+    date: "",
+  });
+  const [sendingStudentLink, setSendingStudentLink] = useState(false);
 
   useEffect(() => {
     fetchGlobalData();
@@ -112,6 +119,63 @@ export default function MasterControl() {
     document.body.removeChild(link);
   }
 
+  const buildStudentLink = () => {
+    const origin = window.location.origin;
+    const params = new URLSearchParams();
+    if (studentForm.name.trim()) params.set("name", studentForm.name.trim());
+    if (studentForm.email.trim()) params.set("email", studentForm.email.trim());
+    if (studentForm.program.trim()) params.set("program", studentForm.program.trim());
+    if (studentForm.date.trim()) params.set("date", studentForm.date.trim());
+    return `${origin}/student-onboarding?${params.toString()}`;
+  };
+
+  const copyStudentLink = async () => {
+    await navigator.clipboard.writeText(buildStudentLink());
+  };
+
+  const sendStudentLink = async () => {
+    if (!studentForm.email.trim()) {
+      alert("Student email is required.");
+      return;
+    }
+    setSendingStudentLink(true);
+    try {
+      const link = buildStudentLink();
+      const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: studentForm.email.trim(),
+          cc: "jakeflowers222@gmail.com",
+          subject: "Complete Your Resin Academics Student Onboarding",
+          html: `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background:#ffffff;padding:32px;border-radius:12px;">
+    <h1 style="margin:0 0 12px;color:#111827;font-size:24px;">Student Onboarding</h1>
+    <p style="color:#334155;font-size:16px;line-height:1.6;">${studentForm.name ? `Hey ${studentForm.name},` : "Hey,"}</p>
+    <p style="color:#334155;font-size:16px;line-height:1.6;">Please complete your Resin Academics training onboarding form before class.</p>
+    <p style="color:#334155;font-size:16px;line-height:1.6;"><strong>Program:</strong> ${studentForm.program || "Private Epoxy / Resin Training"}</p>
+    ${studentForm.date ? `<p style="color:#334155;font-size:16px;line-height:1.6;"><strong>Training Date:</strong> ${studentForm.date}</p>` : ""}
+    <p style="margin:28px 0;"><a href="${link}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-weight:700;">Complete Onboarding</a></p>
+    <p style="color:#94a3b8;font-size:13px;">If the button does not open, copy and paste this link:<br>${link}</p>
+  </div>
+</body>
+</html>`
+        })
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => null);
+        throw new Error(error?.error || "Could not send onboarding link.");
+      }
+      alert("Student onboarding link sent.");
+    } catch (err: any) {
+      alert(err.message || "Failed to send student onboarding link.");
+    } finally {
+      setSendingStudentLink(false);
+    }
+  };
+
   return (
     <div className="p-8 pb-20">
       <header className="mb-10 border-b border-emerald-500/20 pb-6 flex justify-between items-start">
@@ -165,6 +229,32 @@ export default function MasterControl() {
           </div>
         </div>
       )}
+
+      {/* Jake-only Student Onboarding Sender */}
+      <div className="mb-12 bg-[#0a0a0a] border border-[#78c8ff]/20 rounded-2xl p-6">
+        <h2 className="text-xl font-space font-bold text-white mb-2 flex items-center gap-3">
+          <FileSignature size={20} className="text-[#78c8ff]" />
+          Student Onboarding Sender
+        </h2>
+        <p className="text-white/40 text-sm mb-5">Generate or email a student onboarding/signature form. This panel only lives in Super Admin.</p>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <input value={studentForm.name} onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })} placeholder="Student name" className="bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#78c8ff]" />
+          <input value={studentForm.email} onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })} placeholder="Student email" className="bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#78c8ff]" />
+          <input value={studentForm.program} onChange={(e) => setStudentForm({ ...studentForm, program: e.target.value })} placeholder="Program" className="bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#78c8ff]" />
+          <input value={studentForm.date} onChange={(e) => setStudentForm({ ...studentForm, date: e.target.value })} placeholder="Training date" className="bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#78c8ff]" />
+        </div>
+        <div className="bg-black/50 border border-white/10 rounded-xl p-3 mb-4 text-xs text-white/50 font-mono break-all">
+          {buildStudentLink()}
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button onClick={copyStudentLink} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white px-4 py-3 rounded-xl font-bold">
+            <Copy size={16} /> Copy Link
+          </button>
+          <button onClick={sendStudentLink} disabled={sendingStudentLink} className="flex items-center justify-center gap-2 bg-[#78c8ff] hover:bg-white text-black px-4 py-3 rounded-xl font-bold disabled:opacity-50">
+            {sendingStudentLink ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Send Form
+          </button>
+        </div>
+      </div>
 
       {/* Official Partners Library */}
       <div className="mb-12">

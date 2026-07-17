@@ -20,6 +20,7 @@ import PartnershipAgreement from "./components/PartnershipAgreement";
 import FoundingPartnerAgreement from "./components/FoundingPartnerAgreement";
 import JakeEpoxyLanding from "./pages/JakeEpoxyLanding";
 import JakeMentorshipPromo from "./pages/JakeMentorshipPromo";
+import StudentOnboarding from "./pages/StudentOnboarding";
 
 // SaaS Admin Routes
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -62,6 +63,7 @@ const App = () => (
           <Route path="/privacy" element={<LegalTerms />} />
           <Route path="/licensing" element={<LicensingPage />} />
           <Route path="/quote-live/:id" element={<QuoteViewLive />} />
+          <Route path="/student-onboarding" element={<StudentOnboarding />} />
           <Route path="/book/:slug" element={<BookingLive />} />
           <Route path="/portfolio/:id" element={<PortfolioGallery />} />
           <Route path="/quote-form/:id" element={<LeadCaptureWidget />} />
