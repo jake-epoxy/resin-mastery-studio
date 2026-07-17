@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { ShieldAlert, TrendingUp, Building, Download, Share2, FileSignature, Send, Copy, Loader2, FileUp, X } from "lucide-react";
+import { ShieldAlert, TrendingUp, Building, Download, Share2, FileSignature, Send, Copy, Loader2, FileUp, X, Eye } from "lucide-react";
 
 export default function MasterControl() {
   const [installers, setInstallers] = useState<any[]>([]);
@@ -16,6 +16,11 @@ export default function MasterControl() {
     program: "Private Epoxy / Resin Training",
     date: "",
     price: "",
+    paidAmount: "",
+    paidDate: "",
+    nextAmount: "",
+    nextDate: new Date().toISOString().slice(0, 10),
+    finalDue: "",
     agreementUrl: "",
     agreementName: "",
   });
@@ -131,6 +136,11 @@ export default function MasterControl() {
     if (studentForm.program.trim()) params.set("program", studentForm.program.trim());
     if (studentForm.date.trim()) params.set("date", studentForm.date.trim());
     if (studentForm.price.trim()) params.set("price", studentForm.price.trim());
+    if (studentForm.paidAmount.trim()) params.set("paidAmount", studentForm.paidAmount.trim());
+    if (studentForm.paidDate.trim()) params.set("paidDate", studentForm.paidDate.trim());
+    if (studentForm.nextAmount.trim()) params.set("nextAmount", studentForm.nextAmount.trim());
+    if (studentForm.nextDate.trim()) params.set("nextDate", studentForm.nextDate.trim());
+    if (studentForm.finalDue.trim()) params.set("finalDue", studentForm.finalDue.trim());
     if (studentForm.agreementUrl) params.set("agreement", studentForm.agreementUrl);
     if (studentForm.agreementName) params.set("agreementName", studentForm.agreementName);
     return `${origin}/student-onboarding?${params.toString()}`;
@@ -139,6 +149,22 @@ export default function MasterControl() {
   const copyStudentLink = async () => {
     await navigator.clipboard.writeText(buildStudentLink());
   };
+
+  const previewStudentForm = () => {
+    window.open(buildStudentLink(), "_blank", "noopener,noreferrer");
+  };
+
+  const money = (value: string) => {
+    const amount = Number(value);
+    return Number.isFinite(amount)
+      ? amount.toLocaleString("en-US", { style: "currency", currency: "USD" })
+      : "$0.00";
+  };
+
+  const remainingStudentBalance = Math.max(
+    Number(studentForm.price || 0) - Number(studentForm.paidAmount || 0) - Number(studentForm.nextAmount || 0),
+    0,
+  );
 
   const handleStudentAgreementUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -199,6 +225,13 @@ export default function MasterControl() {
     <p style="color:#334155;font-size:16px;line-height:1.6;"><strong>Program:</strong> ${studentForm.program || "Private Epoxy / Resin Training"}</p>
     ${studentForm.date ? `<p style="color:#334155;font-size:16px;line-height:1.6;"><strong>Training Date:</strong> ${studentForm.date}</p>` : ""}
     ${studentForm.price ? `<p style="color:#334155;font-size:16px;line-height:1.6;"><strong>Class Price:</strong> $${Number(studentForm.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>` : ""}
+    ${(studentForm.paidAmount || studentForm.nextAmount) ? `
+      <div style="margin:20px 0;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
+        <p style="margin:0 0 10px;color:#0f172a;font-size:15px;font-weight:700;">Payment Schedule</p>
+        ${studentForm.paidAmount ? `<p style="margin:5px 0;color:#334155;"><strong>Previously paid:</strong> ${money(studentForm.paidAmount)}${studentForm.paidDate ? ` on ${studentForm.paidDate}` : ""}</p>` : ""}
+        ${studentForm.nextAmount ? `<p style="margin:5px 0;color:#334155;"><strong>Next payment:</strong> ${money(studentForm.nextAmount)}${studentForm.nextDate ? ` due ${studentForm.nextDate}` : ""}</p>` : ""}
+        <p style="margin:5px 0;color:#334155;"><strong>Remaining after next payment:</strong> ${money(String(remainingStudentBalance))}${studentForm.finalDue ? ` (${studentForm.finalDue})` : ""}</p>
+      </div>` : ""}
     ${studentForm.agreementUrl ? `<p style="color:#334155;font-size:16px;line-height:1.6;">Your training agreement is included in the onboarding form for review and signature.</p>` : ""}
     <p style="margin:28px 0;"><a href="${link}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-weight:700;">Complete Onboarding</a></p>
     <p style="color:#94a3b8;font-size:13px;">If the button does not open, copy and paste this link:<br>${link}</p>
@@ -310,10 +343,45 @@ export default function MasterControl() {
             </label>
           </div>
         </div>
+        <div className="mb-4 border border-white/10 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 bg-white/[0.03] border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <div>
+              <p className="text-sm font-bold text-white">Payment schedule <span className="text-white/30 font-normal">(optional)</span></p>
+              <p className="text-xs text-white/40 mt-1">Record what was received, what is due next, and when the final balance is due.</p>
+            </div>
+            <p className="text-sm font-bold text-[#78c8ff]">Final balance: {money(String(remainingStudentBalance))}</p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-white/10">
+            <div className="p-4 grid grid-cols-2 gap-3">
+              <p className="col-span-2 text-[11px] uppercase tracking-widest text-emerald-400 font-bold">Previously Paid</p>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35">$</span>
+                <input type="number" min="0" step="0.01" value={studentForm.paidAmount} onChange={(e) => setStudentForm({ ...studentForm, paidAmount: e.target.value })} placeholder="500" aria-label="Previously paid amount" className="w-full bg-black border border-white/10 rounded-lg pl-7 pr-3 py-2.5 text-white text-sm outline-none focus:border-emerald-400" />
+              </div>
+              <input type="date" value={studentForm.paidDate} onChange={(e) => setStudentForm({ ...studentForm, paidDate: e.target.value })} aria-label="Previous payment date" className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm outline-none focus:border-emerald-400 [color-scheme:dark]" />
+            </div>
+            <div className="p-4 grid grid-cols-2 gap-3">
+              <p className="col-span-2 text-[11px] uppercase tracking-widest text-[#78c8ff] font-bold">Next Payment</p>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35">$</span>
+                <input type="number" min="0" step="0.01" value={studentForm.nextAmount} onChange={(e) => setStudentForm({ ...studentForm, nextAmount: e.target.value })} placeholder="500" aria-label="Next payment amount" className="w-full bg-black border border-white/10 rounded-lg pl-7 pr-3 py-2.5 text-white text-sm outline-none focus:border-[#78c8ff]" />
+              </div>
+              <input type="date" value={studentForm.nextDate} onChange={(e) => setStudentForm({ ...studentForm, nextDate: e.target.value })} aria-label="Next payment due date" className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm outline-none focus:border-[#78c8ff] [color-scheme:dark]" />
+            </div>
+            <div className="p-4">
+              <p className="text-[11px] uppercase tracking-widest text-amber-400 font-bold mb-3">Remaining Balance</p>
+              <div className="h-[42px] flex items-center text-lg font-bold text-white mb-3">{money(String(remainingStudentBalance))}</div>
+              <input value={studentForm.finalDue} onChange={(e) => setStudentForm({ ...studentForm, finalDue: e.target.value })} placeholder="When due? e.g. After training" aria-label="Final balance due timing" className="w-full bg-black border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm outline-none focus:border-amber-400" />
+            </div>
+          </div>
+        </div>
         <div className="bg-black/50 border border-white/10 rounded-xl p-3 mb-4 text-xs text-white/50 font-mono break-all">
           {buildStudentLink()}
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
+          <button onClick={previewStudentForm} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white px-4 py-3 rounded-xl font-bold">
+            <Eye size={16} /> Preview as Student
+          </button>
           <button onClick={copyStudentLink} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white px-4 py-3 rounded-xl font-bold">
             <Copy size={16} /> Copy Link
           </button>

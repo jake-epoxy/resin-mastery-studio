@@ -25,6 +25,11 @@ export default function StudentOnboarding() {
     program: params.get("program") || "Private Epoxy / Resin Training",
     trainingDate: params.get("date") || "",
     classPrice: params.get("price") || "",
+    paidAmount: params.get("paidAmount") || "",
+    paidDate: params.get("paidDate") || "",
+    nextAmount: params.get("nextAmount") || "",
+    nextDate: params.get("nextDate") || "",
+    finalDue: params.get("finalDue") || "",
     agreementUrl: params.get("agreement") || "",
     agreementName: params.get("agreementName") || "Student Training Agreement.pdf",
   }), [params]);
@@ -54,6 +59,36 @@ export default function StudentOnboarding() {
       ? amount.toLocaleString("en-US", { style: "currency", currency: "USD" })
       : prefill.classPrice;
   }, [prefill.classPrice]);
+
+  const formatMoney = (value: string | number) => {
+    const amount = Number(value);
+    return Number.isFinite(amount)
+      ? amount.toLocaleString("en-US", { style: "currency", currency: "USD" })
+      : "$0.00";
+  };
+
+  const formatDate = (value: string, fallback: string) => {
+    if (!value) return fallback;
+    const date = new Date(`${value}T00:00:00`);
+    return Number.isNaN(date.getTime())
+      ? value
+      : date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  };
+
+  const paymentSchedule = useMemo(() => {
+    const total = Number(prefill.classPrice || 0);
+    const paid = Number(prefill.paidAmount || 0);
+    const next = Number(prefill.nextAmount || 0);
+    const remaining = Math.max(total - paid - next, 0);
+    const today = new Date().toISOString().slice(0, 10);
+    return {
+      hasSchedule: Boolean(prefill.paidAmount || prefill.nextAmount),
+      paid,
+      next,
+      remaining,
+      nextStatus: prefill.nextDate === today ? "Due Today" : "Upcoming",
+    };
+  }, [prefill.classPrice, prefill.nextAmount, prefill.nextDate, prefill.paidAmount]);
 
   const pdfSafeText = (value: string) => value
     .normalize("NFKD")
@@ -95,6 +130,7 @@ export default function StudentOnboarding() {
       ["Program", form.program],
       ["Training Date", form.trainingDate || "To be scheduled"],
       ["Class Price", classPriceLabel],
+      ...(paymentSchedule.hasSchedule ? [["Payment Plan", `${formatMoney(paymentSchedule.paid)} paid; ${formatMoney(paymentSchedule.next)} next; ${formatMoney(paymentSchedule.remaining)} remaining`]] : []),
       ["Agreement", prefill.agreementName],
       ["Signed At", signedAt],
     ];
@@ -107,7 +143,7 @@ export default function StudentOnboarding() {
 
     page.drawRectangle({ x: 48, y: 285, width: 516, height: 90, color: rgb(0.95, 0.97, 0.99), borderColor: rgb(0.82, 0.86, 0.9), borderWidth: 1 });
     page.drawText("ELECTRONIC ACKNOWLEDGEMENT", { x: 64, y: 345, size: 10, font: bold, color: rgb(0.1, 0.15, 0.22) });
-    const acknowledgement = "I confirm that I reviewed every page of the attached training agreement and the safety and training terms presented during onboarding. I agree to be legally bound by them and adopt the signature below as my electronic signature.";
+    const acknowledgement = "I confirm that I reviewed every page of the attached training agreement, the payment schedule, and the safety and training terms presented during onboarding. I agree to be legally bound by them and adopt the signature below as my electronic signature.";
     const acknowledgementWords = acknowledgement.split(" ");
     const acknowledgementLines: string[] = [];
     let line = "";
@@ -177,6 +213,13 @@ export default function StudentOnboarding() {
     addText(`Program: ${form.program}`);
     addText(`Training Date: ${form.trainingDate || "To be scheduled"}`);
     addText(`Class Price: ${classPriceLabel}`);
+    if (paymentSchedule.hasSchedule) {
+      y += 4;
+      addText("Payment Schedule", 14, true, 8);
+      if (prefill.paidAmount) addText(`Previously Paid: ${formatMoney(paymentSchedule.paid)} - ${formatDate(prefill.paidDate, "Date not specified")}`);
+      if (prefill.nextAmount) addText(`Next Payment: ${formatMoney(paymentSchedule.next)} - ${formatDate(prefill.nextDate, "Date not specified")}`);
+      addText(`Remaining After Next Payment: ${formatMoney(paymentSchedule.remaining)} - ${prefill.finalDue || "Due date not specified"}`);
+    }
     y += 4;
 
     addText("Agreement Terms", 14, true, 8);
@@ -242,6 +285,11 @@ export default function StudentOnboarding() {
             <p><strong>Program:</strong> ${form.program}</p>
             <p><strong>Training Date:</strong> ${form.trainingDate || "To be scheduled"}</p>
             <p><strong>Class Price:</strong> ${classPriceLabel}</p>
+            ${paymentSchedule.hasSchedule ? `
+              <p><strong>Previously Paid:</strong> ${formatMoney(paymentSchedule.paid)}${prefill.paidDate ? ` on ${formatDate(prefill.paidDate, "")}` : ""}</p>
+              <p><strong>Next Payment:</strong> ${formatMoney(paymentSchedule.next)}${prefill.nextDate ? ` due ${formatDate(prefill.nextDate, "")}` : ""}</p>
+              <p><strong>Remaining After Next Payment:</strong> ${formatMoney(paymentSchedule.remaining)}${prefill.finalDue ? ` (${prefill.finalDue})` : ""}</p>
+            ` : ""}
             <p>The completed signed ${prefill.agreementUrl ? "student agreement" : "onboarding agreement"} is attached.</p>
           `,
           attachments: [{ filename: `Signed_Student_Agreement_${form.fullName.replace(/\s+/g, "_")}.pdf`, content: pdf }]
@@ -302,6 +350,48 @@ export default function StudentOnboarding() {
           </div>
         </section>
 
+        {paymentSchedule.hasSchedule && (
+          <section className="bg-[#111] border border-white/10 rounded-2xl overflow-hidden mb-8">
+            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-widest text-white/35 font-bold mb-1">Payment Plan</p>
+                <h2 className="font-bold text-lg">Class Payment Schedule</h2>
+              </div>
+              <p className="text-sm text-white/45">Total {classPriceLabel}</p>
+            </div>
+            <div className="divide-y divide-white/10">
+              {prefill.paidAmount && (
+                <div className="px-5 py-4 grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_1fr_auto] items-center gap-3">
+                  <div>
+                    <p className="font-bold">Previous Payment</p>
+                    <p className="text-sm text-white/45 mt-1">{formatDate(prefill.paidDate, "Previously received")}</p>
+                  </div>
+                  <span className="hidden sm:inline-flex justify-self-start text-[10px] uppercase tracking-widest font-bold text-emerald-400 border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 rounded-full">Paid</span>
+                  <p className="font-bold text-emerald-400">{formatMoney(paymentSchedule.paid)}</p>
+                </div>
+              )}
+              {prefill.nextAmount && (
+                <div className="px-5 py-4 grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_1fr_auto] items-center gap-3">
+                  <div>
+                    <p className="font-bold">Next Payment</p>
+                    <p className="text-sm text-white/45 mt-1">{formatDate(prefill.nextDate, "Date to be arranged")}</p>
+                  </div>
+                  <span className="hidden sm:inline-flex justify-self-start text-[10px] uppercase tracking-widest font-bold text-[#78c8ff] border border-[#78c8ff]/25 bg-[#78c8ff]/10 px-2.5 py-1 rounded-full">{paymentSchedule.nextStatus}</span>
+                  <p className="font-bold text-[#78c8ff]">{formatMoney(paymentSchedule.next)}</p>
+                </div>
+              )}
+              <div className="px-5 py-4 grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_1fr_auto] items-center gap-3">
+                <div>
+                  <p className="font-bold">Final Balance</p>
+                  <p className="text-sm text-white/45 mt-1">{prefill.finalDue || "Due timing to be arranged"}</p>
+                </div>
+                <span className="hidden sm:inline-flex justify-self-start text-[10px] uppercase tracking-widest font-bold text-amber-400 border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 rounded-full">Remaining</span>
+                <p className="font-bold text-amber-400">{formatMoney(paymentSchedule.remaining)}</p>
+              </div>
+            </div>
+          </section>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           {[
             ["fullName", "Full Legal Name", "Your full name"],
@@ -356,7 +446,7 @@ export default function StudentOnboarding() {
           </label>
           <label className="flex gap-3 items-start text-sm text-white/70">
             <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} className="mt-1" />
-            I have read and agree to {prefill.agreementUrl ? "the uploaded student agreement and " : ""}the training terms above, including the class price shown.
+            I have read and agree to the training terms above, including the class price shown{prefill.agreementUrl ? ", the uploaded student agreement" : ""}{paymentSchedule.hasSchedule ? ", and the payment schedule" : ""}.
           </label>
         </div>
 
