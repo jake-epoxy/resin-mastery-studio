@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { ShieldAlert, TrendingUp, Building, Download, Share2, FileSignature, Send, Copy, Loader2, FileUp, X, Eye } from "lucide-react";
+import { ShieldAlert, TrendingUp, Building, Download, Share2, FileSignature, Send, Copy, Loader2, Eye, ShieldCheck } from "lucide-react";
 
 export default function MasterControl() {
   const [installers, setInstallers] = useState<any[]>([]);
@@ -21,11 +21,8 @@ export default function MasterControl() {
     nextAmount: "",
     nextDate: new Date().toISOString().slice(0, 10),
     finalDue: "",
-    agreementUrl: "",
-    agreementName: "",
   });
   const [sendingStudentLink, setSendingStudentLink] = useState(false);
-  const [uploadingStudentAgreement, setUploadingStudentAgreement] = useState(false);
 
   useEffect(() => {
     fetchGlobalData();
@@ -141,8 +138,6 @@ export default function MasterControl() {
     if (studentForm.nextAmount.trim()) params.set("nextAmount", studentForm.nextAmount.trim());
     if (studentForm.nextDate.trim()) params.set("nextDate", studentForm.nextDate.trim());
     if (studentForm.finalDue.trim()) params.set("finalDue", studentForm.finalDue.trim());
-    if (studentForm.agreementUrl) params.set("agreement", studentForm.agreementUrl);
-    if (studentForm.agreementName) params.set("agreementName", studentForm.agreementName);
     return `${origin}/student-onboarding?${params.toString()}`;
   };
 
@@ -165,40 +160,6 @@ export default function MasterControl() {
     Number(studentForm.price || 0) - Number(studentForm.paidAmount || 0) - Number(studentForm.nextAmount || 0),
     0,
   );
-
-  const handleStudentAgreementUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-      alert("Please upload a PDF file.");
-      return;
-    }
-    if (file.size > 3 * 1024 * 1024) {
-      alert("Please keep the PDF under 3 MB so the completed signed copy can be emailed.");
-      return;
-    }
-
-    setUploadingStudentAgreement(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Your admin session expired. Please sign in again.");
-
-      const safeName = file.name.replace(/[^a-z0-9_.-]/gi, "_");
-      const filePath = `${user.id}/student-agreements/${Date.now()}_${safeName}`;
-      const { error } = await supabase.storage
-        .from("business-assets")
-        .upload(filePath, file, { cacheControl: "3600", upsert: false, contentType: "application/pdf" });
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage.from("business-assets").getPublicUrl(filePath);
-      setStudentForm((current) => ({ ...current, agreementUrl: publicUrl, agreementName: file.name }));
-    } catch (err: any) {
-      alert(err.message || "Could not upload the student agreement.");
-    } finally {
-      setUploadingStudentAgreement(false);
-    }
-  };
 
   const sendStudentLink = async () => {
     if (!studentForm.email.trim()) {
@@ -232,7 +193,7 @@ export default function MasterControl() {
         ${studentForm.nextAmount ? `<p style="margin:5px 0;color:#334155;"><strong>Next payment:</strong> ${money(studentForm.nextAmount)}${studentForm.nextDate ? ` due ${studentForm.nextDate}` : ""}</p>` : ""}
         <p style="margin:5px 0;color:#334155;"><strong>Remaining after next payment:</strong> ${money(String(remainingStudentBalance))}${studentForm.finalDue ? ` (${studentForm.finalDue})` : ""}</p>
       </div>` : ""}
-    ${studentForm.agreementUrl ? `<p style="color:#334155;font-size:16px;line-height:1.6;">Your training agreement is included in the onboarding form for review and signature.</p>` : ""}
+    <p style="color:#334155;font-size:16px;line-height:1.6;">The onboarding form includes the Resin Academics Student Training Agreement, payment terms, assumption of risk, and release for review and signature.</p>
     <p style="margin:28px 0;"><a href="${link}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:8px;font-weight:700;">Complete Onboarding</a></p>
     <p style="color:#94a3b8;font-size:13px;">If the button does not open, copy and paste this link:<br>${link}</p>
   </div>
@@ -323,24 +284,11 @@ export default function MasterControl() {
             <input type="number" min="0" step="0.01" value={studentForm.price} onChange={(e) => setStudentForm({ ...studentForm, price: e.target.value })} placeholder="Class price" className="w-full bg-black border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white text-sm outline-none focus:border-[#78c8ff]" />
           </div>
         </div>
-        <div className="mb-4 border border-dashed border-white/15 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-white">Custom student agreement <span className="text-white/30 font-normal">(optional)</span></p>
-            <p className="text-xs text-white/40 mt-1 truncate">
-              {studentForm.agreementName || "Upload your own PDF. The student's signature record will be appended to it."}
-            </p>
-          </div>
-          <div className="flex gap-2 shrink-0">
-            {studentForm.agreementUrl && (
-              <button type="button" onClick={() => setStudentForm({ ...studentForm, agreementUrl: "", agreementName: "" })} title="Remove uploaded agreement" className="w-11 h-11 inline-flex items-center justify-center bg-white/5 hover:bg-red-500/10 text-white/50 hover:text-red-400 border border-white/10 rounded-xl">
-                <X size={17} />
-              </button>
-            )}
-            <label className="relative inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white px-4 h-11 rounded-xl font-bold cursor-pointer">
-              {uploadingStudentAgreement ? <Loader2 size={16} className="animate-spin" /> : <FileUp size={16} />}
-              {uploadingStudentAgreement ? "Uploading..." : studentForm.agreementUrl ? "Replace PDF" : "Upload PDF"}
-              <input type="file" accept="application/pdf,.pdf" onChange={handleStudentAgreementUpload} disabled={uploadingStudentAgreement} className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed" />
-            </label>
+        <div className="mb-4 border border-emerald-500/20 bg-emerald-500/[0.05] rounded-xl p-4 flex items-start gap-3">
+          <ShieldCheck size={20} className="text-emerald-400 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-white">Resin Academics Student Training Agreement included</p>
+            <p className="text-xs text-white/45 mt-1 leading-relaxed">Built-in no-refund terms, student-specific materials policy, safety and risk disclosures, release of liability, intellectual-property protection, and Texas electronic-signature terms.</p>
           </div>
         </div>
         <div className="mb-4 border border-white/10 rounded-xl overflow-hidden">
