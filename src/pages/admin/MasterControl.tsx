@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { ShieldAlert, TrendingUp, Building, Download, Share2, FileSignature, Send, Copy, Loader2, Eye, ShieldCheck } from "lucide-react";
+import { ShieldAlert, TrendingUp, Building, Download, Share2, FileSignature, Send, Copy, Loader2, Eye, ShieldCheck, RefreshCw, ClipboardCheck, FileCheck2, DollarSign, X, ReceiptText, Mail, Upload, CreditCard, CheckCircle2 } from "lucide-react";
 
 export default function MasterControl() {
   const [installers, setInstallers] = useState<any[]>([]);
   const [officialPartners, setOfficialPartners] = useState<any[]>([]);
+  const [studentAgreements, setStudentAgreements] = useState<any[]>([]);
+  const [loadingStudentAgreements, setLoadingStudentAgreements] = useState(true);
   const [totalClients, setTotalClients] = useState(0);
   const [totalGmv, setTotalGmv] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -23,10 +25,54 @@ export default function MasterControl() {
     finalDue: "",
   });
   const [sendingStudentLink, setSendingStudentLink] = useState(false);
+  const [copyingStudentLink, setCopyingStudentLink] = useState(false);
+  const [loggingStudentSend, setLoggingStudentSend] = useState(false);
+  const [paymentAgreement, setPaymentAgreement] = useState<any | null>(null);
+  const [paymentForm, setPaymentForm] = useState({
+    amount: "",
+    paymentDate: new Date().toISOString().slice(0, 10),
+    method: "Zelle",
+    reference: "",
+    note: "",
+    sendReceipt: true,
+  });
+  const [recordingPayment, setRecordingPayment] = useState(false);
+  const [uploadingSignedAgreement, setUploadingSignedAgreement] = useState("");
+  const [emailingReceipt, setEmailingReceipt] = useState("");
 
   useEffect(() => {
     fetchGlobalData();
+    fetchStudentAgreements();
   }, []);
+
+  async function studentAgreementRequest(body: Record<string, unknown>) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error("Your Super Admin session expired. Please sign in again.");
+
+    const response = await fetch("/api/student-agreements-admin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(data?.error || "Student agreement request failed.");
+    return data;
+  }
+
+  async function fetchStudentAgreements() {
+    setLoadingStudentAgreements(true);
+    try {
+      const data = await studentAgreementRequest({ action: "list" });
+      setStudentAgreements(data.agreements || []);
+    } catch (error) {
+      console.error("Could not load student agreement records", error);
+    } finally {
+      setLoadingStudentAgreements(false);
+    }
+  }
 
   async function fetchGlobalData() {
     setLoading(true);
@@ -125,28 +171,81 @@ export default function MasterControl() {
     document.body.removeChild(link);
   }
 
-  const buildStudentLink = () => {
+  const buildStudentLink = (trackingId = "", preview = false, source: any = studentForm) => {
     const origin = window.location.origin;
     const params = new URLSearchParams();
-    if (studentForm.name.trim()) params.set("name", studentForm.name.trim());
-    if (studentForm.email.trim()) params.set("email", studentForm.email.trim());
-    if (studentForm.program.trim()) params.set("program", studentForm.program.trim());
-    if (studentForm.date.trim()) params.set("date", studentForm.date.trim());
-    if (studentForm.price.trim()) params.set("price", studentForm.price.trim());
-    if (studentForm.paidAmount.trim()) params.set("paidAmount", studentForm.paidAmount.trim());
-    if (studentForm.paidDate.trim()) params.set("paidDate", studentForm.paidDate.trim());
-    if (studentForm.nextAmount.trim()) params.set("nextAmount", studentForm.nextAmount.trim());
-    if (studentForm.nextDate.trim()) params.set("nextDate", studentForm.nextDate.trim());
-    if (studentForm.finalDue.trim()) params.set("finalDue", studentForm.finalDue.trim());
+    const values = {
+      name: source.studentName ?? source.name ?? "",
+      email: source.studentEmail ?? source.email ?? "",
+      program: source.program ?? "",
+      date: source.trainingDate ?? source.date ?? "",
+      price: String(source.classPrice ?? source.price ?? ""),
+      paidAmount: String(source.paidAmount ?? ""),
+      paidDate: source.paidDate ?? "",
+      nextAmount: String(source.nextAmount ?? ""),
+      nextDate: source.nextDate ?? "",
+      finalDue: source.finalDue ?? "",
+    };
+    Object.entries(values).forEach(([key, value]) => {
+      if (value.trim()) params.set(key, value.trim());
+    });
+    if (trackingId) params.set("tracking", trackingId);
+    if (preview) params.set("preview", "1");
     return `${origin}/student-onboarding?${params.toString()}`;
   };
 
+  const studentAgreementPayload = () => ({
+    studentName: studentForm.name,
+    studentEmail: studentForm.email,
+    program: studentForm.program,
+    trainingDate: studentForm.date,
+    classPrice: studentForm.price,
+    paidAmount: studentForm.paidAmount,
+    paidDate: studentForm.paidDate,
+    nextAmount: studentForm.nextAmount,
+    nextDate: studentForm.nextDate,
+    finalDue: studentForm.finalDue,
+  });
+
+  const validateStudentRecord = () => {
+    if (!studentForm.name.trim() || !studentForm.email.trim()) {
+      alert("Student name and email are required.");
+      return false;
+    }
+    return true;
+  };
+
+  const createStudentAgreement = async (status: "created" | "sent", source: string) => {
+    const data = await studentAgreementRequest({
+      action: "create",
+      agreement: studentAgreementPayload(),
+      status,
+      source,
+    });
+    return data.agreement;
+  };
+
+  const markStudentAgreement = async (id: string, status: "sent" | "failed", emailId = "", note = "") => {
+    await studentAgreementRequest({ action: "mark", id, status, emailId, note });
+  };
+
   const copyStudentLink = async () => {
-    await navigator.clipboard.writeText(buildStudentLink());
+    if (!validateStudentRecord()) return;
+    setCopyingStudentLink(true);
+    try {
+      const agreement = await createStudentAgreement("created", "copied-link");
+      await navigator.clipboard.writeText(buildStudentLink(agreement.id));
+      await fetchStudentAgreements();
+      alert("Tracked student link copied.");
+    } catch (error: any) {
+      alert(error.message || "Could not create the tracked link.");
+    } finally {
+      setCopyingStudentLink(false);
+    }
   };
 
   const previewStudentForm = () => {
-    window.open(buildStudentLink(), "_blank", "noopener,noreferrer");
+    window.open(buildStudentLink("", true), "_blank", "noopener,noreferrer");
   };
 
   const money = (value: string) => {
@@ -161,14 +260,155 @@ export default function MasterControl() {
     0,
   );
 
-  const sendStudentLink = async () => {
-    if (!studentForm.email.trim()) {
-      alert("Student email is required.");
+  const logExistingStudentSend = async () => {
+    if (!validateStudentRecord()) return;
+    setLoggingStudentSend(true);
+    try {
+      await createStudentAgreement("sent", "manual-backfill");
+      await fetchStudentAgreements();
+      alert("Existing student form send logged.");
+    } catch (error: any) {
+      alert(error.message || "Could not log the existing send.");
+    } finally {
+      setLoggingStudentSend(false);
+    }
+  };
+
+  const copyAgreementLink = async (agreement: any) => {
+    await navigator.clipboard.writeText(buildStudentLink(agreement.id, false, agreement));
+    alert("Tracked student link copied.");
+  };
+
+  const studentStatusLabel = (status: string) => ({
+    created: "Link Created",
+    sent: "Sent",
+    opened: "Opened",
+    signed: "Signed",
+    failed: "Send Failed",
+  }[status] || status);
+
+  const studentStatusClass = (status: string) => ({
+    created: "border-white/15 bg-white/5 text-white/60",
+    sent: "border-[#78c8ff]/30 bg-[#78c8ff]/10 text-[#78c8ff]",
+    opened: "border-amber-400/30 bg-amber-400/10 text-amber-300",
+    signed: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
+    failed: "border-red-400/30 bg-red-400/10 text-red-300",
+  }[status] || "border-white/15 bg-white/5 text-white/60");
+
+  const agreementActivity = (agreement: any) => {
+    const latestPayment = [...(agreement.payments || [])].reverse()[0];
+    const value = agreement.paidInFullAt || latestPayment?.recordedAt || agreement.signedAt || agreement.openedAt || agreement.sentAt || agreement.createdAt;
+    return value ? new Date(value).toLocaleString() : "No activity";
+  };
+
+  const latestReceiptFor = (agreement: any) => (
+    [...(agreement.payments || [])].reverse().find((payment) => payment.receiptPdfPath)
+  );
+
+  const openPaymentEditor = (agreement: any) => {
+    setPaymentAgreement(agreement);
+    setPaymentForm({
+      amount: String(agreement.balanceDue || ""),
+      paymentDate: new Date().toISOString().slice(0, 10),
+      method: "Zelle",
+      reference: "",
+      note: "",
+      sendReceipt: true,
+    });
+  };
+
+  const recordStudentPayment = async () => {
+    if (!paymentAgreement) return;
+    const amount = Number(paymentForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      alert("Enter a valid payment amount.");
       return;
     }
-    setSendingStudentLink(true);
+
+    setRecordingPayment(true);
     try {
-      const link = buildStudentLink();
+      const result = await studentAgreementRequest({
+        action: "record-payment",
+        id: paymentAgreement.id,
+        amount,
+        paymentDate: paymentForm.paymentDate,
+        method: paymentForm.method,
+        reference: paymentForm.reference,
+        note: paymentForm.note,
+        sendReceipt: paymentForm.sendReceipt,
+      });
+      setPaymentAgreement(null);
+      await fetchStudentAgreements();
+      if (result.warning) {
+        alert(`Payment recorded and receipt saved. Email delivery needs attention: ${result.warning}`);
+      } else if (paymentForm.sendReceipt) {
+        alert("Payment recorded and receipt emailed to the student.");
+      } else {
+        alert("Payment recorded and receipt saved.");
+      }
+    } catch (error: any) {
+      alert(error.message || "Could not record the student payment.");
+    } finally {
+      setRecordingPayment(false);
+    }
+  };
+
+  const emailLatestReceipt = async (agreement: any) => {
+    const payment = latestReceiptFor(agreement);
+    if (!payment) return;
+    setEmailingReceipt(agreement.id);
+    try {
+      await studentAgreementRequest({ action: "send-receipt", id: agreement.id, paymentId: payment.id });
+      await fetchStudentAgreements();
+      alert(`Receipt emailed to ${agreement.studentEmail}.`);
+    } catch (error: any) {
+      alert(error.message || "Could not email the receipt.");
+    } finally {
+      setEmailingReceipt("");
+    }
+  };
+
+  const attachSignedAgreement = async (agreement: any, file: File) => {
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      alert("Please choose the signed agreement as a PDF.");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      alert("The signed PDF must be smaller than 3 MB.");
+      return;
+    }
+
+    setUploadingSignedAgreement(agreement.id);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Could not read the signed PDF."));
+        reader.readAsDataURL(file);
+      });
+      await studentAgreementRequest({
+        action: "attach-signed-pdf",
+        id: agreement.id,
+        pdfBase64: dataUrl,
+      });
+      await fetchStudentAgreements();
+      alert("Signed student agreement attached.");
+    } catch (error: any) {
+      alert(error.message || "Could not attach the signed agreement.");
+    } finally {
+      setUploadingSignedAgreement("");
+    }
+  };
+
+  const sendStudentLink = async () => {
+    if (!validateStudentRecord()) return;
+    setSendingStudentLink(true);
+    let agreementId = "";
+    let emailSent = false;
+    try {
+      const agreement = await createStudentAgreement("created", "email");
+      agreementId = agreement.id;
+      const link = buildStudentLink(agreement.id);
       const res = await fetch("/api/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -201,13 +441,22 @@ export default function MasterControl() {
 </html>`
         })
       });
-      if (!res.ok) {
-        const error = await res.json().catch(() => null);
-        throw new Error(error?.error || "Could not send onboarding link.");
-      }
-      alert("Student onboarding link sent.");
+      const emailResult = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(emailResult?.error || "Could not send onboarding link.");
+      emailSent = true;
+
+      const emailId = emailResult?.data?.id || emailResult?.id || "";
+      await markStudentAgreement(agreement.id, "sent", emailId);
+      await fetchStudentAgreements();
+      alert("Student onboarding link sent and recorded.");
     } catch (err: any) {
-      alert(err.message || "Failed to send student onboarding link.");
+      if (agreementId && !emailSent) {
+        await markStudentAgreement(agreementId, "failed", "", err.message).catch(() => undefined);
+        await fetchStudentAgreements();
+      }
+      alert(emailSent
+        ? "The form was emailed, but its status could not be updated. Use Log Existing Send to backfill it."
+        : err.message || "Failed to send student onboarding link.");
     } finally {
       setSendingStudentLink(false);
     }
@@ -324,19 +573,121 @@ export default function MasterControl() {
           </div>
         </div>
         <div className="bg-black/50 border border-white/10 rounded-xl p-3 mb-4 text-xs text-white/50 font-mono break-all">
-          {buildStudentLink()}
+          {buildStudentLink("", true)}
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
           <button onClick={previewStudentForm} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white px-4 py-3 rounded-xl font-bold">
             <Eye size={16} /> Preview as Student
           </button>
-          <button onClick={copyStudentLink} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white px-4 py-3 rounded-xl font-bold">
-            <Copy size={16} /> Copy Link
+          <button onClick={copyStudentLink} disabled={copyingStudentLink} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white px-4 py-3 rounded-xl font-bold disabled:opacity-50">
+            {copyingStudentLink ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />} Copy Tracked Link
+          </button>
+          <button onClick={logExistingStudentSend} disabled={loggingStudentSend} className="flex items-center justify-center gap-2 bg-amber-400/10 hover:bg-amber-400/15 border border-amber-400/20 text-amber-300 px-4 py-3 rounded-xl font-bold disabled:opacity-50">
+            {loggingStudentSend ? <Loader2 size={16} className="animate-spin" /> : <ClipboardCheck size={16} />} Log Existing Send
           </button>
           <button onClick={sendStudentLink} disabled={sendingStudentLink} className="flex items-center justify-center gap-2 bg-[#78c8ff] hover:bg-white text-black px-4 py-3 rounded-xl font-bold disabled:opacity-50">
             {sendingStudentLink ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Send Form
           </button>
         </div>
+      </div>
+
+      <div className="mb-12">
+        <div className="flex items-center justify-between gap-4 mb-5">
+          <h2 className="text-xl font-space font-bold text-white flex items-center gap-3">
+            <FileCheck2 size={20} className="text-emerald-400" />
+            Student Agreement Records
+            {studentAgreements.length > 0 && (
+              <span className="text-xs font-bold border border-white/10 bg-white/5 text-white/60 px-2.5 py-1 rounded-full">
+                {studentAgreements.length}
+              </span>
+            )}
+          </h2>
+          <button onClick={fetchStudentAgreements} disabled={loadingStudentAgreements} title="Refresh student agreement records" className="h-10 w-10 flex items-center justify-center border border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-lg disabled:opacity-50">
+            <RefreshCw size={16} className={loadingStudentAgreements ? "animate-spin" : ""} />
+          </button>
+        </div>
+
+        {loadingStudentAgreements && studentAgreements.length === 0 ? (
+          <div className="border-y border-white/10 py-8 text-center text-sm text-white/40">Loading student agreement records...</div>
+        ) : studentAgreements.length === 0 ? (
+          <div className="border-y border-white/10 py-8 text-center text-sm text-white/40">No student agreement activity recorded yet.</div>
+        ) : (
+          <div className="border-y border-white/10 divide-y divide-white/10">
+            {studentAgreements.map((agreement) => (
+              <div key={agreement.id} className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.75fr_0.85fr_minmax(280px,auto)] gap-4 lg:items-center py-5">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                    <p className="font-bold text-white truncate">{agreement.studentName}</p>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-widest ${studentStatusClass(agreement.status)}`}>
+                      {studentStatusLabel(agreement.status)}
+                    </span>
+                    {agreement.paymentStatus === "paid" && (
+                      <span className="shrink-0 px-2 py-0.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 text-emerald-300 text-[10px] font-bold uppercase tracking-widest">
+                        Paid in Full
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-white/50 truncate">{agreement.studentEmail}</p>
+                  <p className="text-xs text-white/30 truncate mt-1">{agreement.program}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-white/30 mb-1">Class Price</p>
+                  <p className="font-bold text-white">{money(String(agreement.classPrice || 0))}</p>
+                  <p className="text-xs text-emerald-300/70 mt-1">{money(String(agreement.totalPaid || 0))} paid</p>
+                  <p className="text-xs text-white/35 mt-0.5">{money(String(agreement.balanceDue || 0))} remaining</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-white/30 mb-1">Latest Activity</p>
+                  <p className="text-sm text-white/70">{agreementActivity(agreement)}</p>
+                  <p className="text-xs text-white/30 mt-1">
+                    {(agreement.payments || []).length} payment{(agreement.payments || []).length === 1 ? "" : "s"} recorded
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  {agreement.balanceDue > 0 && (
+                    <button onClick={() => openPaymentEditor(agreement)} title="Record student payment" className="h-10 px-3 flex items-center justify-center gap-2 border border-[#78c8ff]/25 bg-[#78c8ff]/10 hover:bg-[#78c8ff]/15 text-[#78c8ff] rounded-lg text-sm font-bold">
+                      <DollarSign size={16} /> Payment
+                    </button>
+                  )}
+                  <button onClick={() => copyAgreementLink(agreement)} title="Copy tracked student link" className="h-10 w-10 flex items-center justify-center border border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-lg">
+                    <Copy size={16} />
+                  </button>
+                  {agreement.signedPdfUrl && (
+                    <a href={agreement.signedPdfUrl} target="_blank" rel="noreferrer" title="Open signed student agreement" className="h-10 w-10 flex items-center justify-center border border-emerald-400/25 bg-emerald-400/10 hover:bg-emerald-400/15 text-emerald-300 rounded-lg">
+                      <FileSignature size={16} />
+                    </a>
+                  )}
+                  {!agreement.signedPdfUrl && (
+                    <label title="Attach existing signed agreement PDF" className="h-10 w-10 flex items-center justify-center border border-amber-400/25 bg-amber-400/10 hover:bg-amber-400/15 text-amber-300 rounded-lg cursor-pointer">
+                      {uploadingSignedAgreement === agreement.id ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                      <input
+                        type="file"
+                        accept="application/pdf,.pdf"
+                        className="hidden"
+                        disabled={uploadingSignedAgreement === agreement.id}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) attachSignedAgreement(agreement, file);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                  )}
+                  {latestReceiptFor(agreement)?.receiptPdfUrl && (
+                    <a href={latestReceiptFor(agreement).receiptPdfUrl} target="_blank" rel="noreferrer" title="Open latest payment receipt" className="h-10 w-10 flex items-center justify-center border border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-lg">
+                      <ReceiptText size={16} />
+                    </a>
+                  )}
+                  {latestReceiptFor(agreement)?.receiptPdfPath && (
+                    <button onClick={() => emailLatestReceipt(agreement)} disabled={emailingReceipt === agreement.id} title="Email latest receipt" className="h-10 w-10 flex items-center justify-center border border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-lg disabled:opacity-50">
+                      {emailingReceipt === agreement.id ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Official Partners Library */}
@@ -555,6 +906,108 @@ export default function MasterControl() {
           </div>
         </div>
       </div>
+
+      {paymentAgreement && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm p-4 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="student-payment-title">
+          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto bg-[#0b0b0c] border border-white/15 rounded-xl shadow-2xl">
+            <div className="sticky top-0 z-10 bg-[#0b0b0c] border-b border-white/10 px-6 py-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-[#78c8ff] font-bold mb-1">Student Payment</p>
+                <h2 id="student-payment-title" className="text-xl font-bold text-white">{paymentAgreement.studentName}</h2>
+                <p className="text-sm text-white/45 mt-1">{paymentAgreement.program}</p>
+              </div>
+              <button onClick={() => setPaymentAgreement(null)} disabled={recordingPayment} title="Close payment window" className="h-10 w-10 shrink-0 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white rounded-lg disabled:opacity-50">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="grid grid-cols-3 border-y border-white/10 mb-6">
+                <div className="py-4 pr-3">
+                  <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-1">Class Total</p>
+                  <p className="text-lg font-bold text-white">{money(String(paymentAgreement.classPrice || 0))}</p>
+                </div>
+                <div className="py-4 px-3 border-x border-white/10">
+                  <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-1">Paid So Far</p>
+                  <p className="text-lg font-bold text-emerald-300">{money(String(paymentAgreement.totalPaid || 0))}</p>
+                </div>
+                <div className="py-4 pl-3">
+                  <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-1">Balance</p>
+                  <p className="text-lg font-bold text-amber-300">{money(String(paymentAgreement.balanceDue || 0))}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2">Payment Amount</label>
+                  <div className="relative">
+                    <DollarSign size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35" />
+                    <input type="number" min="0.01" max={paymentAgreement.balanceDue} step="0.01" value={paymentForm.amount} onChange={(event) => setPaymentForm({ ...paymentForm, amount: event.target.value })} className="w-full bg-black border border-white/10 rounded-lg pl-9 pr-3 py-3 text-white outline-none focus:border-[#78c8ff]" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2">Payment Date</label>
+                  <input type="date" value={paymentForm.paymentDate} onChange={(event) => setPaymentForm({ ...paymentForm, paymentDate: event.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-3 py-3 text-white outline-none focus:border-[#78c8ff] [color-scheme:dark]" />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2">Payment Method</label>
+                  <div className="relative">
+                    <CreditCard size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none" />
+                    <select value={paymentForm.method} onChange={(event) => setPaymentForm({ ...paymentForm, method: event.target.value })} className="w-full appearance-none bg-black border border-white/10 rounded-lg pl-9 pr-3 py-3 text-white outline-none focus:border-[#78c8ff]">
+                      <option>Zelle</option>
+                      <option>Cash</option>
+                      <option>Credit / Debit Card</option>
+                      <option>Cash App</option>
+                      <option>Venmo</option>
+                      <option>Check</option>
+                      <option>Bank Transfer</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2">Reference <span className="text-white/25">Optional</span></label>
+                  <input value={paymentForm.reference} onChange={(event) => setPaymentForm({ ...paymentForm, reference: event.target.value })} placeholder="Transaction ID or confirmation" className="w-full bg-black border border-white/10 rounded-lg px-3 py-3 text-white outline-none focus:border-[#78c8ff]" />
+                </div>
+              </div>
+
+              <div className="mb-5">
+                <label className="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2">Internal Note <span className="text-white/25">Optional</span></label>
+                <textarea value={paymentForm.note} onChange={(event) => setPaymentForm({ ...paymentForm, note: event.target.value })} rows={3} placeholder="Any payment details you want stored on the record" className="w-full bg-black border border-white/10 rounded-lg px-3 py-3 text-white outline-none focus:border-[#78c8ff] resize-none" />
+              </div>
+
+              <div className="border-y border-white/10 py-4 mb-5 grid grid-cols-[1fr_auto] gap-4 items-center">
+                <div>
+                  <p className="text-sm font-bold text-white flex items-center gap-2"><ReceiptText size={16} className="text-[#78c8ff]" /> Receipt Summary</p>
+                  <p className="text-xs text-white/40 mt-1">New balance after payment</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-bold text-white">{money(String(Math.max(Number(paymentAgreement.balanceDue || 0) - Number(paymentForm.amount || 0), 0)))}</p>
+                  {Number(paymentForm.amount || 0) >= Number(paymentAgreement.balanceDue || 0) && (
+                    <p className="text-xs font-bold uppercase tracking-widest text-emerald-300 mt-1">Paid in Full</p>
+                  )}
+                </div>
+              </div>
+
+              <label className="flex items-start gap-3 mb-6 cursor-pointer">
+                <input type="checkbox" checked={paymentForm.sendReceipt} onChange={(event) => setPaymentForm({ ...paymentForm, sendReceipt: event.target.checked })} className="mt-1 h-4 w-4 accent-[#78c8ff]" />
+                <span>
+                  <span className="block text-sm font-bold text-white">Email receipt to {paymentAgreement.studentEmail}</span>
+                  <span className="block text-xs text-white/40 mt-1">The receipt and original signed agreement will be attached when available.</span>
+                </span>
+              </label>
+
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                <button onClick={() => setPaymentAgreement(null)} disabled={recordingPayment} className="px-5 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg font-bold disabled:opacity-50">Cancel</button>
+                <button onClick={recordStudentPayment} disabled={recordingPayment} className="px-5 py-3 bg-[#78c8ff] hover:bg-white text-black rounded-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50">
+                  {recordingPayment ? <Loader2 size={17} className="animate-spin" /> : paymentForm.sendReceipt ? <Mail size={17} /> : <CheckCircle2 size={17} />}
+                  {recordingPayment ? "Recording..." : paymentForm.sendReceipt ? "Record Payment & Email Receipt" : "Record Payment"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import SignatureCanvas from "react-signature-canvas";
 import { jsPDF } from "jspdf";
@@ -17,6 +17,8 @@ export default function StudentOnboarding() {
   const { toast } = useToast();
   const [params] = useSearchParams();
   const sigRef = useRef<any>(null);
+  const trackingId = params.get("tracking") || "";
+  const previewMode = params.get("preview") === "1";
   const prefill = useMemo(() => ({
     name: params.get("name") || "",
     email: params.get("email") || "",
@@ -47,6 +49,45 @@ export default function StudentOnboarding() {
   const [submitting, setSubmitting] = useState(false);
   const [complete, setComplete] = useState(false);
   const [pdfBase64, setPdfBase64] = useState("");
+  const [agreementRecordId, setAgreementRecordId] = useState(trackingId);
+  const [emailDelivered, setEmailDelivered] = useState(true);
+
+  useEffect(() => {
+    if (previewMode) return;
+    const controller = new AbortController();
+
+    fetch("/api/student-agreement-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        action: "open",
+        trackingId,
+        agreement: {
+          studentName: prefill.name,
+          studentEmail: prefill.email,
+          program: prefill.program,
+          trainingDate: prefill.trainingDate,
+          classPrice: prefill.classPrice,
+          paidAmount: prefill.paidAmount,
+          paidDate: prefill.paidDate,
+          nextAmount: prefill.nextAmount,
+          nextDate: prefill.nextDate,
+          finalDue: prefill.finalDue,
+        },
+      }),
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.error || "Could not record agreement activity.");
+        if (data?.id) setAgreementRecordId(data.id);
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") console.error("Student agreement open event failed", error);
+      });
+
+    return () => controller.abort();
+  }, [prefill, previewMode, trackingId]);
 
   const update = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -286,6 +327,10 @@ export default function StudentOnboarding() {
   }
 
   async function submit() {
+    if (previewMode) {
+      toast({ title: "Preview mode", description: "This preview will not submit or email an agreement." });
+      return;
+    }
     if (!form.fullName || !form.email) {
       toast({ title: "Missing info", description: "Name and email are required.", variant: "destructive" });
       return;
@@ -305,40 +350,79 @@ export default function StudentOnboarding() {
       const pdf = await buildPdf(signatureData);
       setPdfBase64(pdf);
 
-      const res = await fetch("/api/send-email", {
+      const agreement = {
+        studentName: form.fullName,
+        studentEmail: form.email,
+        studentPhone: form.phone,
+        cityState: form.cityState,
+        emergencyContact: form.emergencyContact,
+        program: form.program,
+        trainingDate: form.trainingDate,
+        classPrice: prefill.classPrice,
+        paidAmount: prefill.paidAmount,
+        paidDate: prefill.paidDate,
+        nextAmount: prefill.nextAmount,
+        nextDate: prefill.nextDate,
+        finalDue: prefill.finalDue,
+      };
+
+      const recordResponse = await fetch("/api/student-agreement-event", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          to: ["Pourmastersllc@gmail.com", "jakeflowers222@gmail.com", form.email],
-          subject: `Student Onboarding Signed: ${form.fullName}`,
-          html: `
-            <h2>Student Onboarding Signed</h2>
-            <p><strong>Student:</strong> ${form.fullName}</p>
-            <p><strong>Email:</strong> ${form.email}</p>
-            <p><strong>Phone:</strong> ${form.phone || "N/A"}</p>
-            <p><strong>Program:</strong> ${form.program}</p>
-            <p><strong>Training Date:</strong> ${form.trainingDate || "To be scheduled"}</p>
-            <p><strong>Class Price:</strong> ${classPriceLabel}</p>
-            ${paymentSchedule.hasSchedule ? `
-              <p><strong>Previously Paid:</strong> ${formatMoney(paymentSchedule.paid)}${prefill.paidDate ? ` on ${formatDate(prefill.paidDate, "")}` : ""}</p>
-              <p><strong>Next Payment:</strong> ${formatMoney(paymentSchedule.next)}${prefill.nextDate ? ` due ${formatDate(prefill.nextDate, "")}` : ""}</p>
-              <p><strong>Remaining After Next Payment:</strong> ${formatMoney(paymentSchedule.remaining)}${prefill.finalDue ? ` (${prefill.finalDue})` : ""}</p>
-            ` : ""}
-            <p>The completed signed Resin Academics Student Training Agreement is attached.</p>
-          `,
-          attachments: [{ filename: `Signed_Student_Agreement_${form.fullName.replace(/\s+/g, "_")}.pdf`, content: pdf }]
-        })
+          action: "sign",
+          trackingId: agreementRecordId || trackingId,
+          agreement,
+          pdfBase64: pdf,
+        }),
       });
+      const recordResult = await recordResponse.json().catch(() => null);
+      if (!recordResponse.ok) throw new Error(recordResult?.error || "Could not save the signed agreement.");
+      if (recordResult?.id) setAgreementRecordId(recordResult.id);
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.error || "Could not send signed onboarding.");
+      try {
+        const res = await fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: ["Pourmastersllc@gmail.com", "jakeflowers222@gmail.com", form.email],
+            subject: `Student Onboarding Signed: ${form.fullName}`,
+            html: `
+              <h2>Student Onboarding Signed</h2>
+              <p><strong>Student:</strong> ${form.fullName}</p>
+              <p><strong>Email:</strong> ${form.email}</p>
+              <p><strong>Phone:</strong> ${form.phone || "N/A"}</p>
+              <p><strong>Program:</strong> ${form.program}</p>
+              <p><strong>Training Date:</strong> ${form.trainingDate || "To be scheduled"}</p>
+              <p><strong>Class Price:</strong> ${classPriceLabel}</p>
+              ${paymentSchedule.hasSchedule ? `
+                <p><strong>Previously Paid:</strong> ${formatMoney(paymentSchedule.paid)}${prefill.paidDate ? ` on ${formatDate(prefill.paidDate, "")}` : ""}</p>
+                <p><strong>Next Payment:</strong> ${formatMoney(paymentSchedule.next)}${prefill.nextDate ? ` due ${formatDate(prefill.nextDate, "")}` : ""}</p>
+                <p><strong>Remaining After Next Payment:</strong> ${formatMoney(paymentSchedule.remaining)}${prefill.finalDue ? ` (${prefill.finalDue})` : ""}</p>
+              ` : ""}
+              <p>The completed signed Resin Academics Student Training Agreement is attached.</p>
+            `,
+            attachments: [{ filename: `Signed_Student_Agreement_${form.fullName.replace(/\s+/g, "_")}.pdf`, content: pdf }],
+          }),
+        });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => null);
+          throw new Error(errorData?.error || "Could not email the signed onboarding.");
+        }
+        setEmailDelivered(true);
+      } catch (emailError: any) {
+        setEmailDelivered(false);
+        toast({
+          title: "Agreement saved",
+          description: "The signature is safely recorded, but the email copy could not be delivered right now.",
+        });
       }
       setComplete(true);
     } catch (e: any) {
       toast({ title: "Submission failed", description: e.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   }
 
   if (complete) {
@@ -347,7 +431,11 @@ export default function StudentOnboarding() {
         <div className="max-w-xl bg-[#111] border border-emerald-500/30 rounded-3xl p-10 text-center">
           <CheckCircle2 className="mx-auto text-emerald-400 mb-4" size={56} />
           <h1 className="text-3xl font-bold mb-3">You're Signed In</h1>
-          <p className="text-white/60 mb-6">Your signed Student Training Agreement has been sent to you and Resin Academics.</p>
+          <p className="text-white/60 mb-6">
+            {emailDelivered
+              ? "Your signed Student Training Agreement has been saved and emailed to you and Resin Academics."
+              : "Your signed Student Training Agreement has been saved. The email copy is delayed, but Resin Academics can retrieve it from the agreement record."}
+          </p>
           {pdfBase64 && (
             <a href={`data:application/pdf;base64,${pdfBase64}`} download={`Signed_Student_Agreement_${form.fullName.replace(/\s+/g, "_")}.pdf`} className="inline-flex items-center gap-2 bg-white text-black px-5 py-3 rounded-xl font-bold">
               <FileText size={18} /> Download Copy
@@ -509,9 +597,9 @@ export default function StudentOnboarding() {
           </div>
         </section>
 
-        <button onClick={submit} disabled={submitting} className="w-full bg-[#78c8ff] text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
+        <button onClick={submit} disabled={submitting || previewMode} className="w-full bg-[#78c8ff] text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
           {submitting ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
-          {submitting ? "Submitting..." : "Sign & Submit Student Onboarding"}
+          {previewMode ? "Preview Mode" : submitting ? "Submitting..." : "Sign & Submit Student Onboarding"}
         </button>
       </div>
     </div>
