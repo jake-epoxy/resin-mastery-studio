@@ -1,5 +1,6 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { Resend } from "resend";
 import {
   buildStudentAgreementRecord,
@@ -46,6 +47,82 @@ function safeFilename(value: string) {
   return value.replace(/[^a-zA-Z0-9_-]+/g, "_").replace(/^_+|_+$/g, "") || "Student";
 }
 
+function parsedDate(value: string) {
+  if (!value || /not specified|to be scheduled/i.test(value)) return "";
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? "" : new Date(timestamp).toISOString().slice(0, 10);
+}
+
+function parsedMoney(value: string) {
+  return cleanMoney(value.replace(/[^0-9.-]/g, ""));
+}
+
+async function extractSignedAgreementDetails(pdf: Buffer) {
+  const loadingTask = getDocument({
+    data: new Uint8Array(pdf),
+    isEvalSupported: false,
+    useSystemFonts: true,
+  });
+  const document = await loadingTask.promise;
+  const lines: string[] = [];
+
+  try {
+    for (let pageNumber = 1; pageNumber <= Math.min(document.numPages, 3); pageNumber += 1) {
+      const page = await document.getPage(pageNumber);
+      const content = await page.getTextContent();
+      const rows = new Map<number, Array<{ x: number; text: string }>>();
+      content.items.forEach((item) => {
+        if (!("str" in item) || !item.str.trim() || !("transform" in item)) return;
+        const y = Math.round(item.transform[5]);
+        const row = rows.get(y) || [];
+        row.push({ x: item.transform[4], text: item.str.trim() });
+        rows.set(y, row);
+      });
+      [...rows.entries()]
+        .sort((a, b) => b[0] - a[0])
+        .forEach(([, row]) => lines.push(row.sort((a, b) => a.x - b.x).map((item) => item.text).join(" ")));
+    }
+  } finally {
+    await document.destroy();
+  }
+
+  const valueFor = (label: string) => {
+    const line = lines.find((entry) => entry.toLowerCase().startsWith(`${label.toLowerCase()}:`));
+    return line ? line.slice(line.indexOf(":") + 1).trim() : "";
+  };
+  const splitScheduleLine = (label: string) => {
+    const value = valueFor(label);
+    const separator = value.indexOf(" - ");
+    return separator === -1
+      ? { amount: parsedMoney(value), detail: "" }
+      : { amount: parsedMoney(value.slice(0, separator)), detail: value.slice(separator + 3).trim() };
+  };
+
+  const paid = splitScheduleLine("Previously Paid");
+  const next = splitScheduleLine("Next Payment");
+  const remaining = splitScheduleLine("Remaining After Next Payment");
+  const signedLine = lines.find((entry) => entry.includes("Signed electronically on")) || "";
+  const signedMatch = signedLine.match(/Signed electronically on\s+(.+?)(?:\.|$)/i);
+  const signedTimestamp = signedMatch ? Date.parse(signedMatch[1]) : Number.NaN;
+
+  return {
+    studentName: valueFor("Name"),
+    studentEmail: valueFor("Email"),
+    studentPhone: valueFor("Phone"),
+    cityState: valueFor("City / State"),
+    emergencyContact: valueFor("Emergency Contact"),
+    program: valueFor("Program") || "Private Epoxy / Resin Training",
+    trainingDate: parsedDate(valueFor("Training Date")),
+    classPrice: parsedMoney(valueFor("Class Price")),
+    paidAmount: paid.amount,
+    paidDate: parsedDate(paid.detail),
+    nextAmount: next.amount,
+    nextDate: parsedDate(next.detail),
+    finalDue: remaining.detail,
+    signedAt: Number.isNaN(signedTimestamp) ? "" : new Date(signedTimestamp).toISOString(),
+  };
+}
+
 function wrapText(text: string, font: Awaited<ReturnType<PDFDocument["embedFont"]>>, size: number, maxWidth: number) {
   const words = text.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
@@ -80,7 +157,7 @@ async function buildReceiptPdf(record: StudentAgreementRecord, payment: StudentP
   page.drawText(`Receipt ${payment.receiptNumber}`, { x: 46, y: 672, size: 10, font: regular, color: rgb(0.72, 0.76, 0.82) });
 
   const paidInFull = record.paymentStatus === "paid";
-  page.drawRectangle({ x: 430, y: 690, width: 136, height: 34, color: paidInFull ? green : blue, borderRadius: 6 });
+  page.drawRectangle({ x: 430, y: 690, width: 136, height: 34, color: paidInFull ? green : blue });
   page.drawText(paidInFull ? "PAID IN FULL" : "PAYMENT RECEIVED", {
     x: paidInFull ? 451 : 438,
     y: 702,
@@ -269,6 +346,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (action === "list") {
       return res.status(200).json({ agreements: await listAgreements(supabase) });
+    }
+
+    if (action === "import-signed-contract") {
+      const rawPdf = cleanText(body.pdfBase64, 12 * 1024 * 1024).replace(/^data:application\/pdf;base64,/, "");
+      if (!rawPdf) {
+        return res.status(400).json({ error: "Choose the signed Student Training Agreement PDF." });
+      }
+
+      const pdf = Buffer.from(rawPdf, "base64");
+      if (pdf.length < 500 || pdf.length > 8 * 1024 * 1024 || pdf.subarray(0, 4).toString() !== "%PDF") {
+        return res.status(400).json({ error: "Please choose a valid signed PDF smaller than 8 MB." });
+      }
+
+      const id = `import-${createHash("sha256").update(pdf).digest("hex").slice(0, 32)}`;
+      const existing = await readStudentAgreement(supabase, id);
+      if (existing) {
+        return res.status(200).json({ agreement: existing, alreadyExists: true });
+      }
+
+      let details: Awaited<ReturnType<typeof extractSignedAgreementDetails>>;
+      try {
+        details = await extractSignedAgreementDetails(pdf);
+      } catch (error) {
+        console.error("Could not read imported signed student agreement", error);
+        return res.status(400).json({
+          error: "I could not read that PDF. Choose the signed Student Training Agreement generated by Resin OS.",
+        });
+      }
+
+      if (!details.studentName || !isValidStudentEmail(details.studentEmail) || details.classPrice <= 0) {
+        return res.status(400).json({
+          error: "That PDF is missing the student's name, email, or class price. Choose the signed agreement Resin OS emailed you.",
+        });
+      }
+
+      const now = new Date().toISOString();
+      const record: StudentAgreementRecord = buildStudentAgreementRecord(id, details, "signed", "signed-pdf-import");
+      record.signedAt = details.signedAt || now;
+      record.events[0].note = "Existing signed agreement imported by Super Admin.";
+
+      const path = `signed/${record.id}/Imported_Signed_Student_Agreement_${Date.now()}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from(STUDENT_AGREEMENTS_BUCKET)
+        .upload(path, pdf, { contentType: "application/pdf", upsert: false });
+      if (uploadError) throw uploadError;
+
+      record.signedPdfPath = path;
+      await writeStudentAgreement(supabase, record);
+      return res.status(200).json({ agreement: record, alreadyExists: false });
     }
 
     if (action === "create") {

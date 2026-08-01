@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { ShieldAlert, TrendingUp, Building, Download, Share2, FileSignature, Send, Copy, Loader2, Eye, ShieldCheck, RefreshCw, ClipboardCheck, FileCheck2, DollarSign, X, ReceiptText, Mail, Upload, CreditCard, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, TrendingUp, Building, Download, Share2, FileSignature, Send, Copy, Loader2, Eye, ShieldCheck, RefreshCw, FileCheck2, DollarSign, X, ReceiptText, Mail, Upload, CreditCard, CheckCircle2 } from "lucide-react";
 
 export default function MasterControl() {
   const [installers, setInstallers] = useState<any[]>([]);
@@ -26,7 +26,7 @@ export default function MasterControl() {
   });
   const [sendingStudentLink, setSendingStudentLink] = useState(false);
   const [copyingStudentLink, setCopyingStudentLink] = useState(false);
-  const [loggingStudentSend, setLoggingStudentSend] = useState(false);
+  const [importingSignedContract, setImportingSignedContract] = useState(false);
   const [paymentAgreement, setPaymentAgreement] = useState<any | null>(null);
   const [paymentForm, setPaymentForm] = useState({
     amount: "",
@@ -66,9 +66,12 @@ export default function MasterControl() {
     setLoadingStudentAgreements(true);
     try {
       const data = await studentAgreementRequest({ action: "list" });
-      setStudentAgreements(data.agreements || []);
+      const agreements = data.agreements || [];
+      setStudentAgreements(agreements);
+      return agreements;
     } catch (error) {
       console.error("Could not load student agreement records", error);
+      return [];
     } finally {
       setLoadingStudentAgreements(false);
     }
@@ -260,17 +263,35 @@ export default function MasterControl() {
     0,
   );
 
-  const logExistingStudentSend = async () => {
-    if (!validateStudentRecord()) return;
-    setLoggingStudentSend(true);
+  const importSignedContract = async (file: File) => {
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      alert("Choose the signed Student Training Agreement PDF.");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      alert("The signed PDF must be smaller than 3 MB.");
+      return;
+    }
+
+    setImportingSignedContract(true);
     try {
-      await createStudentAgreement("sent", "manual-backfill");
-      await fetchStudentAgreements();
-      alert("Existing student form send logged.");
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Could not read the signed PDF."));
+        reader.readAsDataURL(file);
+      });
+      const result = await studentAgreementRequest({
+        action: "import-signed-contract",
+        pdfBase64: dataUrl,
+      });
+      const agreements = await fetchStudentAgreements();
+      const imported = agreements.find((agreement: any) => agreement.id === result.agreement.id) || result.agreement;
+      openStudentRecord(imported);
     } catch (error: any) {
-      alert(error.message || "Could not log the existing send.");
+      alert(error.message || "Could not import the signed contract.");
     } finally {
-      setLoggingStudentSend(false);
+      setImportingSignedContract(false);
     }
   };
 
@@ -305,7 +326,7 @@ export default function MasterControl() {
     [...(agreement.payments || [])].reverse().find((payment) => payment.receiptPdfPath)
   );
 
-  const openPaymentEditor = (agreement: any) => {
+  const openStudentRecord = (agreement: any) => {
     setPaymentAgreement(agreement);
     setPaymentForm({
       amount: String(agreement.balanceDue || ""),
@@ -455,7 +476,7 @@ export default function MasterControl() {
         await fetchStudentAgreements();
       }
       alert(emailSent
-        ? "The form was emailed, but its status could not be updated. Use Log Existing Send to backfill it."
+        ? "The form was emailed, but its status could not be updated. Refresh the Student Database to confirm the record."
         : err.message || "Failed to send student onboarding link.");
     } finally {
       setSendingStudentLink(false);
@@ -582,9 +603,6 @@ export default function MasterControl() {
           <button onClick={copyStudentLink} disabled={copyingStudentLink} className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white px-4 py-3 rounded-xl font-bold disabled:opacity-50">
             {copyingStudentLink ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />} Copy Tracked Link
           </button>
-          <button onClick={logExistingStudentSend} disabled={loggingStudentSend} className="flex items-center justify-center gap-2 bg-amber-400/10 hover:bg-amber-400/15 border border-amber-400/20 text-amber-300 px-4 py-3 rounded-xl font-bold disabled:opacity-50">
-            {loggingStudentSend ? <Loader2 size={16} className="animate-spin" /> : <ClipboardCheck size={16} />} Log Existing Send
-          </button>
           <button onClick={sendStudentLink} disabled={sendingStudentLink} className="flex items-center justify-center gap-2 bg-[#78c8ff] hover:bg-white text-black px-4 py-3 rounded-xl font-bold disabled:opacity-50">
             {sendingStudentLink ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Send Form
           </button>
@@ -592,19 +610,36 @@ export default function MasterControl() {
       </div>
 
       <div className="mb-12">
-        <div className="flex items-center justify-between gap-4 mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
           <h2 className="text-xl font-space font-bold text-white flex items-center gap-3">
             <FileCheck2 size={20} className="text-emerald-400" />
-            Student Agreement Records
+            Student Database
             {studentAgreements.length > 0 && (
               <span className="text-xs font-bold border border-white/10 bg-white/5 text-white/60 px-2.5 py-1 rounded-full">
                 {studentAgreements.length}
               </span>
             )}
           </h2>
-          <button onClick={fetchStudentAgreements} disabled={loadingStudentAgreements} title="Refresh student agreement records" className="h-10 w-10 flex items-center justify-center border border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-lg disabled:opacity-50">
-            <RefreshCw size={16} className={loadingStudentAgreements ? "animate-spin" : ""} />
-          </button>
+          <div className="flex items-center gap-2">
+            <label className="h-10 px-4 flex items-center justify-center gap-2 bg-[#78c8ff] hover:bg-white text-black rounded-lg text-sm font-bold cursor-pointer">
+              {importingSignedContract ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+              {importingSignedContract ? "Importing..." : "Import Signed Contract"}
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                className="hidden"
+                disabled={importingSignedContract}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) importSignedContract(file);
+                  event.currentTarget.value = "";
+                }}
+              />
+            </label>
+            <button onClick={fetchStudentAgreements} disabled={loadingStudentAgreements} title="Refresh student database" className="h-10 w-10 shrink-0 flex items-center justify-center border border-white/10 bg-white/5 hover:bg-white/10 text-white rounded-lg disabled:opacity-50">
+              <RefreshCw size={16} className={loadingStudentAgreements ? "animate-spin" : ""} />
+            </button>
+          </div>
         </div>
 
         {loadingStudentAgreements && studentAgreements.length === 0 ? (
@@ -617,7 +652,9 @@ export default function MasterControl() {
               <div key={agreement.id} className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.75fr_0.85fr_minmax(280px,auto)] gap-4 lg:items-center py-5">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <p className="font-bold text-white truncate">{agreement.studentName}</p>
+                    <button onClick={() => openStudentRecord(agreement)} className="font-bold text-white hover:text-[#78c8ff] truncate text-left underline decoration-white/20 underline-offset-4">
+                      {agreement.studentName}
+                    </button>
                     <span className={`shrink-0 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-widest ${studentStatusClass(agreement.status)}`}>
                       {studentStatusLabel(agreement.status)}
                     </span>
@@ -645,7 +682,7 @@ export default function MasterControl() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                   {agreement.balanceDue > 0 && (
-                    <button onClick={() => openPaymentEditor(agreement)} title="Record student payment" className="h-10 px-3 flex items-center justify-center gap-2 border border-[#78c8ff]/25 bg-[#78c8ff]/10 hover:bg-[#78c8ff]/15 text-[#78c8ff] rounded-lg text-sm font-bold">
+                    <button onClick={() => openStudentRecord(agreement)} title="Open student record" className="h-10 px-3 flex items-center justify-center gap-2 border border-[#78c8ff]/25 bg-[#78c8ff]/10 hover:bg-[#78c8ff]/15 text-[#78c8ff] rounded-lg text-sm font-bold">
                       <DollarSign size={16} /> Payment
                     </button>
                   )}
@@ -912,7 +949,7 @@ export default function MasterControl() {
           <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto bg-[#0b0b0c] border border-white/15 rounded-xl shadow-2xl">
             <div className="sticky top-0 z-10 bg-[#0b0b0c] border-b border-white/10 px-6 py-5 flex items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] uppercase tracking-widest text-[#78c8ff] font-bold mb-1">Student Payment</p>
+                <p className="text-[10px] uppercase tracking-widest text-[#78c8ff] font-bold mb-1">Student Record</p>
                 <h2 id="student-payment-title" className="text-xl font-bold text-white">{paymentAgreement.studentName}</h2>
                 <p className="text-sm text-white/45 mt-1">{paymentAgreement.program}</p>
               </div>
@@ -922,6 +959,18 @@ export default function MasterControl() {
             </div>
 
             <div className="p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                <div>
+                  <p className="text-sm text-white/75">{paymentAgreement.studentEmail}</p>
+                  <p className="text-xs text-white/35 mt-1">Status: {studentStatusLabel(paymentAgreement.status)}</p>
+                </div>
+                {paymentAgreement.signedPdfUrl && (
+                  <a href={paymentAgreement.signedPdfUrl} target="_blank" rel="noreferrer" className="h-10 px-4 flex items-center justify-center gap-2 border border-emerald-400/25 bg-emerald-400/10 hover:bg-emerald-400/15 text-emerald-300 rounded-lg text-sm font-bold">
+                    <FileSignature size={16} /> Open Signed Contract
+                  </a>
+                )}
+              </div>
+
               <div className="grid grid-cols-3 border-y border-white/10 mb-6">
                 <div className="py-4 pr-3">
                   <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-1">Class Total</p>
@@ -937,6 +986,29 @@ export default function MasterControl() {
                 </div>
               </div>
 
+              {(paymentAgreement.payments || []).length > 0 && (
+                <div className="mb-6">
+                  <p className="text-[10px] uppercase tracking-widest text-white/35 font-bold mb-2">Payment History</p>
+                  <div className="border-y border-white/10 divide-y divide-white/10">
+                    {(paymentAgreement.payments || []).map((payment: any) => (
+                      <div key={payment.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-bold text-white">{money(String(payment.amount || 0))}</p>
+                          <p className="text-xs text-white/40 mt-0.5">{payment.paymentDate} - {payment.method || "Previously recorded"}</p>
+                        </div>
+                        {payment.receiptPdfUrl && (
+                          <a href={payment.receiptPdfUrl} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#78c8ff] hover:text-white flex items-center gap-1.5">
+                            <ReceiptText size={14} /> Open Receipt
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {Number(paymentAgreement.balanceDue || 0) > 0 ? (
+                <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2">Payment Amount</label>
@@ -1001,9 +1073,37 @@ export default function MasterControl() {
                 <button onClick={() => setPaymentAgreement(null)} disabled={recordingPayment} className="px-5 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg font-bold disabled:opacity-50">Cancel</button>
                 <button onClick={recordStudentPayment} disabled={recordingPayment} className="px-5 py-3 bg-[#78c8ff] hover:bg-white text-black rounded-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50">
                   {recordingPayment ? <Loader2 size={17} className="animate-spin" /> : paymentForm.sendReceipt ? <Mail size={17} /> : <CheckCircle2 size={17} />}
-                  {recordingPayment ? "Recording..." : paymentForm.sendReceipt ? "Record Payment & Email Receipt" : "Record Payment"}
+                  {recordingPayment
+                    ? "Recording..."
+                    : Number(paymentForm.amount || 0) >= Number(paymentAgreement.balanceDue || 0)
+                      ? paymentForm.sendReceipt ? "Mark Paid in Full & Email Receipt" : "Mark Paid in Full"
+                      : paymentForm.sendReceipt ? "Record Payment & Email Receipt" : "Record Payment"}
                 </button>
               </div>
+                </>
+              ) : (
+                <div className="border-y border-emerald-400/20 py-6">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 size={22} className="text-emerald-300 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-emerald-300">Paid in Full</p>
+                      <p className="text-sm text-white/45 mt-1">This student has no remaining balance.</p>
+                    </div>
+                  </div>
+                  {latestReceiptFor(paymentAgreement)?.receiptPdfPath && (
+                    <div className="flex flex-col sm:flex-row gap-3 mt-5">
+                      {latestReceiptFor(paymentAgreement)?.receiptPdfUrl && (
+                        <a href={latestReceiptFor(paymentAgreement).receiptPdfUrl} target="_blank" rel="noreferrer" className="h-10 px-4 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-bold">
+                          <ReceiptText size={16} /> Open Latest Receipt
+                        </a>
+                      )}
+                      <button onClick={() => emailLatestReceipt(paymentAgreement)} disabled={emailingReceipt === paymentAgreement.id} className="h-10 px-4 flex items-center justify-center gap-2 bg-[#78c8ff] hover:bg-white text-black rounded-lg text-sm font-bold disabled:opacity-50">
+                        {emailingReceipt === paymentAgreement.id ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />} Email Receipt Again
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
