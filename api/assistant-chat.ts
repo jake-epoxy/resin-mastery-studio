@@ -271,7 +271,7 @@ CRITICAL RULE 5: VERY IMPORTANT! If you are regenerating or updating a quote dra
           } else {
             // Send email via Resend
             try {
-              await resend.emails.send({
+              const { error: sendError } = await resend.emails.send({
                 from: 'Resin OS Bot <updates@resinacademics.com>',
                 replyTo: contractorEmail,
                 to: [client.email],
@@ -280,6 +280,7 @@ CRITICAL RULE 5: VERY IMPORTANT! If you are regenerating or updating a quote dra
                          <p>${functionArgs.message}</p>
                        </div>`
               });
+              if (sendError) throw new Error(sendError.message);
               toolResult = `Success: Follow up sent to ${client.first_name} ${client.last_name} at ${client.email}.`;
             } catch (err: any) {
               toolResult = `Error sending email: ${err.message}`;
@@ -377,18 +378,20 @@ CRITICAL RULE 5: VERY IMPORTANT! If you are regenerating or updating a quote dra
 </html>
 `;
 
-                await resend.emails.send({
+                const { error: sendError } = await resend.emails.send({
                   from: 'Resin OS Bot <updates@resinacademics.com>',
                   replyTo: contractorEmail,
                   to: [client.email],
                   subject: `Your custom quote from ${brandName} is ready!`,
                   html: premiumHtml
                 });
+                if (sendError) throw new Error(sendError.message);
                 
                 // Update quote status to Sent
-                await supabaseAdmin.from('quotes').update({ status: 'Sent' }).eq('id', quote.id);
-                
-                toolResult = `Success: Quote link sent to ${client.first_name} at ${client.email}.`;
+                const { error: statusError } = await supabaseAdmin.from('quotes').update({ status: 'Sent' }).eq('id', quote.id);
+                toolResult = statusError
+                  ? `The quote email was accepted for ${client.first_name} at ${client.email}, but quote status tracking failed: ${statusError.message}. Do not send a duplicate without checking first.`
+                  : `Success: Quote link accepted for delivery to ${client.first_name} at ${client.email}.`;
               } catch (err: any) {
                 toolResult = `Error sending quote: ${err.message}`;
               }

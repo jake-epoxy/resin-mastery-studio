@@ -85,9 +85,15 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
   }
 
   async function handleSave(resendMode: boolean) {
+    if (resendMode && !quote.client?.email?.trim()) {
+      toast({ title: 'Client email missing', description: 'Add an email before resending this quote.', variant: 'destructive' });
+      return;
+    }
+
     if (resendMode) setIsResending(true);
     else setIsSaving(true);
 
+    let quoteSaved = false;
     try {
       const selectedMilestones = scheduleType === 'custom' ? customMilestones : (SCHEDULE_PRESETS[scheduleType]?.milestones || SCHEDULE_PRESETS['50_50'].milestones);
       const updatedConfig = {
@@ -112,11 +118,12 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
         .eq('id', quote.id);
 
       if (error) throw error;
+      quoteSaved = true;
 
       // Force iframe to reload to show changes
       setRefreshKey(prev => prev + 1);
 
-      if (resendMode && quote.client?.email) {
+      if (resendMode) {
         const brandName = quote.config?.brand_name || 'Your Contractor';
         const logoUrl = quote.config?.logo_url || '';
         const bodyText = `Hello${quote.client?.first_name ? ' ' + quote.client.first_name : ''},<br><br>Your proposal has been updated with revised terms at your request. Please review the changes and sign at your convenience.`;
@@ -173,11 +180,11 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
           })
         });
 
-        if (res.ok) {
-          toast({ title: "Saved & Resent", description: "Updated proposal emailed to client." });
-        } else {
-          toast({ title: "Saved but email failed", description: "Quote updated, but notification email failed.", variant: "destructive" });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => null);
+          throw new Error(errorData?.error || 'The email service rejected the updated quote.');
         }
+        toast({ title: "Saved & Resent", description: "Updated proposal accepted for delivery." });
       } else {
         toast({ title: "Quote Updated", description: "Changes saved. The preview has been updated." });
       }
@@ -186,7 +193,8 @@ export default function QuoteEditorModal({ quote, onClose, onUpdate }: any) {
       if (resendMode) onClose();
 
     } catch (e: any) {
-      toast({ title: "Error", description: e.message || "Failed to update quote.", variant: "destructive" });
+      if (quoteSaved) onUpdate();
+      toast({ title: quoteSaved ? 'Saved but email failed' : 'Error saving quote', description: e.message || 'Could not complete the request.', variant: 'destructive' });
     }
 
     setIsSaving(false);

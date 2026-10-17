@@ -1,6 +1,5 @@
 import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import process from 'node:process';
 
 export default async function handler(req: any, res: any) {
   // CORS setup for Vercel Serverless
@@ -23,6 +22,10 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'Missing required email payload.' });
   }
 
+  if (!process.env.RESEND_API_KEY) {
+    return res.status(503).json({ error: 'Email service is not configured.' });
+  }
+
   try {
     const payload: any = {
       from: 'Resin OS <updates@resinacademics.com>',
@@ -39,10 +42,20 @@ export default async function handler(req: any, res: any) {
        payload.attachments = attachments;
     }
 
-    const data = await resend.emails.send(payload);
-    
-    return res.status(200).json(data);
+    const { data, error } = await new Resend(process.env.RESEND_API_KEY).emails.send(payload);
+    if (error) {
+      const status = error.statusCode && error.statusCode >= 400 && error.statusCode < 600
+        ? error.statusCode
+        : 502;
+      return res.status(status).json({ error: error.message });
+    }
+
+    if (!data?.id) {
+      return res.status(502).json({ error: 'Email service did not confirm the message.' });
+    }
+
+    return res.status(200).json({ id: data.id });
   } catch (error: any) {
-    return res.status(400).json({ error: error.message });
+    return res.status(502).json({ error: error.message || 'Email service is unavailable.' });
   }
 }

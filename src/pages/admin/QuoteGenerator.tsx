@@ -218,7 +218,7 @@ export default function QuoteGenerator() {
     }
 
     try {
-      await fetch('/api/send-email', {
+      const response = await fetch('/api/send-email', {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -276,12 +276,20 @@ export default function QuoteGenerator() {
         })
       });
       
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || 'The email service rejected this quote.');
+      }
+
       if (generatedQuoteId) {
-        await supabase.from('quotes').update({ status: 'Sent' }).eq('id', generatedQuoteId);
+        const { error: statusError } = await supabase.from('quotes').update({ status: 'Sent' }).eq('id', generatedQuoteId);
+        if (statusError) {
+          toast({ title: 'Quote emailed, but tracking failed', description: statusError.message, variant: 'destructive' });
+        }
       }
       
       setClientEmailed(true);
-      toast({ title: "Quote Sent Successfully!", description: "Check your email for your CC receipt." });
+      toast({ title: "Quote accepted for delivery", description: "The email service accepted the quote for your client." });
       
       // Auto-refresh the form so the user can move on to the next quote
       setTimeout(() => {
@@ -533,20 +541,28 @@ export default function QuoteGenerator() {
     const emailSubject = documentMode === 'quote' ? 'Link Ready: Smart Quote Generated' : 'Link Ready: Vision Pitch Generated';
     const emailHeader = documentMode === 'quote' ? 'Secure Link Ready' : 'Vision Pitch Ready';
     
-    await fetch('/api/send-email', {
-      method: "POST",
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-          to: installerEmail,
-          subject: emailSubject,
-          html: `<div style="font-family:sans-serif;padding:20px;border-radius:10px;border:1px solid #eee;">
-                  <h2>${emailHeader}</h2>
-                  <a href="${smartLink}">${smartLink}</a>
-                 </div>`
-      })
-    });
-
-    setIsGenerating(false);
+    try {
+      const response = await fetch('/api/send-email', {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            to: installerEmail,
+            subject: emailSubject,
+            html: `<div style="font-family:sans-serif;padding:20px;border-radius:10px;border:1px solid #eee;">
+                    <h2>${emailHeader}</h2>
+                    <a href="${smartLink}">${smartLink}</a>
+                   </div>`
+        })
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || 'The email service rejected the notification.');
+      }
+    } catch (error: unknown) {
+      toast({ title: 'Link created, but notification failed', description: error instanceof Error ? error.message : 'Could not notify the installer.', variant: 'destructive' });
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   function copyLink() {
@@ -1066,11 +1082,12 @@ export default function QuoteGenerator() {
                           if (!inputVal) return;
                           setIsSendingToClient(true);
                           try {
-                            await fetch('/api/send-email', {
+                            const response = await fetch('/api/send-email', {
                               method: "POST",
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({
                                   to: inputVal,
+                                  cc: installerEmail.includes('@') ? installerEmail : undefined,
                                   subject: `Your Custom Quote from ${brandName}`,
                                   html: `<!DOCTYPE html>
 <html>
@@ -1122,8 +1139,22 @@ export default function QuoteGenerator() {
 </html>`
                               })
                             });
+                            if (!response.ok) {
+                              const errorData = await response.json().catch(() => null);
+                              throw new Error(errorData?.error || 'The email service rejected this quote.');
+                            }
+
+                            if (generatedQuoteId) {
+                              const { error: statusError } = await supabase.from('quotes').update({ status: 'Sent' }).eq('id', generatedQuoteId);
+                              if (statusError) {
+                                toast({ title: 'Quote emailed, but tracking failed', description: statusError.message, variant: 'destructive' });
+                              }
+                            }
                             setClientEmailed(true);
-                          } catch(e: any) {}
+                            toast({ title: 'Quote accepted for delivery', description: `Emailed to ${inputVal}.` });
+                          } catch(e: unknown) {
+                            toast({ title: 'Failed to send quote', description: e instanceof Error ? e.message : 'Could not reach the email service.', variant: 'destructive' });
+                          }
                           setIsSendingToClient(false);
                         }}
                         disabled={isSendingToClient}
