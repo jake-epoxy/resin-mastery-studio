@@ -60,7 +60,23 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot-status" style="min-height:100vh;background:#050505;color:#fff;display:flex;align-items:center;justify-content:center;font:16px system-ui,sans-serif;text-align:center;padding:24px;box-sizing:border-box">
+        Opening Resin OS...
+      </div>
+    </div>
+    <script>
+      setTimeout(function () {
+        var status = document.getElementById('boot-status');
+        if (!status) return;
+        status.textContent = 'Resin OS could not start. Please reload or update iOS.';
+        var reload = document.createElement('button');
+        reload.textContent = 'Reload';
+        reload.style.cssText = 'margin-left:12px;padding:10px 16px;background:#78c8ff;color:#000;border:0;border-radius:6px;font:inherit;font-weight:600';
+        reload.onclick = function () { location.reload(); };
+        status.appendChild(reload);
+      }, 12000);
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

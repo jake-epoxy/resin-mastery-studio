@@ -4,46 +4,44 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import { lazy, Suspense } from "react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import LegalTerms from "./components/LegalTerms";
-import LicensingPage from "./pages/LicensingPage";
-import QuoteViewLive from "./pages/QuoteViewLive";
-import BookingLive from "./pages/BookingLive";
-import PortfolioGallery from "./pages/PortfolioGallery";
-import LeadCaptureWidget from "./pages/LeadCaptureWidget";
-import ReviewPortal from "./pages/ReviewPortal";
-import EmbedWidget from "./pages/EmbedWidget";
-import AffiliateLanding from "./pages/AffiliateLanding";
-import PartnershipAgreement from "./components/PartnershipAgreement";
-import FoundingPartnerAgreement from "./components/FoundingPartnerAgreement";
-import JakeEpoxyLanding from "./pages/JakeEpoxyLanding";
-import JakeMentorshipPromo from "./pages/JakeMentorshipPromo";
-import StudentOnboarding from "./pages/StudentOnboarding";
+const Index = lazy(() => import("./pages/Index"));
+const LegalTerms = lazy(() => import("./components/LegalTerms"));
+const LicensingPage = lazy(() => import("./pages/LicensingPage"));
+const QuoteViewLive = lazy(() => import("./pages/QuoteViewLive"));
+const BookingLive = lazy(() => import("./pages/BookingLive"));
+const PortfolioGallery = lazy(() => import("./pages/PortfolioGallery"));
+const LeadCaptureWidget = lazy(() => import("./pages/LeadCaptureWidget"));
+const ReviewPortal = lazy(() => import("./pages/ReviewPortal"));
+const EmbedWidget = lazy(() => import("./pages/EmbedWidget"));
+const AffiliateLanding = lazy(() => import("./pages/AffiliateLanding"));
+const PartnershipAgreement = lazy(() => import("./components/PartnershipAgreement"));
+const FoundingPartnerAgreement = lazy(() => import("./components/FoundingPartnerAgreement"));
+const JakeEpoxyLanding = lazy(() => import("./pages/JakeEpoxyLanding"));
+const JakeMentorshipPromo = lazy(() => import("./pages/JakeMentorshipPromo"));
+const StudentOnboarding = lazy(() => import("./pages/StudentOnboarding"));
 
-// SaaS Admin Routes
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/Dashboard";
-import QuoteGenerator from "./pages/admin/QuoteGenerator";
-import Academy from "./pages/admin/Academy";
-import Marketplace from "./pages/admin/Marketplace";
-import MasterControl from "./pages/admin/MasterControl";
-import LeadCenter from "./pages/admin/LeadCenter";
-import Visualizer from "./pages/admin/Visualizer";
-import Autopilot from "./pages/admin/Autopilot";
-import OperationsHub from "./pages/admin/OperationsHub";
-import WorkforceHub from "./pages/admin/WorkforceHub";
-import Billing from "./pages/admin/Billing";
-import CloneOS from "./pages/admin/CloneOS";
-import ProposalsLibrary from "./pages/admin/ProposalsLibrary";
-import AdminBanking from "./pages/admin/AdminBanking";
-import SettingsPage from "./pages/admin/SettingsPage";
-import EpoxyBrain from "./pages/admin/EpoxyBrain";
-import FieldLayout from "./pages/field/FieldLayout";
-import MobileSchedule from "./pages/field/MobileSchedule";
-
-import AssistantFAB from "./components/AssistantFAB";
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const QuoteGenerator = lazy(() => import("./pages/admin/QuoteGenerator"));
+const Academy = lazy(() => import("./pages/admin/Academy"));
+const Marketplace = lazy(() => import("./pages/admin/Marketplace"));
+const MasterControl = lazy(() => import("./pages/admin/MasterControl"));
+const LeadCenter = lazy(() => import("./pages/admin/LeadCenter"));
+const Visualizer = lazy(() => import("./pages/admin/Visualizer"));
+const Autopilot = lazy(() => import("./pages/admin/Autopilot"));
+const OperationsHub = lazy(() => import("./pages/admin/OperationsHub"));
+const WorkforceHub = lazy(() => import("./pages/admin/WorkforceHub"));
+const Billing = lazy(() => import("./pages/admin/Billing"));
+const CloneOS = lazy(() => import("./pages/admin/CloneOS"));
+const ProposalsLibrary = lazy(() => import("./pages/admin/ProposalsLibrary"));
+const AdminBanking = lazy(() => import("./pages/admin/AdminBanking"));
+const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
+const EpoxyBrain = lazy(() => import("./pages/admin/EpoxyBrain"));
+const FieldLayout = lazy(() => import("./pages/field/FieldLayout"));
+const MobileSchedule = lazy(() => import("./pages/field/MobileSchedule"));
+const AssistantFAB = lazy(() => import("./components/AssistantFAB"));
 
 const queryClient = new QueryClient();
 
@@ -55,6 +53,7 @@ const App = () => (
       <HelmetProvider>
       <BrowserRouter>
         <ErrorBoundary>
+          <Suspense fallback={<div className="min-h-screen bg-[#050505] text-white flex items-center justify-center">Loading Resin OS...</div>}>
           <Routes>
             <Route path="/" element={<Index />} />
           <Route path="/jakeepoxy" element={<JakeEpoxyLanding />} />
@@ -103,10 +102,11 @@ const App = () => (
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+          </Suspense>
         </ErrorBoundary>
 
         {/* Global Assistant Nav/Chatbot visible everywhere EXCEPT on end-client URLs like quote-live */}
-        <AssistantFAB />
+        <Suspense fallback={null}><AssistantFAB /></Suspense>
       </BrowserRouter>
       </HelmetProvider>
     </TooltipProvider>

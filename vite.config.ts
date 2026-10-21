@@ -8,6 +8,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  build: {
+    target: ["es2020", "safari14"],
+  },
   server: {
     host: "127.0.0.1",
     port: 8080,
